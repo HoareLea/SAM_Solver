@@ -22,7 +22,11 @@ namespace SAM.Solver.Grasshopper
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
-            pManager.AddParameter(new GooPanelParam(), "Panels", "P", "Panels", GH_ParamAccess.list);
+            int index;
+            
+            index = pManager.AddParameter(new GooPanelParam(), "Panels", "P", "Panels", GH_ParamAccess.list);
+            pManager[index].DataMapping = GH_DataMapping.Flatten;
+
             pManager.AddBrepParameter("Surfaces", "Surfaces", "Surfaces", GH_ParamAccess.tree);
             pManager.AddIntegerParameter("Sources", "S", "Sources Indexes", GH_ParamAccess.tree);
         }

@@ -105,7 +105,9 @@ namespace SAM.Solver.Grasshopper
                 for (int j = 0; j < thiswalls.Count; j++) {
                     Brep item = thiswalls[j];
                     List<int> sources = thisids[j];
-                    GH_Path thisbreppath = thispath.AppendElement(j); 
+                    GH_Path thisbreppath = thispath.AppendElement(j);
+
+                    item.Flip();
 
                     walls.Append(new GH_Brep(item), thisbreppath);
                     foreach (int index in sources) 

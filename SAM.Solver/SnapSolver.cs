@@ -826,14 +826,16 @@ namespace SAM.Solver
 
                 double bota, botb, topa, topb;
 
-                Rhino.Geometry.Intersect.Intersection.LineLine(boxbottom, line, out bota, out botb);
-                Rhino.Geometry.Intersect.Intersection.LineLine(boxtop, line, out topa, out topb);
+                bool int1 = Rhino.Geometry.Intersect.Intersection.LineLine(boxbottom, line, out bota, out botb);
+                bool int2 = Rhino.Geometry.Intersect.Intersection.LineLine(boxtop, line, out topa, out topb);
 
-                if (bota >= 0 && bota <= 1 && topa >= 0 && topa <= 1) {
-                    candidates.Add(new Line(boxbottom.PointAt(bota), boxtop.PointAt(topa)));
-                    Point3d boxmidbot = BucketBox.PointAt(0.5, 0, 0);
-                    Point3d boxmidtop = BucketBox.PointAt(0.5, 1, 0);
-                    distances.Add(line.DistanceTo(boxmidbot, false) + line.DistanceTo(boxmidtop, false));
+                if (int1 | int2) {
+                    if (bota >= 0 && bota <= 1 && topa >= 0 && topa <= 1) {
+                        candidates.Add(new Line(boxbottom.PointAt(bota), boxtop.PointAt(topa)));
+                        Point3d boxmidbot = BucketBox.PointAt(0.5, 0, 0);
+                        Point3d boxmidtop = BucketBox.PointAt(0.5, 1, 0);
+                        distances.Add(line.DistanceTo(boxmidbot, false) + line.DistanceTo(boxmidtop, false));
+                    }
                 }
             }
 

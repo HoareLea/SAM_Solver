@@ -41,7 +41,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-     <Reference Include="RhinoCommon">
+    <Reference Include="RhinoCommon">
       <HintPath>$(Rhino7InstallDir)RhinoCommon.dll</HintPath>
       <Private>False</Private>
     </Reference>
@@ -111,9 +111,16 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>Copy "$(TargetPath)" "$(TargetDir)\$(ProjectName).gha"
-                  Erase "$(TargetPath)"
-</PostBuildEvent>
+    <PostBuildEvent>copy "$(TargetPath)" "$(TargetDir)\$(ProjectName).gha"
+
+set GH_PACKAGES_DIR=$(APPDATA)\Grasshopper\Libraries\SAM\
+if not exist "%25GH_PACKAGES_DIR%25" mkdir "%25GH_PACKAGES_DIR%25"
+
+copy "$(TargetDir)*.dll" "%25GH_PACKAGES_DIR%25"
+copy "%25GH_PACKAGES_DIR%25\$(ProjectName).dll" "%25GH_PACKAGES_DIR%25\$(ProjectName).gha"
+
+::erase "%25GH_PACKAGES_DIR%25$(ProjectName).dll"
+::erase "$(TargetPath)"</PostBuildEvent>
   </PropertyGroup>
   <Import Project="..\packages\RhinoCommon.7.0.20091.15085-wip\build\net45\RhinoCommon.targets" Condition="Exists('..\packages\RhinoCommon.7.0.20091.15085-wip\build\net45\RhinoCommon.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

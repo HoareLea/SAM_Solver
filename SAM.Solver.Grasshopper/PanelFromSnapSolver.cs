@@ -24,11 +24,11 @@ namespace SAM.Solver.Grasshopper
         {
             int index;
             
-            index = pManager.AddParameter(new GooPanelParam(), "Panels", "P", "Panels", GH_ParamAccess.list);
+            index = pManager.AddParameter(new GooPanelParam(), "_panels", "_panels", "Panels", GH_ParamAccess.list);
             pManager[index].DataMapping = GH_DataMapping.Flatten;
 
-            pManager.AddBrepParameter("Surfaces", "Surfaces", "Surfaces", GH_ParamAccess.tree);
-            pManager.AddIntegerParameter("Sources", "S", "Sources Indexes", GH_ParamAccess.tree);
+            pManager.AddBrepParameter("_surfaces", "_surfaces", "Surfaces", GH_ParamAccess.tree);
+            pManager.AddIntegerParameter("_sources", "_sources", "Sources Indexes", GH_ParamAccess.tree);
         }
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)

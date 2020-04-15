@@ -16,25 +16,25 @@ namespace SAM.Solver.Grasshopper
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
-            pManager.AddParameter(new GooPanelParam(), "Panels", "P", "Panels", GH_ParamAccess.list);
-            pManager.AddParameter(new GooPanelParam(), "Fixed", "F", "Fixed panels", GH_ParamAccess.list);
+            pManager.AddParameter(new GooPanelParam(), "_panels", "P", "Panels", GH_ParamAccess.list);
+            pManager.AddParameter(new GooPanelParam(), "fixed_", "F", "Fixed panels", GH_ParamAccess.list);
 
             Params.Input[1].Optional = true;
 
-            pManager.AddIntervalParameter("Levels", "L", "Levels", GH_ParamAccess.list);
-            pManager.AddNumberParameter("BucketSize", "B", "Bucket size", GH_ParamAccess.item, 0.5);
-            pManager.AddNumberParameter("GridSize", "G", "Grid size", GH_ParamAccess.item, 0.1);
-            pManager.AddNumberParameter("MaxGap", "M", "Max gap", GH_ParamAccess.item, 0.5);
-            pManager.AddNumberParameter("Angle", "A", "Angle", GH_ParamAccess.item, 5);
-            pManager.AddNumberParameter("Tolerance", "±", "Tolerance", GH_ParamAccess.item, 0.01);
-            pManager.AddPointParameter("Origin", "O", "Grid origin", GH_ParamAccess.item, new Rhino.Geometry.Point3d(0, 0, 0));
+            pManager.AddIntervalParameter("_levels", "L", "Levels", GH_ParamAccess.list);
+            pManager.AddNumberParameter("_bucketSize_", "B", "Bucket default: ", GH_ParamAccess.item, 0.5);
+            pManager.AddNumberParameter("_gridSize_", "G", "Grid size default: ", GH_ParamAccess.item, 0.1);
+            pManager.AddNumberParameter("_maxGap_", "M", "Max gap default: ", GH_ParamAccess.item, 0.5);
+            pManager.AddNumberParameter("_angle_", "A", "Angle default: ", GH_ParamAccess.item, 5);
+            pManager.AddNumberParameter("_tolerance_", "±", "Tolerance default: ", GH_ParamAccess.item, 0.01);
+            pManager.AddPointParameter("_origin_", "O", "Grid origin default: ", GH_ParamAccess.item, new Rhino.Geometry.Point3d(0, 0, 0));
         }
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
-            pManager.AddBrepParameter("Walls", "W", "Walls per level", GH_ParamAccess.tree);
+            pManager.AddBrepParameter("Surfaces Walls", "W", "Walls per level", GH_ParamAccess.tree);
             pManager.AddIntegerParameter("Sources", "I", "Source panels indices per level and brep", GH_ParamAccess.tree);
-            pManager.AddCurveParameter("Slabs", "S", "Slabs", GH_ParamAccess.tree);
+            pManager.AddCurveParameter("Curves Slabs ", "S", "Slabs", GH_ParamAccess.tree);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)

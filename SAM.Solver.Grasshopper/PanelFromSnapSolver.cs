@@ -42,19 +42,19 @@ namespace SAM.Solver.Grasshopper
             if (!DA.GetDataTree(1, out breps))
                 return;
 
-            GH_Structure<IGH_Goo> sources;
-            if (!DA.GetDataTree(0, out sources)) 
+            GH_Structure<GH_Integer> sources;
+            if (!DA.GetDataTree(2, out sources)) 
                 return;
 
             List<Tuple<int, List<int>>> tuples = new List<Tuple<int, List<int>>>();
             HashSet<int> indexes_Unique = new HashSet<int>();
             for (int i = 0; i < sources.PathCount; i++)
             {
-                List<IGH_Goo> goos = sources[i];
+                List<GH_Integer> goos = sources[i];
                 List<int> indexes_Temp = new List<int>();
-                foreach (IGH_Goo goo in goos)
+                foreach (GH_Integer goo in goos)
                 {
-                    int index = (goo as dynamic).Value;
+                    int index = goo.Value;
                     indexes_Temp.Add(index);
                     indexes_Unique.Add(index);
                 }

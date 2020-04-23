@@ -39,6 +39,10 @@ namespace SAM.Solver.Grasshopper
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            //TODO: Find better Way to change tolerance
+            Rhino.RhinoDoc.ActiveDoc.ModelAbsoluteTolerance = Core.Tolerance.MacroDistance;
+            Rhino.RhinoDoc.ActiveDoc.ModelUnitSystem = Rhino.UnitSystem.Meters;
+
             List<GooPanel> Panels = new List<GooPanel>();
             List<GooPanel> FixedPanels = new List<GooPanel>();
 

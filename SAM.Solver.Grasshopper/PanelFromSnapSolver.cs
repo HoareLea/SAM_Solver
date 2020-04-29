@@ -34,6 +34,7 @@ namespace SAM.Solver.Grasshopper
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddParameter(new GooPanelParam(), "Panels", "P", "Panels", GH_ParamAccess.list);
+            pManager.AddParameter(new GooPanelParam(), "UnusedPanels", "UP", "Unused Panels", GH_ParamAccess.list);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
@@ -66,7 +67,7 @@ namespace SAM.Solver.Grasshopper
             }
 
             List<Analytical.Panel> result = new List<Analytical.Panel>();
-            foreach(Tuple<int, List<int>> tuple in tuples)
+            foreach (Tuple<int, List<int>> tuple in tuples)
             {
                 int index_Brep = tuple.Item1;
                 if (index_Brep == -1)
@@ -96,7 +97,16 @@ namespace SAM.Solver.Grasshopper
 
             }
 
+            List<Analytical.Panel> result_Unused = new List<Analytical.Panel>();
+            foreach(Analytical.Panel panel in panels)
+            {
+                Analytical.Panel panel_Temp = result.Find(x => x.Guid.Equals(panel.Guid));
+                if (panel_Temp == null)
+                    result_Unused.Add(panel_Temp);
+            }
+
             DA.SetDataList(0, result.ConvertAll(x => new GooPanel(x)));
+            DA.SetDataList(1, result_Unused.ConvertAll(x => new GooPanel(x)));
         }
     }
 }

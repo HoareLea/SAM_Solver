@@ -102,7 +102,7 @@ namespace SAM.Solver.Grasshopper
             {
                 Analytical.Panel panel_Temp = result.Find(x => x.Guid.Equals(panel.Guid));
                 if (panel_Temp == null)
-                    result_Unused.Add(panel_Temp);
+                    result_Unused.Add(panel);
             }
 
             DA.SetDataList(0, result.ConvertAll(x => new GooPanel(x)));

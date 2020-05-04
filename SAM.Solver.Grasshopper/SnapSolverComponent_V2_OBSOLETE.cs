@@ -9,7 +9,9 @@ namespace SAM.Solver.Grasshopper
 {
     public class SnapSolverComponent_V2_OBSOLETE : GH_Component
     {
-        public SnapSolverComponent_V2_OBSOLETE() : base("SnapSolver V2", "SnapS 2", "Snap solver", "SAM", "Solver") { }
+        public SnapSolverComponent_V2_OBSOLETE() : base("SnapSolver V2", "SnapS 2", "Snap solver", "SAM", "Solver")
+        {
+        }
 
         public override Guid ComponentGuid => new Guid("{AD7D3DBB-0967-4E48-BBE7-1063FAD65DA1}");
 
@@ -55,11 +57,14 @@ namespace SAM.Solver.Grasshopper
             if (!DA.GetData(7, ref toler)) return;
             if (!DA.GetData(8, ref Origin)) return;
 
-            if (FixedPanels.Count > 0) {
+            if (FixedPanels.Count > 0)
+            {
                 List<Line> fixedlines = new List<Line>();
 
-                foreach (Interval interval in Levels) {
-                    foreach (Brep brep in FixedPanels) {
+                foreach (Interval interval in Levels)
+                {
+                    foreach (Brep brep in FixedPanels)
+                    {
                         Plane plane1 = new Plane(new Point3d(0, 0, interval.T0), Vector3d.ZAxis);
                         Plane plane2 = new Plane(new Point3d(0, 0, interval.T1), Vector3d.ZAxis);
                         Rhino.Geometry.Intersect.Intersection.BrepPlane(brep, plane1, Rhino.RhinoDoc.ActiveDoc.ModelAbsoluteTolerance, out Curve[] curves1, out Point3d[] points1);
@@ -67,8 +72,10 @@ namespace SAM.Solver.Grasshopper
 
                         List<Curve> allcurves = new List<Curve>(curves1);
                         allcurves.AddRange(curves2);
-                        foreach (Curve item in allcurves) {
-                            if (item.TryGetPolyline(out Polyline aspoly)) {
+                        foreach (Curve item in allcurves)
+                        {
+                            if (item.TryGetPolyline(out Polyline aspoly))
+                            {
                                 aspoly.Transform(Transform.PlanarProjection(Plane.WorldXY));
                                 fixedlines.AddRange(aspoly.GetSegments());
                             }
@@ -78,17 +85,18 @@ namespace SAM.Solver.Grasshopper
 
                 SnapSolver.SnapPanels(Panels, Levels, bucket, grid, gap, angle, toler, Origin, fixedlines, out OutputWalls, out SlabOutlines);
             }
-            else {
+            else
+            {
                 SnapSolver.SnapPanels(Panels, Levels, bucket, grid, gap, angle, toler, Origin, out OutputWalls, out SlabOutlines);
             }
-
 
             GH_Structure<GH_Brep> walls = new GH_Structure<GH_Brep>();
             GH_Structure<GH_Curve> slabs = new GH_Structure<GH_Curve>();
 
             GH_Path tar = DA.ParameterTargetPath(0);
 
-            for (int i = 0; i < OutputWalls.Keys.Count; i++) {
+            for (int i = 0; i < OutputWalls.Keys.Count; i++)
+            {
                 GH_Path thispath = tar.AppendElement(i);
 
                 List<Brep> thiswalls = OutputWalls[OutputWalls.Keys[i]];
@@ -96,7 +104,8 @@ namespace SAM.Solver.Grasshopper
                     walls.Append(new GH_Brep(item), thispath);
             }
 
-            for (int i = 0; i < SlabOutlines.Count; i++) {
+            for (int i = 0; i < SlabOutlines.Count; i++)
+            {
                 List<Curve> thisout = SlabOutlines[i];
                 GH_Path thispath = tar.AppendElement(i);
 

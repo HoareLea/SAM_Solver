@@ -9,7 +9,9 @@ namespace SAM.Solver.Grasshopper
 {
     public class SnapSolverComponent_OBSOLETE : GH_Component
     {
-        public SnapSolverComponent_OBSOLETE() : base("SnapSolver", "SnapS", "Snap solver", "SAM", "Solver") { }
+        public SnapSolverComponent_OBSOLETE() : base("SnapSolver", "SnapS", "Snap solver", "SAM", "Solver")
+        {
+        }
 
         public override Guid ComponentGuid => new Guid("{9A8FCA14-FC72-42C8-B540-BACE49096E42}");
 
@@ -52,13 +54,13 @@ namespace SAM.Solver.Grasshopper
             SnapSolver.SnapPanels(Panels, Levels, bucket, grid, gap, angle, toler, Origin, out OutputWalls, out SlabOutlines);
 
             GH_Structure<GH_Brep> walls = new GH_Structure<GH_Brep>();
-            GH_Structure<GH_Curve> slabs = new GH_Structure<GH_Curve>(); 
+            GH_Structure<GH_Curve> slabs = new GH_Structure<GH_Curve>();
 
-            GH_Path tar = DA.ParameterTargetPath(0); 
+            GH_Path tar = DA.ParameterTargetPath(0);
 
             for (int i = 0; i < OutputWalls.Keys.Count; i++)
             {
-                GH_Path thispath = tar.AppendElement(i); 
+                GH_Path thispath = tar.AppendElement(i);
 
                 List<Brep> thiswalls = OutputWalls[OutputWalls.Keys[i]];
                 foreach (Brep item in thiswalls)
@@ -67,7 +69,7 @@ namespace SAM.Solver.Grasshopper
 
             for (int i = 0; i < SlabOutlines.Count; i++)
             {
-                List<Curve> thisout = SlabOutlines[i]; 
+                List<Curve> thisout = SlabOutlines[i];
                 GH_Path thispath = tar.AppendElement(i);
 
                 foreach (Curve item in thisout)

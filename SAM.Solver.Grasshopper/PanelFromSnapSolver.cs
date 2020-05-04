@@ -1,7 +1,6 @@
 ﻿using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
-using Rhino.Geometry;
 using SAM.Analytical.Grasshopper;
 using SAM.Geometry.Spatial;
 using System;
@@ -17,13 +16,14 @@ namespace SAM.Solver.Grasshopper
         /// </summary>
         public override Guid ComponentGuid => new Guid("5857acd8-c038-4a1e-9bde-33dedfed4fde");
 
-
-        public PanelFromSnapSolver() : base("PanelFromSnapSolver", "PanelFromSnapSolver", "PanelFromSnapSolver", "SAM", "Solver") { }
+        public PanelFromSnapSolver() : base("PanelFromSnapSolver", "PanelFromSnapSolver", "PanelFromSnapSolver", "SAM", "Solver")
+        {
+        }
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             int index;
-            
+
             index = pManager.AddParameter(new GooPanelParam(), "_panels", "_panels", "Panels", GH_ParamAccess.list);
             pManager[index].DataMapping = GH_DataMapping.Flatten;
 
@@ -40,7 +40,7 @@ namespace SAM.Solver.Grasshopper
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             List<Analytical.Panel> panels = new List<SAM.Analytical.Panel>();
-            if (!DA.GetDataList(0, panels)) 
+            if (!DA.GetDataList(0, panels))
                 return;
 
             GH_Structure<GH_Brep> breps = new GH_Structure<GH_Brep>();
@@ -48,7 +48,7 @@ namespace SAM.Solver.Grasshopper
                 return;
 
             GH_Structure<GH_Integer> sources;
-            if (!DA.GetDataTree(2, out sources)) 
+            if (!DA.GetDataTree(2, out sources))
                 return;
 
             List<Tuple<int, List<int>>> tuples = new List<Tuple<int, List<int>>>();
@@ -94,11 +94,10 @@ namespace SAM.Solver.Grasshopper
                 Analytical.Panel panel_New = new Analytical.Panel(panel_Old.Guid, panel_Old, face3D, true, Core.Tolerance.MacroDistance, 0.3);
 
                 result.Add(panel_New);
-
             }
 
             List<Analytical.Panel> result_Unused = new List<Analytical.Panel>();
-            foreach(Analytical.Panel panel in panels)
+            foreach (Analytical.Panel panel in panels)
             {
                 Analytical.Panel panel_Temp = result.Find(x => x.Guid.Equals(panel.Guid));
                 if (panel_Temp == null)

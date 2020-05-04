@@ -10,7 +10,9 @@ namespace SAM.Solver.Grasshopper
 {
     public class SnapSolverComponent_V3 : GH_Component
     {
-        public SnapSolverComponent_V3() : base("SnapSolver V3", "SnapS 3", "Snap solver", "SAM", "Solver") { }
+        public SnapSolverComponent_V3() : base("SnapSolver V3", "SnapS 3", "Snap solver", "SAM", "Solver")
+        {
+        }
 
         public override Guid ComponentGuid => new Guid("{83C6F5D9-F7CC-491B-94BA-AD0F87E1993E}");
 
@@ -66,25 +68,31 @@ namespace SAM.Solver.Grasshopper
             List<Brep> fixedBreps = new List<Brep>();
             List<Brep> panelBreps = new List<Brep>();
 
-            foreach (GooPanel item in Panels) 
+            foreach (GooPanel item in Panels)
                 panelBreps.Add(item.Value.ToRhino());
 
-            if (FixedPanels.Count > 0) {
-                foreach (GooPanel item in FixedPanels) {
+            if (FixedPanels.Count > 0)
+            {
+                foreach (GooPanel item in FixedPanels)
+                {
                     fixedBreps.Add(item.Value.ToRhino());
                 }
             }
 
             List<Line> fixedlines = new List<Line>();
 
-            foreach (Interval interval in Levels) {
-                foreach (Brep brep in fixedBreps) {
+            foreach (Interval interval in Levels)
+            {
+                foreach (Brep brep in fixedBreps)
+                {
                     Plane plane1 = new Plane(new Point3d(0, 0, (interval.T0 + interval.T1) / 2), Vector3d.ZAxis);
                     Rhino.Geometry.Intersect.Intersection.BrepPlane(brep, plane1, Rhino.RhinoDoc.ActiveDoc.ModelAbsoluteTolerance, out Curve[] curves1, out Point3d[] points1);
 
                     List<Curve> allcurves = new List<Curve>(curves1);
-                    foreach (Curve item in allcurves) {
-                        if (item.TryGetPolyline(out Polyline aspoly)) {
+                    foreach (Curve item in allcurves)
+                    {
+                        if (item.TryGetPolyline(out Polyline aspoly))
+                        {
                             aspoly.Transform(Transform.PlanarProjection(Plane.WorldXY));
                             fixedlines.AddRange(aspoly.GetSegments());
                         }
@@ -95,18 +103,20 @@ namespace SAM.Solver.Grasshopper
             SnapSolver.SnapPanels(panelBreps, Levels, bucket, grid, gap, angle, toler, Origin, fixedlines, out OutputWalls, out OutputIds, out SlabOutlines);
 
             GH_Structure<GH_Brep> walls = new GH_Structure<GH_Brep>();
-            GH_Structure<GH_Integer> wallids = new GH_Structure<GH_Integer>(); 
+            GH_Structure<GH_Integer> wallids = new GH_Structure<GH_Integer>();
             GH_Structure<GH_Curve> slabs = new GH_Structure<GH_Curve>();
 
             GH_Path tar = DA.ParameterTargetPath(0);
 
-            for (int i = 0; i < OutputWalls.Keys.Count; i++) {
+            for (int i = 0; i < OutputWalls.Keys.Count; i++)
+            {
                 GH_Path thispath = tar.AppendElement(i);
 
                 List<Brep> thiswalls = OutputWalls[OutputWalls.Keys[i]];
                 List<List<int>> thisids = OutputIds[OutputIds.Keys[i]];
 
-                for (int j = 0; j < thiswalls.Count; j++) {
+                for (int j = 0; j < thiswalls.Count; j++)
+                {
                     Brep item = thiswalls[j];
                     List<int> sources = thisids[j];
                     GH_Path thisbreppath = thispath.AppendElement(j);
@@ -114,12 +124,13 @@ namespace SAM.Solver.Grasshopper
                     item.Flip();
 
                     walls.Append(new GH_Brep(item), thisbreppath);
-                    foreach (int index in sources) 
+                    foreach (int index in sources)
                         wallids.Append(new GH_Integer(index), thisbreppath);
                 }
             }
 
-            for (int i = 0; i < SlabOutlines.Count; i++) {
+            for (int i = 0; i < SlabOutlines.Count; i++)
+            {
                 List<Curve> thisout = SlabOutlines[i];
                 GH_Path thispath = tar.AppendElement(i);
 

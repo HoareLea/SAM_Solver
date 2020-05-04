@@ -6,7 +6,6 @@ namespace SAM.Solver
 {
     public static class SnapSolver
     {
-
         public static void SnapPanels(List<Brep> Panels,
            List<Interval> Levels,
            double BucketSize,
@@ -32,14 +31,17 @@ namespace SAM.Solver
             List<Brep> slabs = new List<Brep>();
             List<double> slabsZ = new List<double>();
 
-            for (int i = 0; i < Panels.Count; i++) {
+            for (int i = 0; i < Panels.Count; i++)
+            {
                 Brep panel = Panels[i];
                 BoundingBox bb = panel.GetBoundingBox(false);
-                if (bb.Diagonal.Z > Tolerance) {
+                if (bb.Diagonal.Z > Tolerance)
+                {
                     wallbreps.Add(panel);
                     wallbrepsids.Add(i);
                 }
-                else if (bb.Diagonal.Z <= Tolerance) {
+                else if (bb.Diagonal.Z <= Tolerance)
+                {
                     slabs.Add(panel);
                     slabsZ.Add(bb.Center.Z);
                 }
@@ -49,18 +51,20 @@ namespace SAM.Solver
 
             //project the fixed lines
             Transform projection = Transform.PlanarProjection(Plane.WorldXY);
-            for (int i = 0; i < Fixed.Count; i++) {
+            for (int i = 0; i < Fixed.Count; i++)
+            {
                 Line thisline = Fixed[i];
                 thisline.Transform(projection);
                 Fixed[i] = thisline;
             }
 
-            //project the wall sections 
+            //project the wall sections
             List<Line> projectedWallLines = new List<Line>();
             SortedList<Interval, List<int>> wallLineIds = new SortedList<Interval, List<int>>(); //stores the line indices per level
             SortedList<Interval, List<int>> wallSourceIds = new SortedList<Interval, List<int>>(); //stores the line to brep mapping
 
-            foreach (Interval level in Levels) {
+            foreach (Interval level in Levels)
+            {
                 OutputWalls.Add(level, new List<Brep>());
                 OutputIds.Add(level, new List<List<int>>());
                 wallLineIds.Add(level, new List<int>());
@@ -69,7 +73,8 @@ namespace SAM.Solver
                 double mid = level.ParameterAt(0.5);
                 Plane thiscut = new Plane(new Point3d(0, 0, mid), Vector3d.ZAxis);
 
-                for (int i = 0; i < wallbreps.Count; i++) {
+                for (int i = 0; i < wallbreps.Count; i++)
+                {
                     Brep thiswall = wallbreps[i];
                     int thisSourceIndex = wallbrepsids[i];
 
@@ -78,7 +83,8 @@ namespace SAM.Solver
 
                     if (Rhino.Geometry.Intersect.Intersection.BrepPlane(thiswall, thiscut, Tolerance, out intc, out intp))
                         foreach (Curve curve in intc)
-                            if (curve.IsLinear(Tolerance)) {
+                            if (curve.IsLinear(Tolerance))
+                            {
                                 Line thissect = new Line(curve.PointAtStart, curve.PointAtEnd);
                                 thissect.Transform(Transform.PlanarProjection(Plane.WorldXY));
                                 wallLineIds[level].Add(projectedWallLines.Count);
@@ -101,7 +107,8 @@ namespace SAM.Solver
             projectedWallLines = TrimAndExtend(connections, projectedWallLines, buckets);
 
             //sort the indices per level for later binary search
-            foreach (Interval level in wallLineIds.Keys) {
+            foreach (Interval level in wallLineIds.Keys)
+            {
                 List<int> ids = wallLineIds[level];
                 List<int> sourceids = wallSourceIds[level];
 
@@ -113,22 +120,27 @@ namespace SAM.Solver
                 sourceids = new List<int>(sourceidsarray);
             }
 
-            //fix the slabs 
-            for (int i = 0; i < slabs.Count; i++) {
+            //fix the slabs
+            for (int i = 0; i < slabs.Count; i++)
+            {
                 Brep thisslab = slabs[i];
                 List<Curve> thisSlabCurves = new List<Curve>();
                 double zh = slabsZ[i];
 
-                foreach (Interval level in Levels) {
-                    if (Math.Abs(level.T0 - zh) <= Tolerance) {
+                foreach (Interval level in Levels)
+                {
+                    if (Math.Abs(level.T0 - zh) <= Tolerance)
+                    {
                         zh = level.T0;
                         break;
                     }
-                    else if (Math.Abs(level.T1 - zh) <= Tolerance) {
+                    else if (Math.Abs(level.T1 - zh) <= Tolerance)
+                    {
                         zh = level.T1;
                         break;
                     }
-                    else if (level.IncludesParameter(zh)) {
+                    else if (level.IncludesParameter(zh))
+                    {
                         if (level.NormalizedParameterAt(zh) < 0.5)
                             zh = level.T0;
                         else
@@ -139,29 +151,35 @@ namespace SAM.Solver
 
                 Transform transform = Transform.Translation(new Vector3d(0, 0, zh));
 
-                foreach (Curve crv in Curve.JoinCurves(thisslab.Curves3D, Tolerance)) {
+                foreach (Curve crv in Curve.JoinCurves(thisslab.Curves3D, Tolerance))
+                {
                     Polyline poly = null;
-                    if (crv.TryGetPolyline(out poly)) {
+                    if (crv.TryGetPolyline(out poly))
+                    {
                         poly.Transform(Transform.PlanarProjection(Plane.WorldXY));
                         List<Line> rounded = new List<Line>();
 
                         Line[] segments = poly.GetSegments();
-                        for (int j = 0; j < segments.Length; j++) {
+                        for (int j = 0; j < segments.Length; j++)
+                        {
                             Line segment = segments[j];
                             double minsim = double.MaxValue;
                             Line bestAxis = Line.Unset;
 
-                            for (int k = 0; k < axes.Count; k++) {
+                            for (int k = 0; k < axes.Count; k++)
+                            {
                                 Line axis = axes[k];
                                 double sim = LineSimilarity(segment, axis);
-                                if (sim < minsim) {
+                                if (sim < minsim)
+                                {
                                     minsim = sim;
                                     bestAxis = axis;
                                 }
                             }
 
                             if (bestAxis != Line.Unset)
-                                if (minsim <= BucketSize) {
+                                if (minsim <= BucketSize)
+                                {
                                     segment.From = bestAxis.ClosestPoint(segment.From, false);
                                     segment.To = bestAxis.ClosestPoint(segment.To, false);
                                 }
@@ -172,7 +190,8 @@ namespace SAM.Solver
                         rounded = FixSlab(rounded, Tolerance);
                         List<Curve> slabCurves = new List<Curve>();
 
-                        for (int j = 0; j < rounded.Count; j++) {
+                        for (int j = 0; j < rounded.Count; j++)
+                        {
                             LineCurve line = new LineCurve(rounded[j]);
                             line.Transform(transform);
                             slabCurves.Add(line);
@@ -186,7 +205,8 @@ namespace SAM.Solver
             }
 
             //get all the output geometry and merge lines
-            foreach (Interval level in wallLineIds.Keys) {
+            foreach (Interval level in wallLineIds.Keys)
+            {
                 List<int> lineIds = wallLineIds[level];
                 List<int> sourceIds = wallSourceIds[level];
 
@@ -197,7 +217,8 @@ namespace SAM.Solver
                 List<List<int>> thisLevelMergedIds = new List<List<int>>();
 
                 //collect lines from the current level
-                for (int i = 0; i < lineIds.Count; i++) {
+                for (int i = 0; i < lineIds.Count; i++)
+                {
                     int lineId = lineIds[i];
                     int sourceId = sourceIds[i];
 
@@ -207,11 +228,13 @@ namespace SAM.Solver
                 }
 
                 //for each bucket get list of lines at the current level
-                for (int i = 0; i < buckets.Count; i++) {
+                for (int i = 0; i < buckets.Count; i++)
+                {
                     List<int> bucket = buckets[i];
                     List<int> thislevelBucket = new List<int>();
 
-                    for (int j = 0; j < lineIds.Count; j++) {
+                    for (int j = 0; j < lineIds.Count; j++)
+                    {
                         int index = lineIds[j];
                         if (bucket.BinarySearch(index) >= 0)
                             thislevelBucket.Add(j);
@@ -221,7 +244,8 @@ namespace SAM.Solver
                     List<List<int>> mergedSources = new List<List<int>>();
                     List<Line> merged = MergeLines(thisLevelLines, thisLevelSourceIds, thislevelBucket, axes[i], out mergedSources);
 
-                    for (int j = 0; j < merged.Count; j++) {
+                    for (int j = 0; j < merged.Count; j++)
+                    {
                         Line thisline = merged[j];
                         List<int> thislinesouces = mergedSources[j];
 
@@ -259,13 +283,15 @@ namespace SAM.Solver
 
             List<double> slabsZ = new List<double>();
 
-            for (int i = 0; i < Panels.Count; i++) {
+            for (int i = 0; i < Panels.Count; i++)
+            {
                 Brep panel = Panels[i];
                 BoundingBox bb = panel.GetBoundingBox(false);
 
                 if (bb.Diagonal.Z > Tolerance)
                     walls.Add(panel);
-                else if (bb.Diagonal.Z <= Tolerance) {
+                else if (bb.Diagonal.Z <= Tolerance)
+                {
                     slabs.Add(panel);
                     slabsZ.Add(bb.Center.Z);
                 }
@@ -275,7 +301,8 @@ namespace SAM.Solver
 
             //project the fixed lines
             Transform projection = Transform.PlanarProjection(Plane.WorldXY);
-            for (int i = 0; i < Fixed.Count; i++) {
+            for (int i = 0; i < Fixed.Count; i++)
+            {
                 Line thisline = Fixed[i];
                 thisline.Transform(projection);
                 Fixed[i] = thisline;
@@ -285,21 +312,24 @@ namespace SAM.Solver
             List<Line> wallsLines = new List<Line>();
             SortedList<Interval, List<int>> wallsId = new SortedList<Interval, List<int>>();
 
-            foreach (Interval level in Levels) {
+            foreach (Interval level in Levels)
+            {
                 OutputWalls.Add(level, new List<Brep>());
                 wallsId.Add(level, new List<int>());
 
                 double mid = level.ParameterAt(0.5);
                 Plane thiscut = new Plane(new Point3d(0, 0, mid), Vector3d.ZAxis);
 
-                for (int i = 0; i < walls.Count; i++) {
+                for (int i = 0; i < walls.Count; i++)
+                {
                     Brep thiswall = walls[i];
                     Curve[] intc = null;
                     Point3d[] intp = null;
 
                     if (Rhino.Geometry.Intersect.Intersection.BrepPlane(thiswall, thiscut, Tolerance, out intc, out intp))
                         foreach (Curve curve in intc)
-                            if (curve.IsLinear(Tolerance)) {
+                            if (curve.IsLinear(Tolerance))
+                            {
                                 Line thissect = new Line(curve.PointAtStart, curve.PointAtEnd);
                                 thissect.Transform(Transform.PlanarProjection(Plane.WorldXY));
                                 wallsId[level].Add(wallsLines.Count);
@@ -321,26 +351,32 @@ namespace SAM.Solver
 
             List<Surface> surfaces = new List<Surface>();
 
-            foreach (Interval level in wallsId.Keys) {
+            foreach (Interval level in wallsId.Keys)
+            {
                 List<int> ids = wallsId[level];
                 ids.Sort();
             }
 
-            for (int i = 0; i < slabs.Count; i++) {
+            for (int i = 0; i < slabs.Count; i++)
+            {
                 Brep thisslab = slabs[i];
                 List<Curve> thisSlabCurves = new List<Curve>();
                 double zh = slabsZ[i];
 
-                foreach (Interval level in Levels) {
-                    if (Math.Abs(level.T0 - zh) <= Tolerance) {
+                foreach (Interval level in Levels)
+                {
+                    if (Math.Abs(level.T0 - zh) <= Tolerance)
+                    {
                         zh = level.T0;
                         break;
                     }
-                    else if (Math.Abs(level.T1 - zh) <= Tolerance) {
+                    else if (Math.Abs(level.T1 - zh) <= Tolerance)
+                    {
                         zh = level.T1;
                         break;
                     }
-                    else if (level.IncludesParameter(zh)) {
+                    else if (level.IncludesParameter(zh))
+                    {
                         if (level.NormalizedParameterAt(zh) < 0.5)
                             zh = level.T0;
                         else
@@ -351,29 +387,35 @@ namespace SAM.Solver
 
                 Transform transform = Transform.Translation(new Vector3d(0, 0, zh));
 
-                foreach (Curve crv in Curve.JoinCurves(thisslab.Curves3D, Tolerance)) {
+                foreach (Curve crv in Curve.JoinCurves(thisslab.Curves3D, Tolerance))
+                {
                     Polyline poly = null;
-                    if (crv.TryGetPolyline(out poly)) {
+                    if (crv.TryGetPolyline(out poly))
+                    {
                         poly.Transform(Transform.PlanarProjection(Plane.WorldXY));
                         List<Line> rounded = new List<Line>();
 
                         Line[] segments = poly.GetSegments();
-                        for (int j = 0; j < segments.Length; j++) {
+                        for (int j = 0; j < segments.Length; j++)
+                        {
                             Line segment = segments[j];
                             double minsim = double.MaxValue;
                             Line bestAxis = Line.Unset;
 
-                            for (int k = 0; k < axes.Count; k++) {
+                            for (int k = 0; k < axes.Count; k++)
+                            {
                                 Line axis = axes[k];
                                 double sim = LineSimilarity(segment, axis);
-                                if (sim < minsim) {
+                                if (sim < minsim)
+                                {
                                     minsim = sim;
                                     bestAxis = axis;
                                 }
                             }
 
                             if (bestAxis != Line.Unset)
-                                if (minsim <= BucketSize) {
+                                if (minsim <= BucketSize)
+                                {
                                     segment.From = bestAxis.ClosestPoint(segment.From, false);
                                     segment.To = bestAxis.ClosestPoint(segment.To, false);
                                 }
@@ -384,7 +426,8 @@ namespace SAM.Solver
                         rounded = FixSlab(rounded, Tolerance);
                         List<Curve> slabCurves = new List<Curve>();
 
-                        for (int j = 0; j < rounded.Count; j++) {
+                        for (int j = 0; j < rounded.Count; j++)
+                        {
                             LineCurve line = new LineCurve(rounded[j]);
                             line.Transform(transform);
                             slabCurves.Add(line);
@@ -397,21 +440,25 @@ namespace SAM.Solver
                 SlabOutlines.Add(thisSlabCurves);
             }
 
-            foreach (Interval level in wallsId.Keys) {
+            foreach (Interval level in wallsId.Keys)
+            {
                 List<int> ids = wallsId[level];
                 List<Line> thisLevelLines = new List<Line>();
                 List<Brep> thisLevelWalls = new List<Brep>();
 
-                foreach (int id in ids) {
+                foreach (int id in ids)
+                {
                     Line thisline = wallsLines[id];
                     thisLevelLines.Add(thisline);
                 }
 
-                for (int i = 0; i < buckets.Count; i++) {
+                for (int i = 0; i < buckets.Count; i++)
+                {
                     List<int> bucket = buckets[i];
                     List<int> thislevelBucket = new List<int>();
 
-                    for (int j = 0; j < ids.Count; j++) {
+                    for (int j = 0; j < ids.Count; j++)
+                    {
                         int index = ids[j];
                         if (bucket.BinarySearch(index) >= 0)
                             thislevelBucket.Add(j);
@@ -420,7 +467,8 @@ namespace SAM.Solver
                     if (thislevelBucket.Count == 0) continue;
                     List<Line> merged = MergeLines(thisLevelLines, thislevelBucket, axes[i]);
 
-                    foreach (Line thisline in merged) {
+                    foreach (Line thisline in merged)
+                    {
                         thisline.Transform(Transform.Translation(0, 0, level.T0));
                         Surface srf = Surface.CreateExtrusion(thisline.ToNurbsCurve(), new Vector3d(0, 0, level.Length));
                         thisLevelWalls.Add(Brep.CreateFromSurface(srf));
@@ -452,13 +500,15 @@ namespace SAM.Solver
 
             List<double> slabsZ = new List<double>();
 
-            for (int i = 0; i < Panels.Count; i++) {
+            for (int i = 0; i < Panels.Count; i++)
+            {
                 Brep panel = Panels[i];
                 BoundingBox bb = panel.GetBoundingBox(false);
 
                 if (bb.Diagonal.Z > Tolerance)
                     walls.Add(panel);
-                else if (bb.Diagonal.Z <= Tolerance) {
+                else if (bb.Diagonal.Z <= Tolerance)
+                {
                     slabs.Add(panel);
                     slabsZ.Add(bb.Center.Z);
                 }
@@ -470,21 +520,24 @@ namespace SAM.Solver
             List<Line> wallsLines = new List<Line>();
             SortedList<Interval, List<int>> wallsId = new SortedList<Interval, List<int>>();
 
-            foreach (Interval level in Levels) {
+            foreach (Interval level in Levels)
+            {
                 OutputWalls.Add(level, new List<Brep>());
                 wallsId.Add(level, new List<int>());
 
                 double mid = level.ParameterAt(0.5);
                 Plane thiscut = new Plane(new Point3d(0, 0, mid), Vector3d.ZAxis);
 
-                for (int i = 0; i < walls.Count; i++) {
+                for (int i = 0; i < walls.Count; i++)
+                {
                     Brep thiswall = walls[i];
                     Curve[] intc = null;
                     Point3d[] intp = null;
 
                     if (Rhino.Geometry.Intersect.Intersection.BrepPlane(thiswall, thiscut, Tolerance, out intc, out intp))
                         foreach (Curve curve in intc)
-                            if (curve.IsLinear(Tolerance)) {
+                            if (curve.IsLinear(Tolerance))
+                            {
                                 Line thissect = new Line(curve.PointAtStart, curve.PointAtEnd);
                                 thissect.Transform(Transform.PlanarProjection(Plane.WorldXY));
                                 wallsId[level].Add(wallsLines.Count);
@@ -506,26 +559,32 @@ namespace SAM.Solver
 
             List<Surface> surfaces = new List<Surface>();
 
-            foreach (Interval level in wallsId.Keys) {
+            foreach (Interval level in wallsId.Keys)
+            {
                 List<int> ids = wallsId[level];
                 ids.Sort();
             }
 
-            for (int i = 0; i < slabs.Count; i++) {
+            for (int i = 0; i < slabs.Count; i++)
+            {
                 Brep thisslab = slabs[i];
                 List<Curve> thisSlabCurves = new List<Curve>();
                 double zh = slabsZ[i];
 
-                foreach (Interval level in Levels) {
-                    if (Math.Abs(level.T0 - zh) <= Tolerance) {
+                foreach (Interval level in Levels)
+                {
+                    if (Math.Abs(level.T0 - zh) <= Tolerance)
+                    {
                         zh = level.T0;
                         break;
                     }
-                    else if (Math.Abs(level.T1 - zh) <= Tolerance) {
+                    else if (Math.Abs(level.T1 - zh) <= Tolerance)
+                    {
                         zh = level.T1;
                         break;
                     }
-                    else if (level.IncludesParameter(zh)) {
+                    else if (level.IncludesParameter(zh))
+                    {
                         if (level.NormalizedParameterAt(zh) < 0.5)
                             zh = level.T0;
                         else
@@ -536,29 +595,35 @@ namespace SAM.Solver
 
                 Transform transform = Transform.Translation(new Vector3d(0, 0, zh));
 
-                foreach (Curve crv in Curve.JoinCurves(thisslab.Curves3D, Tolerance)) {
+                foreach (Curve crv in Curve.JoinCurves(thisslab.Curves3D, Tolerance))
+                {
                     Polyline poly = null;
-                    if (crv.TryGetPolyline(out poly)) {
+                    if (crv.TryGetPolyline(out poly))
+                    {
                         poly.Transform(Transform.PlanarProjection(Plane.WorldXY));
                         List<Line> rounded = new List<Line>();
 
                         Line[] segments = poly.GetSegments();
-                        for (int j = 0; j < segments.Length; j++) {
+                        for (int j = 0; j < segments.Length; j++)
+                        {
                             Line segment = segments[j];
                             double minsim = double.MaxValue;
                             Line bestAxis = Line.Unset;
 
-                            for (int k = 0; k < axes.Count; k++) {
+                            for (int k = 0; k < axes.Count; k++)
+                            {
                                 Line axis = axes[k];
                                 double sim = LineSimilarity(segment, axis);
-                                if (sim < minsim) {
+                                if (sim < minsim)
+                                {
                                     minsim = sim;
                                     bestAxis = axis;
                                 }
                             }
 
                             if (bestAxis != Line.Unset)
-                                if (minsim <= BucketSize) {
+                                if (minsim <= BucketSize)
+                                {
                                     segment.From = bestAxis.ClosestPoint(segment.From, false);
                                     segment.To = bestAxis.ClosestPoint(segment.To, false);
                                 }
@@ -569,7 +634,8 @@ namespace SAM.Solver
                         rounded = FixSlab(rounded, Tolerance);
                         List<Curve> slabCurves = new List<Curve>();
 
-                        for (int j = 0; j < rounded.Count; j++) {
+                        for (int j = 0; j < rounded.Count; j++)
+                        {
                             LineCurve line = new LineCurve(rounded[j]);
                             line.Transform(transform);
                             slabCurves.Add(line);
@@ -582,21 +648,25 @@ namespace SAM.Solver
                 SlabOutlines.Add(thisSlabCurves);
             }
 
-            foreach (Interval level in wallsId.Keys) {
+            foreach (Interval level in wallsId.Keys)
+            {
                 List<int> ids = wallsId[level];
                 List<Line> thisLevelLines = new List<Line>();
                 List<Brep> thisLevelWalls = new List<Brep>();
 
-                foreach (int id in ids) {
+                foreach (int id in ids)
+                {
                     Line thisline = wallsLines[id];
                     thisLevelLines.Add(thisline);
                 }
 
-                for (int i = 0; i < buckets.Count; i++) {
+                for (int i = 0; i < buckets.Count; i++)
+                {
                     List<int> bucket = buckets[i];
                     List<int> thislevelBucket = new List<int>();
 
-                    for (int j = 0; j < ids.Count; j++) {
+                    for (int j = 0; j < ids.Count; j++)
+                    {
                         int index = ids[j];
                         if (bucket.BinarySearch(index) >= 0)
                             thislevelBucket.Add(j);
@@ -605,7 +675,8 @@ namespace SAM.Solver
                     if (thislevelBucket.Count == 0) continue;
                     List<Line> merged = MergeLines(thisLevelLines, thislevelBucket, axes[i]);
 
-                    foreach (Line thisline in merged) {
+                    foreach (Line thisline in merged)
+                    {
                         thisline.Transform(Transform.Translation(0, 0, level.T0));
                         Surface srf = Surface.CreateExtrusion(thisline.ToNurbsCurve(), new Vector3d(0, 0, level.Length));
                         thisLevelWalls.Add(Brep.CreateFromSurface(srf));
@@ -620,7 +691,8 @@ namespace SAM.Solver
         {
             List<Line> outs = new List<Line>();
 
-            for (int i = 0; i <= SlabOutline.Count - 1; i++) {
+            for (int i = 0; i <= SlabOutline.Count - 1; i++)
+            {
                 Line thisline = SlabOutline[i];
                 Line prevline = SlabOutline[(i - 1 + SlabOutline.Count) % SlabOutline.Count];
                 Line thatline = SlabOutline[(i + 1 + SlabOutline.Count) % SlabOutline.Count];
@@ -649,7 +721,8 @@ namespace SAM.Solver
 
             double axisLength = BucketAxis.Length;
 
-            foreach (int id in Bucket) {
+            foreach (int id in Bucket)
+            {
                 Line line = Lines[id];
 
                 Interval interval = new Interval(BucketAxis.ClosestParameter(line.From) * axisLength, BucketAxis.ClosestParameter(line.To) * axisLength);
@@ -668,7 +741,8 @@ namespace SAM.Solver
             sources.AddRange(sourcesarray);
 
             HashSet<double> ends = new HashSet<double>();
-            foreach (Interval item in ranges) {
+            foreach (Interval item in ranges)
+            {
                 ends.Add(item.T0);
                 ends.Add(item.T1);
             }
@@ -679,7 +753,8 @@ namespace SAM.Solver
             List<Interval> splitted = new List<Interval>();
             List<List<int>> splittedSources = new List<List<int>>();
 
-            for (int i = 0; i < sorted.Count - 1; i++) {
+            for (int i = 0; i < sorted.Count - 1; i++)
+            {
                 double thisfrom = sorted[i];
                 double thisto = sorted[i + 1];
                 if (Math.Abs(thisfrom - thisto) <= Rhino.RhinoDoc.ActiveDoc.ModelAbsoluteTolerance) continue;
@@ -690,12 +765,14 @@ namespace SAM.Solver
                 bool isin = false;
 
                 for (int j = 0; j < ranges.Count; j++)
-                    if (ranges[j].IncludesParameter(thismid)) {
+                    if (ranges[j].IncludesParameter(thismid))
+                    {
                         rangeSources.Add(sources[j]);
                         isin = true;
                     }
 
-                if (isin) {
+                if (isin)
+                {
                     splitted.Add(new Interval(thisfrom, thisto));
                     splittedSources.Add(rangeSources);
                 }
@@ -715,7 +792,8 @@ namespace SAM.Solver
 
             double axisLength = BucketAxis.Length;
 
-            foreach (int id in Bucket) {
+            foreach (int id in Bucket)
+            {
                 Line line = Lines[id];
                 Interval interval = new Interval(BucketAxis.ClosestParameter(line.From) * axisLength, BucketAxis.ClosestParameter(line.To) * axisLength);
                 interval.MakeIncreasing();
@@ -725,7 +803,8 @@ namespace SAM.Solver
             ranges.Sort();
 
             HashSet<double> ends = new HashSet<double>();
-            foreach (Interval item in ranges) {
+            foreach (Interval item in ranges)
+            {
                 ends.Add(item.T0);
                 ends.Add(item.T1);
             }
@@ -735,7 +814,8 @@ namespace SAM.Solver
 
             List<Interval> splitted = new List<Interval>();
 
-            for (int i = 0; i < sorted.Count - 1; i++) {
+            for (int i = 0; i < sorted.Count - 1; i++)
+            {
                 double thisfrom = sorted[i];
                 double thisto = sorted[i + 1];
                 if (Math.Abs(thisfrom - thisto) <= Rhino.RhinoDoc.ActiveDoc.ModelAbsoluteTolerance) continue;
@@ -744,7 +824,8 @@ namespace SAM.Solver
                 bool isin = false;
 
                 for (int j = 0; j < ranges.Count; j++)
-                    if (ranges[j].IncludesParameter(thismid)) {
+                    if (ranges[j].IncludesParameter(thismid))
+                    {
                         isin = true;
                         break;
                     }
@@ -770,7 +851,8 @@ namespace SAM.Solver
                 foreach (int id in Buckets[i])
                     lineBucket[id] = i;
 
-            for (int i = 0; i < Lines.Count; i++) {
+            for (int i = 0; i < Lines.Count; i++)
+            {
                 Line thisline = Lines[i];
                 int thisbucket = lineBucket[i];
                 List<int> fromline = TipLine[i * 2];
@@ -779,28 +861,32 @@ namespace SAM.Solver
                 double fromMin = double.MaxValue;
                 double toMax = double.MinValue;
 
-                for (int j = 0; j < fromline.Count; j++) {
+                for (int j = 0; j < fromline.Count; j++)
+                {
                     int thatid = fromline[j];
                     int thatbucket = lineBucket[thatid];
                     if (thatbucket == thisbucket) continue;
                     Line thatline = Lines[thatid];
                     double thisparam, thatparam;
 
-                    if (Rhino.Geometry.Intersect.Intersection.LineLine(thisline, thatline, out thisparam, out thatparam, 0, false)) {
+                    if (Rhino.Geometry.Intersect.Intersection.LineLine(thisline, thatline, out thisparam, out thatparam, 0, false))
+                    {
                         fromMin = Math.Min(fromMin, thisparam);
                     }
                 }
 
                 if ((fromMin != double.MaxValue)) { thisline.From = thisline.PointAt(fromMin); }
 
-                for (int j = 0; j < toline.Count; j++) {
+                for (int j = 0; j < toline.Count; j++)
+                {
                     int thatid = toline[j];
                     int thatbucket = lineBucket[thatid];
                     if (thatbucket == thisbucket) continue;
                     Line thatline = Lines[thatid];
                     double thisparam, thatparam;
 
-                    if (Rhino.Geometry.Intersect.Intersection.LineLine(thisline, thatline, out thisparam, out thatparam, 0, false)) {
+                    if (Rhino.Geometry.Intersect.Intersection.LineLine(thisline, thatline, out thisparam, out thatparam, 0, false))
+                    {
                         toMax = Math.Max(toMax, thisparam);
                     }
                 }
@@ -820,7 +906,8 @@ namespace SAM.Solver
 
             BucketBox.Inflate(Rhino.RhinoDoc.ActiveDoc.ModelAbsoluteTolerance, 0, 0);
 
-            foreach (Line line in Fixed) {
+            foreach (Line line in Fixed)
+            {
                 Line boxbottom = new Line(BucketBox.PointAt(0, 0, 0), BucketBox.PointAt(1, 0, 0));
                 Line boxtop = new Line(BucketBox.PointAt(0, 1, 0), BucketBox.PointAt(1, 1, 0));
 
@@ -829,8 +916,10 @@ namespace SAM.Solver
                 bool int1 = Rhino.Geometry.Intersect.Intersection.LineLine(boxbottom, line, out bota, out botb);
                 bool int2 = Rhino.Geometry.Intersect.Intersection.LineLine(boxtop, line, out topa, out topb);
 
-                if (int1 | int2) {
-                    if (bota >= 0 && bota <= 1 && topa >= 0 && topa <= 1) {
+                if (int1 | int2)
+                {
+                    if (bota >= 0 && bota <= 1 && topa >= 0 && topa <= 1)
+                    {
                         candidates.Add(new Line(boxbottom.PointAt(bota), boxtop.PointAt(topa)));
                         Point3d boxmidbot = BucketBox.PointAt(0.5, 0, 0);
                         Point3d boxmidtop = BucketBox.PointAt(0.5, 1, 0);
@@ -839,7 +928,8 @@ namespace SAM.Solver
                 }
             }
 
-            if (candidates.Count > 0) {
+            if (candidates.Count > 0)
+            {
                 double[] distarr = distances.ToArray();
                 Line[] candarr = candidates.ToArray();
                 Array.Sort(distarr, candarr);
@@ -858,7 +948,8 @@ namespace SAM.Solver
 
             BucketsAxes = new List<Line>();
 
-            for (int i = 0; i < Buckets.Count; i++) {
+            for (int i = 0; i < Buckets.Count; i++)
+            {
                 Vector3d aver = AverageDirection(Lines, Buckets[i]);
                 double thisang = Vector3d.VectorAngle(Vector3d.XAxis, aver, Plane.WorldXY);
                 thisang = Math.Round(thisang / angleSnapRad) * angleSnapRad;
@@ -869,7 +960,8 @@ namespace SAM.Solver
 
                 Line axis = Line.Unset;
 
-                if (!TrySnapToFixed(bb, Fixed, out axis)) {
+                if (!TrySnapToFixed(bb, Fixed, out axis))
+                {
                     axis = new Line(bb.PointAt(0.5, 0, 0), bb.PointAt(0.5, 1, 0));
                     double distance = axis.ClosestPoint(GridOrigin, false).DistanceTo(GridOrigin);
                     double roundedDistance = Math.Round(distance / GridSize) * GridSize;
@@ -882,7 +974,8 @@ namespace SAM.Solver
 
                 BucketsAxes.Add(axis);
 
-                for (int j = 0; j < Buckets[i].Count; j++) {
+                for (int j = 0; j < Buckets[i].Count; j++)
+                {
                     Line thisline = Lines[Buckets[i][j]];
                     thisline.From = axis.ClosestPoint(thisline.From, false);
                     thisline.To = axis.ClosestPoint(thisline.To, false);
@@ -900,7 +993,8 @@ namespace SAM.Solver
 
             BucketsAxes = new List<Line>();
 
-            for (int i = 0; i < Buckets.Count; i++) {
+            for (int i = 0; i < Buckets.Count; i++)
+            {
                 Vector3d aver = AverageDirection(Lines, Buckets[i]);
                 double thisang = Vector3d.VectorAngle(Vector3d.XAxis, aver, Plane.WorldXY);
                 thisang = Math.Round(thisang / angleSnapRad) * angleSnapRad;
@@ -920,7 +1014,8 @@ namespace SAM.Solver
 
                 BucketsAxes.Add(axis);
 
-                for (int j = 0; j < Buckets[i].Count; j++) {
+                for (int j = 0; j < Buckets[i].Count; j++)
+                {
                     Line thisline = Lines[Buckets[i][j]];
                     thisline.From = axis.ClosestPoint(thisline.From, false);
                     thisline.To = axis.ClosestPoint(thisline.To, false);
@@ -935,7 +1030,8 @@ namespace SAM.Solver
         {
             //collectpts
             List<Point3d> pts = new List<Point3d>();
-            foreach (int id in Bucket) {
+            foreach (int id in Bucket)
+            {
                 pts.Add(Lines[id].From);
                 pts.Add(Lines[id].To);
             }
@@ -953,7 +1049,8 @@ namespace SAM.Solver
             Vector3d dir = Lines[Bucket[0]].To - Lines[Bucket[0]].From;
             Vector3d aver = Vector3d.Zero;
 
-            foreach (int id in Bucket) {
+            foreach (int id in Bucket)
+            {
                 Vector3d thisvec = Lines[id].To - Lines[id].From;
                 if (Vector3d.VectorAngle(-thisvec, dir) < Vector3d.VectorAngle(thisvec, dir))
                     thisvec = -thisvec;
@@ -971,7 +1068,8 @@ namespace SAM.Solver
             List<Line> extendedLines = new List<Line>(Lines);
 
             //extend lines so they're a bit longer than bucketsize
-            for (int i = 0; i < Lines.Count; i++) {
+            for (int i = 0; i < Lines.Count; i++)
+            {
                 Line item = extendedLines[i];
                 item.Extend(BucketSize * 2, BucketSize * 2);
                 extendedLines[i] = item;
@@ -984,12 +1082,14 @@ namespace SAM.Solver
                 pairs[i] = new List<int>();
 
             for (int i = 0; i < Lines.Count; i++)
-                for (int j = 0; j < Lines.Count; j++) {
+                for (int j = 0; j < Lines.Count; j++)
+                {
                     if (i == j) continue;
                     if (j > i) break;
 
                     double thisscore = LineSimilarity(extendedLines[i], extendedLines[j]);
-                    if (thisscore <= BucketSize) {
+                    if (thisscore <= BucketSize)
+                    {
                         pairs[i].Add(j);
                         pairs[j].Add(i);
                     }
@@ -999,12 +1099,14 @@ namespace SAM.Solver
             List<List<int>> buckets = new List<List<int>>();
             bool[] visited = new bool[Lines.Count];
 
-            for (int i = 0; i < Lines.Count; i++) {
+            for (int i = 0; i < Lines.Count; i++)
+            {
                 List<int> thisbucket = new List<int>();
                 //find not visited
                 int start = -1;
                 for (int j = 0; j < visited.Length; j++)
-                    if (!visited[j]) {
+                    if (!visited[j])
+                    {
                         start = j;
                         visited[j] = true;
                         break;
@@ -1017,12 +1119,14 @@ namespace SAM.Solver
             }
 
             //sort buckets by length
-            for (int i = 0; i < buckets.Count; i++) {
+            for (int i = 0; i < buckets.Count; i++)
+            {
                 List<int> thisbucket = buckets[i];
                 double[] len = new double[thisbucket.Count];
                 int[] ids = new int[thisbucket.Count];
 
-                for (int j = 0; j < thisbucket.Count; j++) {
+                for (int j = 0; j < thisbucket.Count; j++)
+                {
                     len[j] = Lines[thisbucket[j]].Length;
                     ids[j] = thisbucket[j];
                 }
@@ -1059,12 +1163,14 @@ namespace SAM.Solver
             split[0].Add(Bucket[0]);
             bounds.Add(new Interval(param[0], param[0]));
 
-            for (int i = 1; i < Bucket.Count; i++) {
+            for (int i = 1; i < Bucket.Count; i++)
+            {
                 int thisid = Bucket[i];
                 double thisparam = param[i];
                 bool found = false;
 
-                for (int j = 0; j < split.Count; j++) {
+                for (int j = 0; j < split.Count; j++)
+                {
                     Interval range = bounds[j];
                     Interval extended = new Interval(Math.Min(range.T0, thisparam), Math.Max(range.T1, thisparam));
                     if (extended.Length > BucketSize) continue;
@@ -1090,7 +1196,8 @@ namespace SAM.Solver
             List<int> nextlist = new List<int>();
 
             foreach (int pair in Pairs[Current])
-                if (!Visited[pair]) {
+                if (!Visited[pair])
+                {
                     Bucket.Add(pair);
                     nextlist.Add(pair);
                     Visited[pair] = true;
@@ -1115,7 +1222,8 @@ namespace SAM.Solver
         {
             List<List<int>> tt = new List<List<int>>();
 
-            for (int i = 0; i < Lines.Count; i++) {
+            for (int i = 0; i < Lines.Count; i++)
+            {
                 Line thisline = Lines[i];
                 int fromi = i * 2;
                 int toi = fromi + 1;
@@ -1123,13 +1231,15 @@ namespace SAM.Solver
                 tt.Add(new List<int>());
                 tt.Add(new List<int>());
 
-                for (int j = 0; j < Lines.Count; j++) {
+                for (int j = 0; j < Lines.Count; j++)
+                {
                     if (i == j) continue;
                     Line thatline = Lines[j];
                     double fromdist = thatline.DistanceTo(thisline.From, true);
                     double todist = thatline.DistanceTo(thisline.To, true);
 
-                    if (Math.Min(fromdist, todist) <= Gap) {
+                    if (Math.Min(fromdist, todist) <= Gap)
+                    {
                         if (fromdist < todist) { tt[fromi].Add(j); }
                         else { tt[toi].Add(j); }
                     }

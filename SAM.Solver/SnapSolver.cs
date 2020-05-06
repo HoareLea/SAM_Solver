@@ -17,8 +17,9 @@ namespace SAM.Solver
            List<Line> Fixed,
            out SortedList<Interval, List<Brep>> OutputWalls,
            out SortedList<Interval, List<List<int>>> OutputIds,
-           out List<List<Curve>> SlabOutlines
-           )
+           out List<List<Curve>> SlabOutlines,
+           out List<Line> Axes
+            )
         {
             OutputWalls = new SortedList<Interval, List<Brep>>();
             OutputIds = new SortedList<Interval, List<List<int>>>();
@@ -100,10 +101,12 @@ namespace SAM.Solver
             foreach (List<int> bucket in buckets)
                 bucket.Sort();
 
-            List<Line> axes = new List<Line>();
+            Axes = new List<Line>();
             List<List<int>> connections = Tip2Line(projectedWallLines, MaxGap);
 
-            projectedWallLines = SnapLines(projectedWallLines, buckets, GridSize, AngleSnapDeg, Origin, Fixed, out axes);
+            projectedWallLines = SnapLines(projectedWallLines, buckets, GridSize, AngleSnapDeg, Origin, Fixed, out Axes);
+            //TODO bucket axes output
+
             projectedWallLines = TrimAndExtend(connections, projectedWallLines, buckets);
 
             //sort the indices per level for later binary search
@@ -166,9 +169,9 @@ namespace SAM.Solver
                             double minsim = double.MaxValue;
                             Line bestAxis = Line.Unset;
 
-                            for (int k = 0; k < axes.Count; k++)
+                            for (int k = 0; k < Axes.Count; k++)
                             {
-                                Line axis = axes[k];
+                                Line axis = Axes[k];
                                 double sim = LineSimilarity(segment, axis);
                                 if (sim < minsim)
                                 {
@@ -242,7 +245,7 @@ namespace SAM.Solver
 
                     if (thislevelBucket.Count == 0) continue;
                     List<List<int>> mergedSources = new List<List<int>>();
-                    List<Line> merged = MergeLines(thisLevelLines, thisLevelSourceIds, thislevelBucket, axes[i], out mergedSources);
+                    List<Line> merged = MergeLines(thisLevelLines, thisLevelSourceIds, thislevelBucket, Axes[i], out mergedSources);
 
                     for (int j = 0; j < merged.Count; j++)
                     {
@@ -908,6 +911,8 @@ namespace SAM.Solver
 
             foreach (Line line in Fixed)
             {
+                //TODO: extending add varaiblke to extra extendsio
+                //BucketBox.Inflate(0.15, 0, 0);
                 Line boxbottom = new Line(BucketBox.PointAt(0, 0, 0), BucketBox.PointAt(1, 0, 0));
                 Line boxtop = new Line(BucketBox.PointAt(0, 1, 0), BucketBox.PointAt(1, 1, 0));
 

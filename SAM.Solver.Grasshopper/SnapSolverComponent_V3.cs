@@ -37,13 +37,26 @@ namespace SAM.Solver.Grasshopper
             pManager.AddBrepParameter("Surfaces Walls", "W", "Walls per level", GH_ParamAccess.tree);
             pManager.AddIntegerParameter("Sources", "I", "Source panels indices per level and brep", GH_ParamAccess.tree);
             pManager.AddCurveParameter("Curves Slabs ", "S", "Slabs", GH_ParamAccess.tree);
+            pManager.AddCurveParameter("BucketAxes ", "BS", "Bucket Axes", GH_ParamAccess.list);
+        }
+
+        private bool CheckTolerance()
+        {
+            //Rhino.RhinoDoc.ActiveDoc.ModelAbsoluteTolerance;
+            return true;
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             ////TODO: Find better Way to change tolerance
-            //Rhino.RhinoDoc.ActiveDoc.ModelAbsoluteTolerance = Core.Tolerance.MacroDistance;
+            //Rhino.RhinoDoc.ActiveDoc.ModelAbsoluteTolerance = Core.Tolerance.MacroDistance; 1e-3
             //Rhino.RhinoDoc.ActiveDoc.ModelUnitSystem = Rhino.UnitSystem.Meters;
+
+            if (!CheckTolerance())
+            {
+                this.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Set tolerance");
+                return;
+            }
 
             List<GooPanel> Panels = new List<GooPanel>();
             List<GooPanel> FixedPanels = new List<GooPanel>();
@@ -54,6 +67,7 @@ namespace SAM.Solver.Grasshopper
             SortedList<Interval, List<Brep>> OutputWalls = null;
             SortedList<Interval, List<List<int>>> OutputIds = null;
             List<List<Curve>> SlabOutlines = null;
+            List<Line> Axes = null;
 
             if (!DA.GetDataList(0, Panels)) return;
             DA.GetDataList(1, FixedPanels);
@@ -100,7 +114,7 @@ namespace SAM.Solver.Grasshopper
                 }
             }
 
-            SnapSolver.SnapPanels(panelBreps, Levels, bucket, grid, gap, angle, toler, Origin, fixedlines, out OutputWalls, out OutputIds, out SlabOutlines);
+            SnapSolver.SnapPanels(panelBreps, Levels, bucket, grid, gap, angle, toler, Origin, fixedlines, out OutputWalls, out OutputIds, out SlabOutlines, out Axes);
 
             GH_Structure<GH_Brep> walls = new GH_Structure<GH_Brep>();
             GH_Structure<GH_Integer> wallids = new GH_Structure<GH_Integer>();
@@ -141,6 +155,7 @@ namespace SAM.Solver.Grasshopper
             DA.SetDataTree(0, walls);
             DA.SetDataTree(1, wallids);
             DA.SetDataTree(2, slabs);
+            DA.SetDataList(3, Axes);
         }
     }
 }

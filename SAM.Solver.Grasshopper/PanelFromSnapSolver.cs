@@ -81,7 +81,7 @@ namespace SAM.Solver.Grasshopper
                 if (brep == null)
                     continue;
 
-                List<Face3D> face3Ds = Query.Face3Ds(Geometry.Grasshopper.Convert.ToSAM(brep, true));
+                List<Face3D> face3Ds = Geometry.Spatial.Query.Face3Ds(Geometry.Grasshopper.Convert.ToSAM(brep, true));
                 if (face3Ds == null || face3Ds.Count == 0)
                     continue;
 

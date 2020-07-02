@@ -91,7 +91,7 @@ namespace SAM.Solver.Grasshopper
                 if (panel_Old == null)
                     continue;
 
-                Analytical.Panel panel_New = new Analytical.Panel(panel_Old.Guid, panel_Old, face3D, true, Core.Tolerance.MacroDistance, 0.3);
+                Analytical.Panel panel_New = new Analytical.Panel(panel_Old.Guid, panel_Old, face3D, null, true, Core.Tolerance.MacroDistance, 0.3);
 
                 result.Add(panel_New);
             }

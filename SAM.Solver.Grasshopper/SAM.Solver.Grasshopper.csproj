@@ -57,26 +57,23 @@
       <HintPath>..\packages\RhinoCommon.7.0.20182.13135-wip\lib\net45\RhinoCommon.dll</HintPath>
     </Reference>
     <Reference Include="SAM.Analytical">
-      <HintPath>..\references\SAM.Analytical.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>..\..\SAM\build\SAM.Analytical.dll</HintPath>
     </Reference>
     <Reference Include="SAM.Analytical.Grasshopper">
-      <HintPath>..\references\SAM.Analytical.Grasshopper.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>..\..\SAM\build\SAM.Analytical.Grasshopper.dll</HintPath>
     </Reference>
     <Reference Include="SAM.Core">
-      <HintPath>..\references\SAM.Core.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>..\..\SAM\build\SAM.Core.dll</HintPath>
     </Reference>
     <Reference Include="SAM.Core.Grasshopper">
-      <HintPath>..\references\SAM.Core.Grasshopper.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>..\..\SAM\build\SAM.Core.Grasshopper.dll</HintPath>
     </Reference>
-    <Reference Include="SAM.Geometry">
-      <HintPath>..\references\SAM.Geometry.dll</HintPath>
+    <Reference Include="SAM.Geometry, Version=1.0.7464.17794, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\SAM\build\SAM.Geometry.dll</HintPath>
     </Reference>
     <Reference Include="SAM.Geometry.Grasshopper">
-      <HintPath>..\references\SAM.Geometry.Grasshopper.dll</HintPath>
+      <HintPath>..\..\SAM\build\SAM.Geometry.Grasshopper.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

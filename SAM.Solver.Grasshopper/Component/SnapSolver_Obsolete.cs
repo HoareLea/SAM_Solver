@@ -16,7 +16,7 @@ namespace SAM.Solver.Grasshopper.Obsolete_20200709
         public override GH_Exposure Exposure => GH_Exposure.tertiary | GH_Exposure.hidden;
        
         public SnapSolver() 
-            : base("SnapSolver", "SnapS", "Snap solver", "SAM", "Solver")
+            : base("SnapSolver Version 1", "SnapS", "Snap solver Version 1", "SAM", "Solver")
         {
         }
 
@@ -97,7 +97,7 @@ namespace SAM.Solver.Grasshopper.Obsolete_20200710
         public override GH_Exposure Exposure => GH_Exposure.tertiary | GH_Exposure.hidden;
 
         public SnapSolver()
-            : base("SnapSolver V2", "SnapS 2", "Snap solver", "SAM", "Solver")
+            : base("SnapSolver Version 2", "SnapS 2", "Snap Solver Version 2", "SAM", "Solver")
         {
         }
 

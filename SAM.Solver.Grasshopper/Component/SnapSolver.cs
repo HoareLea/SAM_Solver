@@ -3,18 +3,22 @@ using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
 using SAM.Analytical.Grasshopper;
+using SAM.Core.Grasshopper;
 using System;
 using System.Collections.Generic;
 
 namespace SAM.Solver.Grasshopper
 {
-    public class SnapSolverComponent_V3 : GH_Component
+    public class SnapSolver : GH_SAMComponent
     {
-        public SnapSolverComponent_V3() : base("SnapSolver V3", "SnapS 3", "Snap solver", "SAM", "Solver")
+        public override Guid ComponentGuid => new Guid("{83C6F5D9-F7CC-491B-94BA-AD0F87E1993E}");
+
+        public override GH_Exposure Exposure => GH_Exposure.tertiary | GH_Exposure.obscure;
+
+        public SnapSolver() 
+            : base("SnapSolver", "SnapSolver", "Snap Solver", "SAM", "Solver")
         {
         }
-
-        public override Guid ComponentGuid => new Guid("{83C6F5D9-F7CC-491B-94BA-AD0F87E1993E}");
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
@@ -114,7 +118,7 @@ namespace SAM.Solver.Grasshopper
                 }
             }
 
-            SnapSolver.SnapPanels(panelBreps, Levels, bucket, grid, gap, angle, toler, Origin, fixedlines, out OutputWalls, out OutputIds, out SlabOutlines, out Axes);
+            Solver.SnapSolver.SnapPanels(panelBreps, Levels, bucket, grid, gap, angle, toler, Origin, fixedlines, out OutputWalls, out OutputIds, out SlabOutlines, out Axes);
 
             GH_Structure<GH_Brep> walls = new GH_Structure<GH_Brep>();
             GH_Structure<GH_Integer> wallids = new GH_Structure<GH_Integer>();

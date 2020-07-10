@@ -86,10 +86,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="PanelFromSnapSolver.cs" />
-    <Compile Include="SnapSolverComponent_V3.cs" />
-    <Compile Include="SnapSolverComponent_V2_OBSOLETE.cs" />
-    <Compile Include="SnapSolverComponent_OBSOLETE.cs" />
+    <Compile Include="Component\PanelFromSnapSolver.cs" />
+    <Compile Include="Component\SnapSolver.cs" />
+    <Compile Include="Component\SnapSolver_Obsolete.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SAM.Solver\SAM.Solver.csproj">

@@ -8,6 +8,7 @@ using System.Collections.Generic;
 
 namespace SAM.Solver.Grasshopper.Obsolete_20200709
 {
+    [Obsolete("Obsolete since 2020-07-09 Version 1")]
     public class SnapSolver: GH_SAMComponent
     {
         public override Guid ComponentGuid => new Guid("{9A8FCA14-FC72-42C8-B540-BACE49096E42}");
@@ -88,6 +89,7 @@ namespace SAM.Solver.Grasshopper.Obsolete_20200709
 
 namespace SAM.Solver.Grasshopper.Obsolete_20200710
 {
+    [Obsolete("Obsolete since 2020-07-10 Version 2")]
     public class SnapSolver : GH_SAMComponent
     {
         public override Guid ComponentGuid => new Guid("{AD7D3DBB-0967-4E48-BBE7-1063FAD65DA1}");

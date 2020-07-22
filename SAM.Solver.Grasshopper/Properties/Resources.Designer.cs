@@ -79,5 +79,15 @@ namespace SAM.Solver.Grasshopper.Properties {
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap SAM_Solver1 {
+            get {
+                object obj = ResourceManager.GetObject("SAM_Solver1", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
     }
 }

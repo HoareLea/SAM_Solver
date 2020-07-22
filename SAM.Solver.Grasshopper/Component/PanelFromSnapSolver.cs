@@ -21,7 +21,7 @@ namespace SAM.Solver.Grasshopper
         /// <summary>
         /// Provides an Icon for the component.
         /// </summary>
-        protected override System.Drawing.Bitmap Icon => Resources.SAM_Solver;
+        protected override System.Drawing.Bitmap Icon => Resources.SAM_Solver1;
 
         public PanelFromSnapSolver() : base("PanelFromSnapSolver", "PanelFromSnapSolver", "PanelFromSnapSolver", "SAM", "Solver")
         {

@@ -4,6 +4,7 @@ using Grasshopper.Kernel.Types;
 using SAM.Analytical.Grasshopper;
 using SAM.Core.Grasshopper;
 using SAM.Geometry.Spatial;
+using SAM.Solver.Grasshopper.Properties;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +17,11 @@ namespace SAM.Solver.Grasshopper
         /// Gets the unique ID for this component. Do not change this ID after release.
         /// </summary>
         public override Guid ComponentGuid => new Guid("5857acd8-c038-4a1e-9bde-33dedfed4fde");
+
+        /// <summary>
+        /// Provides an Icon for the component.
+        /// </summary>
+        protected override System.Drawing.Bitmap Icon => Resources.SAM_Solver;
 
         public PanelFromSnapSolver() : base("PanelFromSnapSolver", "PanelFromSnapSolver", "PanelFromSnapSolver", "SAM", "Solver")
         {

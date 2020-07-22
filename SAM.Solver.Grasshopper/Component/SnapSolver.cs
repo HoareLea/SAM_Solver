@@ -4,6 +4,7 @@ using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
 using SAM.Analytical.Grasshopper;
 using SAM.Core.Grasshopper;
+using SAM.Solver.Grasshopper.Properties;
 using System;
 using System.Collections.Generic;
 
@@ -15,33 +16,38 @@ namespace SAM.Solver.Grasshopper
 
         public override GH_Exposure Exposure => GH_Exposure.tertiary | GH_Exposure.obscure;
 
+        /// <summary>
+        /// Provides an Icon for the component.
+        /// </summary>
+        protected override System.Drawing.Bitmap Icon => Resources.SAM_Solver;
+
         public SnapSolver() 
-            : base("SnapSolver", "SnapSolver", "Snap Solver", "SAM", "Solver")
+            : base("SnapSolver", "SnapSolver", "Snap Solver Version 3", "SAM", "Solver")
         {
         }
 
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
-            pManager.AddParameter(new GooPanelParam(), "_panels", "P", "Panels", GH_ParamAccess.list);
-            pManager.AddParameter(new GooPanelParam(), "fixed_", "F", "Fixed panels", GH_ParamAccess.list);
+            pManager.AddParameter(new GooPanelParam(), "_panels", "P", "SAM Analytical Panels", GH_ParamAccess.list);
+            pManager.AddParameter(new GooPanelParam(), "fixed_", "F", "SAM Analytical Fixed panels, will be not modified unless included aslo in _panels ", GH_ParamAccess.list);
 
             Params.Input[1].Optional = true;
 
-            pManager.AddIntervalParameter("_levels", "L", "Levels", GH_ParamAccess.list);
-            pManager.AddNumberParameter("_bucketSize_", "B", "Bucket default: ", GH_ParamAccess.item, 0.5);
-            pManager.AddNumberParameter("_gridSize_", "G", "Grid size default: ", GH_ParamAccess.item, 0.1);
-            pManager.AddNumberParameter("_maxGap_", "M", "Max gap default: ", GH_ParamAccess.item, 0.5);
-            pManager.AddNumberParameter("_angle_", "A", "Angle default: ", GH_ParamAccess.item, 5);
-            pManager.AddNumberParameter("_tolerance_", "±", "Tolerance default: ", GH_ParamAccess.item, 0.01);
-            pManager.AddPointParameter("_origin_", "O", "Grid origin default: ", GH_ParamAccess.item, new Rhino.Geometry.Point3d(0, 0, 0));
+            pManager.AddIntervalParameter("_levels", "L", "Levels as Numberic Domain", GH_ParamAccess.list);
+            pManager.AddNumberParameter("_bucketSize_", "B", "Bucket default: 0.19m, distance to squash location line of walls", GH_ParamAccess.item, 0.19); //0.5
+            pManager.AddNumberParameter("_gridSize_", "G", "Grid size default: 0.2m", GH_ParamAccess.item, 0.2); //0.1 
+            pManager.AddNumberParameter("_maxGap_", "M", "Max gap default: 0.2m ", GH_ParamAccess.item, 0.2); //0.5
+            pManager.AddNumberParameter("_angle_", "A", "Angle default: 5 deg ", GH_ParamAccess.item, 5); //5
+            pManager.AddNumberParameter("_tolerance_", "±", "Tolerance default: 0.01m ", GH_ParamAccess.item, 0.01); //0.01
+            pManager.AddPointParameter("_origin_", "O", "Grid origin default: (0,0,0) ", GH_ParamAccess.item, new Rhino.Geometry.Point3d(0, 0, 0)); //new Rhino.Geometry.Point3d(0, 0, 0)
         }
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
-            pManager.AddBrepParameter("Surfaces Walls", "W", "Walls per level", GH_ParamAccess.tree);
-            pManager.AddIntegerParameter("Sources", "I", "Source panels indices per level and brep", GH_ParamAccess.tree);
+            pManager.AddBrepParameter("Surfaces Walls", "W", "Walls per level as Rhino Surfaces", GH_ParamAccess.tree);
+            pManager.AddIntegerParameter("Sources", "I", "Source panels indices per level and brep from _panels list ", GH_ParamAccess.tree);
             pManager.AddCurveParameter("Curves Slabs ", "S", "Slabs", GH_ParamAccess.tree);
-            pManager.AddCurveParameter("BucketAxes ", "BS", "Bucket Axes", GH_ParamAccess.list);
+            pManager.AddCurveParameter("BucketAxes ", "BS", "Bucket Axes as Rhino Curves to be used for further snapping", GH_ParamAccess.list);
         }
 
         private bool CheckTolerance()

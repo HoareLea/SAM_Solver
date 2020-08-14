@@ -1,11 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.960
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30320.27
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SAM.Solver", "SAM.Solver\SAM.Solver.csproj", "{DFA00AD8-8169-4E3C-943A-05F6F2196E3A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SAM.Solver", "SAM_Solver\SAM.Solver.csproj", "{DFA00AD8-8169-4E3C-943A-05F6F2196E3A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SAM.Solver.Grasshopper", "SAM.Solver.Grasshopper\SAM.Solver.Grasshopper.csproj", "{CBEB4724-6EF0-48D3-B634-384FE2300D6C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SAM.Solver.Grasshopper", "Grasshopper\SAM.Solver.Grasshopper.csproj", "{CBEB4724-6EF0-48D3-B634-384FE2300D6C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SAM_Solver", "SAM_Solver", "{C3CC5B7B-5B8A-4B84-B223-29D0EE793782}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Grasshopper", "Grasshopper", "{02213037-8D9C-4CB0-B56C-9F42752EF88C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -24,6 +28,10 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{DFA00AD8-8169-4E3C-943A-05F6F2196E3A} = {C3CC5B7B-5B8A-4B84-B223-29D0EE793782}
+		{CBEB4724-6EF0-48D3-B634-384FE2300D6C} = {02213037-8D9C-4CB0-B56C-9F42752EF88C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {74910401-B5EE-494A-AB6F-2EED3558FE32}

@@ -13,6 +13,11 @@ namespace SAM.Solver.Grasshopper.Obsolete_20200709
     {
         public override Guid ComponentGuid => new Guid("{9A8FCA14-FC72-42C8-B540-BACE49096E42}");
 
+        /// <summary>
+        /// The latest version of this component
+        /// </summary>
+        public override string LatestComponentVersion => "1.0.0";
+
         public override GH_Exposure Exposure => GH_Exposure.tertiary | GH_Exposure.hidden;
        
         public SnapSolver() 
@@ -93,6 +98,11 @@ namespace SAM.Solver.Grasshopper.Obsolete_20200710
     public class SnapSolver : GH_SAMComponent
     {
         public override Guid ComponentGuid => new Guid("{AD7D3DBB-0967-4E48-BBE7-1063FAD65DA1}");
+
+        /// <summary>
+        /// The latest version of this component
+        /// </summary>
+        public override string LatestComponentVersion => "1.0.0";
 
         public override GH_Exposure Exposure => GH_Exposure.tertiary | GH_Exposure.hidden;
 

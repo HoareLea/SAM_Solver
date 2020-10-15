@@ -14,6 +14,13 @@ namespace SAM.Solver.Grasshopper
     {
         public override Guid ComponentGuid => new Guid("{83C6F5D9-F7CC-491B-94BA-AD0F87E1993E}");
 
+
+        /// <summary>
+        /// The latest version of this component
+        /// </summary>
+        public override string LatestComponentVersion => "1.0.0";
+
+
         public override GH_Exposure Exposure => GH_Exposure.tertiary | GH_Exposure.obscure;
 
         /// <summary>

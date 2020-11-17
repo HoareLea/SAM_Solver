@@ -51,7 +51,7 @@ namespace SAM.Solver.Grasshopper
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            List<Analytical.Panel> panels = new List<SAM.Analytical.Panel>();
+            List<Analytical.Panel> panels = new List<Analytical.Panel>();
             if (!DA.GetDataList(0, panels))
                 return;
 
@@ -103,7 +103,11 @@ namespace SAM.Solver.Grasshopper
                 if (panel_Old == null)
                     continue;
 
-                Analytical.Panel panel_New = new Analytical.Panel(panel_Old.Guid, panel_Old, face3D, null, true, Core.Tolerance.MacroDistance, 0.3);
+                Guid guid = panel_Old.Guid;
+                if (result.Find(x => x.Guid == guid) != null)
+                    guid = Guid.NewGuid();
+
+                Analytical.Panel panel_New = new Analytical.Panel(guid, panel_Old, face3D, null, true, Core.Tolerance.MacroDistance, 0.3);
 
                 result.Add(panel_New);
             }

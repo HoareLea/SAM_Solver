@@ -99,7 +99,18 @@ namespace SAM.Solver.Grasshopper
 
                 Face3D face3D = face3Ds.First();
 
-                Analytical.Panel panel_Old = panels[indexes_Panel.First()];
+                List<Analytical.Panel> panels_Old = indexes_Panel.ConvertAll(x => panels[x]);
+                panels_Old.RemoveAll(x => x == null);
+                if (panels_Old.Count == 0)
+                    continue;
+
+                Analytical.Panel panel_Old = panels_Old.Find(x => x.PanelType != Analytical.PanelType.Air && x.Construction != null);
+                if (panel_Old == null)
+                    panels_Old.Find(x => x.Construction != null);
+
+                 if (panel_Old == null)
+                    panel_Old = panels_Old.FirstOrDefault();
+
                 if (panel_Old == null)
                     continue;
 

@@ -11,7 +11,7 @@ using System.Linq;
 
 namespace SAM.Solver.Grasshopper
 {
-    public class PanelFromSnapSolver : GH_SAMComponent
+    public class PanelFromSnapSolver : GH_SAMVariableOutputParameterComponent
     {
         /// <summary>
         /// Gets the unique ID for this component. Do not change this ID after release.
@@ -21,7 +21,9 @@ namespace SAM.Solver.Grasshopper
         /// <summary>
         /// The latest version of this component
         /// </summary>
-        public override string LatestComponentVersion => "1.0.0";
+        public override string LatestComponentVersion => "1.0.1";
+
+        protected override System.Drawing.Bitmap Icon => Resources.SAM_Small;
 
         /// <summary>
         /// Provides an Icon for the component.
@@ -32,36 +34,78 @@ namespace SAM.Solver.Grasshopper
         {
         }
 
-        protected override void RegisterInputParams(GH_InputParamManager pManager)
+        /// <summary>
+        /// Registers all the input parameters for this component.
+        /// </summary>
+        protected override GH_SAMParam[] Inputs
         {
-            int index;
+            get
+            {
+                List<GH_SAMParam> result = new List<GH_SAMParam>();
 
-            index = pManager.AddParameter(new GooPanelParam(), "_panels", "_panels", "Panels", GH_ParamAccess.list);
-            pManager[index].DataMapping = GH_DataMapping.Flatten;
+                GooPanelParam gooPanelParam = new GooPanelParam() { Name = "_panels", NickName = "_panels", Description = "SAM Analytical Panel or AnalyticalModel", Access = GH_ParamAccess.list };
+                gooPanelParam.DataMapping = GH_DataMapping.Flatten;
+                result.Add(new GH_SAMParam(gooPanelParam, ParamVisibility.Binding));
 
-            pManager.AddBrepParameter("_surfaces", "_surfaces", "Surfaces", GH_ParamAccess.tree);
-            pManager.AddIntegerParameter("_sources", "_sources", "Sources Indexes", GH_ParamAccess.tree);
+                result.Add(new GH_SAMParam(new global::Grasshopper.Kernel.Parameters.Param_Brep() { Name = "_surfaces", NickName = "_surfaces", Description = "Surfaces", Access = GH_ParamAccess.tree}, ParamVisibility.Binding));
+                result.Add(new GH_SAMParam(new global::Grasshopper.Kernel.Parameters.Param_Integer() { Name = "_sources", NickName = "_sources", Description = "Sources Indexes", Access = GH_ParamAccess.tree }, ParamVisibility.Binding));
+
+                result.Add(new GH_SAMParam(new global::Grasshopper.Kernel.Parameters.Param_Number() { Name = "_bottom_", NickName = "_bottom_", Description = "Bottom Elevation", Access = GH_ParamAccess.item, Optional = true }, ParamVisibility.Voluntary));
+                result.Add(new GH_SAMParam(new global::Grasshopper.Kernel.Parameters.Param_Number() { Name = "_top_", NickName = "_top_", Description = "Top Elevation", Access = GH_ParamAccess.item, Optional = true }, ParamVisibility.Voluntary));
+                return result.ToArray();
+            }
         }
 
-        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
+        /// <summary>
+        /// Registers all the output parameters for this component.
+        /// </summary>
+        protected override GH_SAMParam[] Outputs
         {
-            pManager.AddParameter(new GooPanelParam(), "Panels", "P", "Panels", GH_ParamAccess.list);
-            pManager.AddParameter(new GooPanelParam(), "UnusedPanels", "UP", "Unused Panels", GH_ParamAccess.list);
+            get
+            {
+                List<GH_SAMParam> result = new List<GH_SAMParam>();
+                result.Add(new GH_SAMParam(new GooPanelParam() { Name = "panels", NickName = "panels", Description = "SAM Analytical Panels", Access = GH_ParamAccess.list }, ParamVisibility.Binding));
+                result.Add(new GH_SAMParam(new GooPanelParam() { Name = "unusedPanels", NickName = "unusedPanels", Description = "Unused SAM Analytical Panels", Access = GH_ParamAccess.list }, ParamVisibility.Voluntary));
+                return result.ToArray();
+            }
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            int index = -1;
+
+            index = Params.IndexOfInputParam("_panels");
             List<Analytical.Panel> panels = new List<Analytical.Panel>();
-            if (!DA.GetDataList(0, panels))
+            if (index == -1 || !DA.GetDataList(index, panels))
                 return;
 
+            index = Params.IndexOfInputParam("_surfaces");
             GH_Structure<GH_Brep> breps = new GH_Structure<GH_Brep>();
-            if (!DA.GetDataTree(1, out breps))
+            if (index == -1 || !DA.GetDataTree(index, out breps))
                 return;
 
+            index = Params.IndexOfInputParam("_sources");
             GH_Structure<GH_Integer> sources;
-            if (!DA.GetDataTree(2, out sources))
+            if (index == -1 || !DA.GetDataTree(index, out sources))
                 return;
+
+            double elevation_Bottom = double.NaN;
+            index = Params.IndexOfInputParam("_bottom_");
+            if (index != -1)
+            {
+                double elevation_Bottom_Temp = double.NaN;
+                if (DA.GetData(index, ref elevation_Bottom_Temp))
+                    elevation_Bottom = elevation_Bottom_Temp;
+            }
+
+            double elevation_Top = double.NaN;
+            index = Params.IndexOfInputParam("_top_");
+            if (index != -1)
+            {
+                double elevation_Top_Temp = double.NaN;
+                if (DA.GetData(index, ref elevation_Top_Temp))
+                    elevation_Top = elevation_Top_Temp;
+            }
 
             List<Tuple<int, List<int>>> tuples = new List<Tuple<int, List<int>>>();
             HashSet<int> indexes_Unique = new HashSet<int>();
@@ -71,9 +115,9 @@ namespace SAM.Solver.Grasshopper
                 List<int> indexes_Temp = new List<int>();
                 foreach (GH_Integer goo in goos)
                 {
-                    int index = goo.Value;
-                    indexes_Temp.Add(index);
-                    indexes_Unique.Add(index);
+                    int index_Temp = goo.Value;
+                    indexes_Temp.Add(index_Temp);
+                    indexes_Unique.Add(index_Temp);
                 }
                 tuples.Add(new Tuple<int, List<int>>(i, indexes_Temp));
             }
@@ -98,6 +142,41 @@ namespace SAM.Solver.Grasshopper
                     continue;
 
                 Face3D face3D = face3Ds.First();
+                if (!double.IsNaN(elevation_Bottom) || !double.IsNaN(elevation_Top))
+                {
+                    BoundingBox3D boundingBox3D = face3D.GetBoundingBox();
+                    Plane plane_Mid = Plane.WorldXY.GetMoved(new Vector3D(0, 0, boundingBox3D.GetCenter().Z)) as Plane;
+                    
+
+                    PlanarIntersectionResult planarIntersectionResult = Geometry.Spatial.Create.PlanarIntersectionResult(plane_Mid, face3D);
+                    if(planarIntersectionResult != null && planarIntersectionResult.Intersecting)
+                    {
+                        List<Geometry.Planar.ISegmentable2D> segmentable2Ds = planarIntersectionResult.GetGeometry2Ds<Geometry.Planar.ISegmentable2D>();
+                        if(segmentable2Ds != null && segmentable2Ds.Count != 0)
+                        {
+                            if (segmentable2Ds.Count > 1)
+                                segmentable2Ds.Sort((x, y) => y.GetLength().CompareTo(x.GetLength()));
+
+                            Plane plane_Bottom = Plane.WorldXY.GetMoved(new Vector3D(0, 0, boundingBox3D.Min.Z)) as Plane;
+
+                            Segment3D segment3D = plane_Bottom.Convert(segmentable2Ds[0]) as Segment3D;
+                            if (segment3D != null)
+                            {
+                                double elevation_Bottom_Temp = elevation_Bottom;
+                                if (double.IsNaN(elevation_Bottom_Temp))
+                                    elevation_Bottom_Temp = boundingBox3D.Min.Z;
+
+                                double elevation_Top_Temp = elevation_Top;
+                                if (double.IsNaN(elevation_Top_Temp))
+                                    elevation_Top_Temp = boundingBox3D.Max.Z;
+
+                                Face3D face3D_Temp = Geometry.Spatial.Create.Face3D(segment3D, elevation_Top_Temp - elevation_Bottom_Temp);
+                                if (face3D_Temp != null)
+                                    face3D = face3D_Temp;
+                            }
+                        }
+                    }
+                }
 
                 List<Analytical.Panel> panels_Old = indexes_Panel.ConvertAll(x => panels[x]);
                 panels_Old.RemoveAll(x => x == null);
@@ -131,8 +210,13 @@ namespace SAM.Solver.Grasshopper
                     result_Unused.Add(panel);
             }
 
-            DA.SetDataList(0, result.ConvertAll(x => new GooPanel(x)));
-            DA.SetDataList(1, result_Unused.ConvertAll(x => new GooPanel(x)));
+            index = Params.IndexOfOutputParam("panels");
+            if (index != -1)
+                DA.SetDataList(index, result.ConvertAll(x => new GooPanel(x)));
+
+            index = Params.IndexOfOutputParam("unusedPanels");
+            if (index != -1)
+                DA.SetDataList(1, result_Unused.ConvertAll(x => new GooPanel(x)));
         }
     }
 }

@@ -23,8 +23,6 @@ namespace SAM.Solver.Grasshopper
         /// </summary>
         public override string LatestComponentVersion => "1.0.1";
 
-        protected override System.Drawing.Bitmap Icon => Resources.SAM_Small;
-
         /// <summary>
         /// Provides an Icon for the component.
         /// </summary>

@@ -155,15 +155,15 @@ namespace SAM.Solver.Grasshopper
                             if (segmentable2Ds.Count > 1)
                                 segmentable2Ds.Sort((x, y) => y.GetLength().CompareTo(x.GetLength()));
 
-                            Plane plane_Bottom = Plane.WorldXY.GetMoved(new Vector3D(0, 0, boundingBox3D.Min.Z)) as Plane;
+                            double elevation_Bottom_Temp = elevation_Bottom;
+                            if (double.IsNaN(elevation_Bottom_Temp))
+                                elevation_Bottom_Temp = boundingBox3D.Min.Z;
+
+                            Plane plane_Bottom = Plane.WorldXY.GetMoved(new Vector3D(0, 0, elevation_Bottom_Temp)) as Plane;
 
                             Segment3D segment3D = plane_Bottom.Convert(segmentable2Ds[0]) as Segment3D;
                             if (segment3D != null)
                             {
-                                double elevation_Bottom_Temp = elevation_Bottom;
-                                if (double.IsNaN(elevation_Bottom_Temp))
-                                    elevation_Bottom_Temp = boundingBox3D.Min.Z;
-
                                 double elevation_Top_Temp = elevation_Top;
                                 if (double.IsNaN(elevation_Top_Temp))
                                     elevation_Top_Temp = boundingBox3D.Max.Z;

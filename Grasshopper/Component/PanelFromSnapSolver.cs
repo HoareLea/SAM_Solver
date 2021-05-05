@@ -195,7 +195,7 @@ namespace SAM.Solver.Grasshopper
                 if (result.Find(x => x.Guid == guid) != null)
                     guid = Guid.NewGuid();
 
-                Analytical.Panel panel_New = new Analytical.Panel(guid, panel_Old, face3D, null, true, Core.Tolerance.MacroDistance, 0.3);
+                Analytical.Panel panel_New = Analytical.Create.Panel(guid, panel_Old, face3D, null, true, Core.Tolerance.MacroDistance, 0.3);
 
                 result.Add(panel_New);
             }

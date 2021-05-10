@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("SAM.Solver.Grasshopper")]
+[assembly: AssemblyTitle("SAM.Core.Solver")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("SAM.Solver.Grasshopper")]
+[assembly: AssemblyProduct("SAM.Core.Solver")]
 [assembly: AssemblyCopyright("Copyright ©  2020")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("cbeb4724-6ef0-48d3-b634-384fe2300d6c")]
+[assembly: Guid("dfa00ad8-8169-4e3c-943a-05f6f2196e3a")]
 
 // Version information for an assembly consists of the following four values:
 //

@@ -4,11 +4,11 @@ using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
 using SAM.Analytical.Grasshopper;
 using SAM.Core.Grasshopper;
-using SAM.Solver.Grasshopper.Properties;
+using SAM.Analytical.Grasshopper.Solver.Properties;
 using System;
 using System.Collections.Generic;
 
-namespace SAM.Solver.Grasshopper
+namespace SAM.Analytical.Solver.Grasshopper
 {
     public class SnapSolver : GH_SAMComponent
     {
@@ -131,7 +131,7 @@ namespace SAM.Solver.Grasshopper
                 }
             }
 
-            Solver.SnapSolver.SnapPanels(panelBreps, Levels, bucket, grid, gap, angle, toler, Origin, fixedlines, out OutputWalls, out OutputIds, out SlabOutlines, out Axes);
+            Core.Solver.Query.Snap(panelBreps, Levels, bucket, grid, gap, angle, toler, Origin, fixedlines, out OutputWalls, out OutputIds, out SlabOutlines, out Axes);
 
             GH_Structure<GH_Brep> walls = new GH_Structure<GH_Brep>();
             GH_Structure<GH_Integer> wallids = new GH_Structure<GH_Integer>();

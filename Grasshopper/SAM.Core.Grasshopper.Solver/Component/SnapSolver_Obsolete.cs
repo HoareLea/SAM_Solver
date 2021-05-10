@@ -6,7 +6,7 @@ using SAM.Core.Grasshopper;
 using System;
 using System.Collections.Generic;
 
-namespace SAM.Solver.Grasshopper.Obsolete_20200709
+namespace SAM.Core.Solver.Grasshopper.Obsolete_20200709
 {
     [Obsolete("Obsolete since 2020-07-09 Version 1")]
     public class SnapSolver: GH_SAMComponent
@@ -45,14 +45,14 @@ namespace SAM.Solver.Grasshopper.Obsolete_20200709
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            List<Brep> Panels = new List<Brep>();
+            List<Brep> breps = new List<Brep>();
             List<Interval> Levels = new List<Interval>();
             double bucket = 0.5, grid = 0.1, gap = 0.5, angle = 5, toler = 0.001;
             Point3d Origin = new Point3d();
             SortedList<Interval, List<Brep>> OutputWalls = null;
             List<List<Curve>> SlabOutlines = null;
 
-            if (!DA.GetDataList(0, Panels)) return;
+            if (!DA.GetDataList(0, breps)) return;
             if (!DA.GetDataList(1, Levels)) return;
             if (!DA.GetData(2, ref bucket)) return;
             if (!DA.GetData(3, ref grid)) return;
@@ -61,7 +61,7 @@ namespace SAM.Solver.Grasshopper.Obsolete_20200709
             if (!DA.GetData(6, ref toler)) return;
             if (!DA.GetData(7, ref Origin)) return;
 
-            Solver.SnapSolver.SnapPanels(Panels, Levels, bucket, grid, gap, angle, toler, Origin, out OutputWalls, out SlabOutlines);
+            Query.Snap(breps, Levels, bucket, grid, gap, angle, toler, Origin, out OutputWalls, out SlabOutlines);
 
             GH_Structure<GH_Brep> walls = new GH_Structure<GH_Brep>();
             GH_Structure<GH_Curve> slabs = new GH_Structure<GH_Curve>();
@@ -135,7 +135,7 @@ namespace SAM.Solver.Grasshopper.Obsolete_20200710
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            List<Brep> Panels = new List<Brep>();
+            List<Brep> breps = new List<Brep>();
             List<Brep> FixedPanels = new List<Brep>();
             List<Interval> Levels = new List<Interval>();
             double bucket = 0.5, grid = 0.1, gap = 0.5, angle = 5, toler = 0.001;
@@ -143,7 +143,7 @@ namespace SAM.Solver.Grasshopper.Obsolete_20200710
             SortedList<Interval, List<Brep>> OutputWalls = null;
             List<List<Curve>> SlabOutlines = null;
 
-            if (!DA.GetDataList(0, Panels)) return;
+            if (!DA.GetDataList(0, breps)) return;
             DA.GetDataList(1, FixedPanels);
             if (!DA.GetDataList(2, Levels)) return;
             if (!DA.GetData(3, ref bucket)) return;
@@ -179,11 +179,11 @@ namespace SAM.Solver.Grasshopper.Obsolete_20200710
                     }
                 }
 
-                Solver.SnapSolver.SnapPanels(Panels, Levels, bucket, grid, gap, angle, toler, Origin, fixedlines, out OutputWalls, out SlabOutlines);
+                Core.Solver.Query.Snap(breps, Levels, bucket, grid, gap, angle, toler, Origin, fixedlines, out OutputWalls, out SlabOutlines);
             }
             else
             {
-                Solver.SnapSolver.SnapPanels(Panels, Levels, bucket, grid, gap, angle, toler, Origin, out OutputWalls, out SlabOutlines);
+                Core.Solver.Query.Snap(breps, Levels, bucket, grid, gap, angle, toler, Origin, out OutputWalls, out SlabOutlines);
             }
 
             GH_Structure<GH_Brep> walls = new GH_Structure<GH_Brep>();

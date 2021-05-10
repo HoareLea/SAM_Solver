@@ -4,12 +4,12 @@ using Grasshopper.Kernel.Types;
 using SAM.Analytical.Grasshopper;
 using SAM.Core.Grasshopper;
 using SAM.Geometry.Spatial;
-using SAM.Solver.Grasshopper.Properties;
+using SAM.Analytical.Grasshopper.Solver.Properties;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace SAM.Solver.Grasshopper
+namespace SAM.Analytical.Solver.Grasshopper
 {
     public class PanelFromSnapSolver : GH_SAMVariableOutputParameterComponent
     {

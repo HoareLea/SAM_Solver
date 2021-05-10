@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace SAM.Solver.Grasshopper.Properties {
+namespace SAM.Analytical.Grasshopper.Solver.Properties {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace SAM.Solver.Grasshopper.Properties {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("SAM.Solver.Grasshopper.Properties.Resources", typeof(Resources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("SAM.Analytical.Grasshopper.Solver.Properties.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -57,6 +57,16 @@ namespace SAM.Solver.Grasshopper.Properties {
             }
             set {
                 resourceCulture = value;
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap HL_Logo24 {
+            get {
+                object obj = ResourceManager.GetObject("HL_Logo24", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
             }
         }
         

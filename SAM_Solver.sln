@@ -13,6 +13,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Grasshopper", "Grasshopper"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SAM.Analytical.Grasshopper.Solver", "Grasshopper\SAM.Analytical.Grasshopper.Solver\SAM.Analytical.Grasshopper.Solver.csproj", "{FDBEC246-857F-40DC-B03F-2FA68BA7D437}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SAM.Analytical.Solver", "SAM_Solver\SAM.Analytical.Solver\SAM.Analytical.Solver.csproj", "{888539D6-CFE2-413D-BCEE-F2DAA1AA8726}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SAM.Geometry.Solver", "SAM_Solver\SAM.Geometry.Solver\SAM.Geometry.Solver.csproj", "{5C870A26-7017-472B-9E68-FDD828367DF4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -31,6 +35,14 @@ Global
 		{FDBEC246-857F-40DC-B03F-2FA68BA7D437}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FDBEC246-857F-40DC-B03F-2FA68BA7D437}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FDBEC246-857F-40DC-B03F-2FA68BA7D437}.Release|Any CPU.Build.0 = Release|Any CPU
+		{888539D6-CFE2-413D-BCEE-F2DAA1AA8726}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{888539D6-CFE2-413D-BCEE-F2DAA1AA8726}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{888539D6-CFE2-413D-BCEE-F2DAA1AA8726}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{888539D6-CFE2-413D-BCEE-F2DAA1AA8726}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5C870A26-7017-472B-9E68-FDD828367DF4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5C870A26-7017-472B-9E68-FDD828367DF4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5C870A26-7017-472B-9E68-FDD828367DF4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5C870A26-7017-472B-9E68-FDD828367DF4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -39,6 +51,8 @@ Global
 		{DFA00AD8-8169-4E3C-943A-05F6F2196E3A} = {C3CC5B7B-5B8A-4B84-B223-29D0EE793782}
 		{CBEB4724-6EF0-48D3-B634-384FE2300D6C} = {02213037-8D9C-4CB0-B56C-9F42752EF88C}
 		{FDBEC246-857F-40DC-B03F-2FA68BA7D437} = {02213037-8D9C-4CB0-B56C-9F42752EF88C}
+		{888539D6-CFE2-413D-BCEE-F2DAA1AA8726} = {C3CC5B7B-5B8A-4B84-B223-29D0EE793782}
+		{5C870A26-7017-472B-9E68-FDD828367DF4} = {C3CC5B7B-5B8A-4B84-B223-29D0EE793782}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {74910401-B5EE-494A-AB6F-2EED3558FE32}

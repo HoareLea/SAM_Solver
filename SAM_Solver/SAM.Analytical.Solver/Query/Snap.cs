@@ -9,7 +9,26 @@ namespace SAM.Analytical.Solver
 {
     public static partial class Query
     {
-        public static void Snap(List<Panel> panels, double elevation, Grid2D grid2D, Func<Panel, double> weights, double tolerance = Core.Tolerance.Distance)
+        /// <summary>
+        /// Sanp Panels to given Grid2Ds
+        /// </summary>
+        /// <param name="panels">List of the panels to be snapped</param>
+        /// <param name="elevation">Section elevation</param>
+        /// <param name="grid2D">Snap Grid</param>
+        /// <param name="bucketSizes">Distance to select local panels (squize into one)</param>
+        /// <param name="maxGaps">Max distance for panels Extension</param>
+        /// <param name="weights">Weight for panels</param>
+        /// <param name="tolerance_Angle">Angle tolerance</param>
+        /// <param name="tolerance_Distance">Distance tolerance</param>
+
+        public static void Snap(this List<Panel> panels, 
+            double elevation, 
+            Grid2D grid2D, 
+            Func<Panel, double> bucketSizes, 
+            Func<Panel, double> maxGaps, 
+            Func<Panel, double> weights, 
+            double tolerance_Angle = Core.Tolerance.Angle, 
+            double tolerance_Distance = Core.Tolerance.Distance)
         {
             if(panels == null || grid2D == null)
             {
@@ -19,9 +38,13 @@ namespace SAM.Analytical.Solver
             //Create section plane (Plane on given elevation)
             Plane plane = Plane.WorldXY.GetMoved(new Vector3D(0, 0, elevation)) as Plane;
 
+            //
+            // Panels to 2D geometry
+            //
+
             //Get geometry of panels has been created by section. Dictionary alows to receive panel for given geometry.
             //ISegmentable2D - 2D geometry which can be described by connected segments such as Polyline, Polygon (closed polyline), rectangle, triangle, BoundingBox etc.
-            Dictionary<Panel, List<ISegmentable2D>> dictionary = panels.SectionDictionary<ISegmentable2D>(plane, tolerance);
+            Dictionary<Panel, List<ISegmentable2D>> dictionary = panels.SectionDictionary<ISegmentable2D>(plane, tolerance_Distance);
 
             //Temporary list to collect all the Segment2Ds for Panels section
             List<Segment2D> segment2Ds_Temp = new List<Segment2D>();
@@ -37,11 +60,20 @@ namespace SAM.Analytical.Solver
                 //Get weight for the given panel to determine sanp behaviour
                 double weight = weights(panel);
 
+                //Get bucketSize for the given panel
+                double bucketSize = bucketSizes(panel);
+
+                //Get max Gap for the given panel
+                double maxGap = maxGaps(panel);
+
                 //Panel geometry is always planar! Use Face3D object to retreive panel Geometry. Face3D contains External Edge and Internal Edges
-                Face3D face3D = panel.GetFace3D();
+                Face3D face3D = panel.GetFace3D(); //Face3D is similar to Polygon2D however it may contains internal edges ("holes")
+
+                //BoundingBox3D of Face3D
+                BoundingBox3D boundingBox3D = face3D.GetBoundingBox();
 
                 //You can get intersection geometry using PlanarIntersectionResult
-                PlanarIntersectionResult planarIntersectionResult = Geometry.Spatial.Create.PlanarIntersectionResult(plane, face3D, Core.Tolerance.Angle, tolerance);
+                PlanarIntersectionResult planarIntersectionResult = Geometry.Spatial.Create.PlanarIntersectionResult(plane, face3D, Core.Tolerance.Angle, tolerance_Distance);
 
                 //This is example how to get intersection 2D geometry from PlanarIntersectionResult
                 List<ISegmentable2D> segmentable2Ds_Intersection = planarIntersectionResult.GetGeometry2Ds<ISegmentable2D>();
@@ -62,21 +94,44 @@ namespace SAM.Analytical.Solver
                     segmentable2Ds.Add(segmentable2D);
                 }
 
+                //If we assume that section of one panel creates single segment2D then
+                //We can axtract all the points from segmentable2Ds and then gets extreme
+                List<Point2D> point2Ds = keyValuePair.Value.UniquePoint2Ds(tolerance_Distance);
+                point2Ds.ExtremePoints(out Point2D point2D_1, out Point2D point2D_2);
+                if(point2D_1.Distance(point2D_2) >= tolerance_Distance)
+                {
+                    Segment2D segment2D_Panel = new Segment2D(point2D_1, point2D_2);
+                }
+                
+                foreach (ISegmentable2D segmentable2D in keyValuePair.Value)
+                {
+                    //In the most of the cases section geometry will be single segment.
+                    List<Segment2D> segment2Ds = segmentable2D.GetSegments();
+                    foreach (Segment2D segment2D in segment2Ds)
+                    {
+                        segment2Ds_Temp.Add(segment2D);
+                    }
+
+                    segmentable2Ds.Add(segmentable2D);
+                }
+
             }
 
             //Split given list of segment2Ds to include intersection points
-            segment2Ds_Temp = segment2Ds_Temp.Split(tolerance);
+            segment2Ds_Temp = segment2Ds_Temp.Split(tolerance_Distance);
 
             //Find all closed loops created by created by given segment2ds
-            List<Polygon2D> polygon2Ds = Geometry.Planar.Create.Polygon2Ds(segment2Ds_Temp, tolerance);
+            List<Polygon2D> polygon2Ds = Geometry.Planar.Create.Polygon2Ds(segment2Ds_Temp, tolerance_Distance);
 
             //Gets External Polygon2Ds
             List<Polygon2D> polygon2Ds_External = Geometry.Planar.Query.ExternalPolygon2Ds(polygon2Ds);
 
             //Convering 2D geometry to 3D geometry on given plane
             List<Polygon3D> polygon3Ds = polygon2Ds.ConvertAll(x => plane.Convert(x));
-
+            
+            //
             //Example of 2D operations on segments:
+            //
 
             Segment2D segment2D_1 = segment2Ds_Temp.First();
             Segment2D segment2D_2 = segment2Ds_Temp.Last();
@@ -85,7 +140,7 @@ namespace SAM.Analytical.Solver
             Vector2D vector2D = segment2D_1.Direction;
 
             //Intersection of two segments. Second parameter determines if segments are bounded. If sets to false intersection point may not lay on given segments
-            Point2D point2D_Intersection = segment2D_1.Intersection(segment2D_2, true, tolerance);
+            Point2D point2D_Intersection = segment2D_1.Intersection(segment2D_2, true, tolerance_Distance);
 
             //Closest point on segment to given point2D
             Point2D point2D_Closest = segment2D_1.Closest(segment2D_2[0]);
@@ -95,23 +150,38 @@ namespace SAM.Analytical.Solver
             BoundingBox2D boundingBox2D_2 = segment2D_2.GetBoundingBox();
 
             //Check if boundingBox2D_2 is in range of boundingBox2D_1. This can be used as initial check for intersection when perforamnce is priority
-            if (boundingBox2D_1.InRange(boundingBox2D_2, tolerance))
+            if (boundingBox2D_1.InRange(boundingBox2D_2, tolerance_Distance))
             {
                 //Another way to get intersection information for two segments. point2D_Closest_1 is closest point on segment2D_1 to intersection Point2D, point2D_Closest_2 is closest point on segment2D_2 
-                Point2D point2D_Intersection_Temp = segment2D_1.Intersection(segment2D_2, out Point2D point2D_Closest_1, out Point2D point2D_Closest2, tolerance);
+                Point2D point2D_Intersection_Temp = segment2D_1.Intersection(segment2D_2, out Point2D point2D_Closest_1, out Point2D point2D_Closest2, tolerance_Distance);
 
                 //Check if Point2D of segment2D_2 is on segment2D_1
-                bool isOn = segment2D_1.On(segment2D_2[0], tolerance);
+                bool isOn = segment2D_1.On(segment2D_2[0], tolerance_Distance);
             }
 
+            //All intersections between segment and list of segmentables
+            List<Point2D> point2Ds_Intersections = segment2D_1.Intersections(segmentable2Ds, tolerance_Distance);
+
+            //
             //Tracing sample
+            //
 
             //To receive  ray trace data use TraceData Query. Inputs: start point, direction, list of geometry will be check for ray hit. Outputs: tuple with hit point, segment being hit, and hit direction
-            List<System.Tuple<Point2D, Segment2D, Vector2D>> traceData = Geometry.Planar.Query.TraceData(segment2D_1[0], segment2D_1.Direction, segmentable2Ds);
+            List<Tuple<Point2D, Segment2D, Vector2D>> traceData = Geometry.Planar.Query.TraceData(segment2D_1[0], segment2D_1.Direction, segmentable2Ds);
 
             //Fast way to receive first hit
             Vector2D vector2D_RayTrace = Geometry.Planar.Query.TraceFirst(segment2D_1[0], segment2D_1.Direction, segmentable2Ds);
 
+            //
+            //Bool Operations sample. Similar methods for Face2D and Polygon2D
+            //
+
+            Polygon2D polygon2D_1 = polygon2Ds.First();
+            Polygon2D polygon2D_2 = polygon2Ds.Last();
+
+            List<Polygon2D> polygon2Ds_Intersection = polygon2D_1.Intersection(polygon2D_2, tolerance_Distance);
+            List<Polygon2D> polygon2Ds_Union = polygon2D_1.Union(polygon2D_2, tolerance_Distance);
+            List<Polygon2D> polygon2Ds_Difference = polygon2D_1.Difference(polygon2D_2, tolerance_Distance);
         }
     }
 }

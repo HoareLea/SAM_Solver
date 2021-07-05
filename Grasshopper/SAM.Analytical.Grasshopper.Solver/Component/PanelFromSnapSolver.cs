@@ -73,7 +73,7 @@ namespace SAM.Analytical.Solver.Grasshopper
             int index = -1;
 
             index = Params.IndexOfInputParam("_panels");
-            List<Analytical.Panel> panels = new List<Analytical.Panel>();
+            List<Panel> panels = new List<Panel>();
             if (index == -1 || !DA.GetDataList(index, panels))
                 return;
 
@@ -120,7 +120,7 @@ namespace SAM.Analytical.Solver.Grasshopper
                 tuples.Add(new Tuple<int, List<int>>(i, indexes_Temp));
             }
 
-            List<Analytical.Panel> result = new List<Analytical.Panel>();
+            List<Panel> result = new List<Panel>();
             foreach (Tuple<int, List<int>> tuple in tuples)
             {
                 int index_Brep = tuple.Item1;
@@ -176,12 +176,12 @@ namespace SAM.Analytical.Solver.Grasshopper
                     }
                 }
 
-                List<Analytical.Panel> panels_Old = indexes_Panel.ConvertAll(x => panels[x]);
+                List<Panel> panels_Old = indexes_Panel.ConvertAll(x => panels[x]);
                 panels_Old.RemoveAll(x => x == null);
                 if (panels_Old.Count == 0)
                     continue;
 
-                Analytical.Panel panel_Old = panels_Old.Find(x => x.PanelType != Analytical.PanelType.Air && x.Construction != null);
+                Panel panel_Old = panels_Old.Find(x => x.PanelType != PanelType.Air && x.Construction != null);
                 if (panel_Old == null)
                     panels_Old.Find(x => x.Construction != null);
 
@@ -191,19 +191,38 @@ namespace SAM.Analytical.Solver.Grasshopper
                 if (panel_Old == null)
                     continue;
 
+                List<Aperture> apertures = null;
+                if(panels_Old.Count > 1)
+                {
+                    panels_Old.Remove(panel_Old);
+                    foreach(Panel panel_Temp in panels_Old)
+                    {
+                        List<Aperture> apertures_Temp = panel_Temp.Apertures;
+                        if(apertures_Temp != null && apertures_Temp.Count != 0)
+                        {
+                            if (apertures == null)
+                            {
+                                apertures = new List<Aperture>();
+                            }
+
+                            apertures.AddRange(apertures_Temp);
+                        }
+                    }
+                }
+
                 Guid guid = panel_Old.Guid;
                 if (result.Find(x => x.Guid == guid) != null)
                     guid = Guid.NewGuid();
 
-                Analytical.Panel panel_New = Analytical.Create.Panel(guid, panel_Old, face3D, null, true, Core.Tolerance.MacroDistance, 0.3);
+                Panel panel_New = Analytical.Create.Panel(guid, panel_Old, face3D, apertures, true, Core.Tolerance.MacroDistance, 0.3);
 
                 result.Add(panel_New);
             }
 
-            List<Analytical.Panel> result_Unused = new List<Analytical.Panel>();
-            foreach (Analytical.Panel panel in panels)
+            List<Panel> result_Unused = new List<Panel>();
+            foreach (Panel panel in panels)
             {
-                Analytical.Panel panel_Temp = result.Find(x => x.Guid.Equals(panel.Guid));
+                Panel panel_Temp = result.Find(x => x.Guid.Equals(panel.Guid));
                 if (panel_Temp == null)
                     result_Unused.Add(panel);
             }

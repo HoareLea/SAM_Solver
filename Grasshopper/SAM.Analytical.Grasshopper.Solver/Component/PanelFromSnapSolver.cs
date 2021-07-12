@@ -21,7 +21,7 @@ namespace SAM.Analytical.Solver.Grasshopper
         /// <summary>
         /// The latest version of this component
         /// </summary>
-        public override string LatestComponentVersion => "1.0.1";
+        public override string LatestComponentVersion => "1.0.2";
 
         /// <summary>
         /// Provides an Icon for the component.
@@ -120,6 +120,9 @@ namespace SAM.Analytical.Solver.Grasshopper
                 tuples.Add(new Tuple<int, List<int>>(i, indexes_Temp));
             }
 
+            double tolerance = Core.Tolerance.Distance;
+            double maxDistance = 0.3;
+
             List<Panel> result = new List<Panel>();
             foreach (Tuple<int, List<int>> tuple in tuples)
             {
@@ -128,8 +131,6 @@ namespace SAM.Analytical.Solver.Grasshopper
                     continue;
 
                 List<int> indexes_Panel = tuple.Item2;
-                if (indexes_Panel == null || indexes_Panel.Count == 0)
-                    continue;
 
                 GH_Brep brep = breps[index_Brep][0];
                 if (brep == null)
@@ -176,7 +177,26 @@ namespace SAM.Analytical.Solver.Grasshopper
                     }
                 }
 
-                List<Panel> panels_Old = indexes_Panel.ConvertAll(x => panels[x]);
+                List<Panel> panels_Old = null;
+                if (indexes_Panel == null || indexes_Panel.Count == 0)
+                {
+                    //TODO: Temporary solution to find panels has not been assigned to Brep
+                    Point3D point3D_Internal = face3D.InternalPoint3D(tolerance);
+                    List<Tuple<Panel, double>> tuples_Distance = panels.FindAll(x => x != null).ConvertAll(x => new Tuple<Panel, double>(x, Math.Min(x.Distance(point3D_Internal), face3D.Distance(x.GetFace3D().InternalPoint3D(tolerance)))));
+                    tuples_Distance.RemoveAll(x => x.Item2 > maxDistance);
+                    tuples_Distance.Sort((x, y) => x.Item2.CompareTo(y.Item2));
+                    panels_Old = tuples_Distance.ConvertAll(x => x.Item1);
+                }
+                else
+                {
+                    panels_Old = indexes_Panel.ConvertAll(x => panels[x]);
+                }
+
+                if(panels_Old == null)
+                {
+                    continue;
+                }
+
                 panels_Old.RemoveAll(x => x == null);
                 if (panels_Old.Count == 0)
                     continue;
@@ -214,7 +234,7 @@ namespace SAM.Analytical.Solver.Grasshopper
                 if (result.Find(x => x.Guid == guid) != null)
                     guid = Guid.NewGuid();
 
-                Panel panel_New = Analytical.Create.Panel(guid, panel_Old, face3D, apertures, true, Core.Tolerance.MacroDistance, 0.3);
+                Panel panel_New = Create.Panel(guid, panel_Old, face3D, apertures, true, Core.Tolerance.MacroDistance, maxDistance);
 
                 result.Add(panel_New);
             }

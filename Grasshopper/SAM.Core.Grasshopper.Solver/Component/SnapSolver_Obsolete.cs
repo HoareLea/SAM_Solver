@@ -34,7 +34,7 @@ namespace SAM.Core.Solver.Grasshopper.Obsolete_20200709
             pManager.AddNumberParameter("MaxGap", "M", "Max gap", GH_ParamAccess.item, 0.5);
             pManager.AddNumberParameter("Angle", "A", "Angle", GH_ParamAccess.item, 5);
             pManager.AddNumberParameter("Tolerance", "±", "Tolerance", GH_ParamAccess.item, 0.01);
-            pManager.AddPointParameter("Origin", "O", "Grid origin", GH_ParamAccess.item, new Rhino.Geometry.Point3d(0, 0, 0));
+            pManager.AddPointParameter("Origin", "O", "Grid origin", GH_ParamAccess.item, new Point3d(0, 0, 0));
         }
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -124,7 +124,7 @@ namespace SAM.Solver.Grasshopper.Obsolete_20200710
             pManager.AddNumberParameter("MaxGap", "M", "Max gap", GH_ParamAccess.item, 0.5);
             pManager.AddNumberParameter("Angle", "A", "Angle", GH_ParamAccess.item, 5);
             pManager.AddNumberParameter("Tolerance", "±", "Tolerance", GH_ParamAccess.item, 0.01);
-            pManager.AddPointParameter("Origin", "O", "Grid origin", GH_ParamAccess.item, new Rhino.Geometry.Point3d(0, 0, 0));
+            pManager.AddPointParameter("Origin", "O", "Grid origin", GH_ParamAccess.item, new Point3d(0, 0, 0));
         }
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)

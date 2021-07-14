@@ -46,7 +46,7 @@ namespace SAM.Analytical.Solver.Grasshopper
             pManager.AddNumberParameter("_maxGap_", "M", "Max gap default: 0.2m ", GH_ParamAccess.item, 0.2); //0.5
             pManager.AddNumberParameter("_angle_", "A", "Angle default: 5 deg ", GH_ParamAccess.item, 5); //5
             pManager.AddNumberParameter("_tolerance_", "±", "Tolerance default: 0.01m ", GH_ParamAccess.item, 0.01); //0.01
-            pManager.AddPointParameter("_origin_", "O", "Grid origin default: (0,0,0) ", GH_ParamAccess.item, new Rhino.Geometry.Point3d(0, 0, 0)); //new Rhino.Geometry.Point3d(0, 0, 0)
+            pManager.AddPointParameter("_origin_", "O", "Grid origin default: (0,0,0) ", GH_ParamAccess.item, new Point3d(0, 0, 0)); //new Rhino.Geometry.Point3d(0, 0, 0)
         }
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)

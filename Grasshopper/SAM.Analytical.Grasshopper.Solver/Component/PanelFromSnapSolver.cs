@@ -212,9 +212,8 @@ namespace SAM.Analytical.Solver.Grasshopper
                     continue;
 
                 List<Aperture> apertures = null;
-                if(panels_Old.Count > 1)
+                if(panels_Old.Count > 0)
                 {
-                    panels_Old.Remove(panel_Old);
                     foreach(Panel panel_Temp in panels_Old)
                     {
                         List<Aperture> apertures_Temp = panel_Temp.Apertures;
@@ -227,7 +226,7 @@ namespace SAM.Analytical.Solver.Grasshopper
 
                             foreach(Aperture aperture_Temp in apertures_Temp)
                             {
-                                Aperture aperture_Fit = Query.Fit(aperture_Temp, face3D, tolerance = Core.Tolerance.Distance);
+                                Aperture aperture_Fit = null;//Query.Fit(aperture_Temp, face3D, tolerance: Core.Tolerance.Distance);
                                 if(aperture_Fit != null)
                                 {
                                     apertures.Add(aperture_Fit);
@@ -239,6 +238,11 @@ namespace SAM.Analytical.Solver.Grasshopper
                             }
                         }
                     }
+                    
+                    panels_Old.Remove(panel_Old);
+                    panel_Old = Create.Panel(panel_Old);
+                    panel_Old.RemoveApertures();
+
                 }
 
                 Guid guid = panel_Old.Guid;

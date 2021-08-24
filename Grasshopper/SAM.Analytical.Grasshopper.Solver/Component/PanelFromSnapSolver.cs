@@ -225,7 +225,18 @@ namespace SAM.Analytical.Solver.Grasshopper
                                 apertures = new List<Aperture>();
                             }
 
-                            apertures.AddRange(apertures_Temp);
+                            foreach(Aperture aperture_Temp in apertures_Temp)
+                            {
+                                Aperture aperture_Fit = Query.Fit(aperture_Temp, face3D, tolerance = Core.Tolerance.Distance);
+                                if(aperture_Fit != null)
+                                {
+                                    apertures.Add(aperture_Fit);
+                                }
+                                else
+                                {
+                                    apertures.Add(aperture_Temp);
+                                }
+                            }
                         }
                     }
                 }

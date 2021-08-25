@@ -123,6 +123,29 @@ namespace SAM.Analytical.Solver.Grasshopper
             double tolerance = Core.Tolerance.Distance;
             double maxDistance = 0.3;
 
+            List<Aperture> apertures = new List<Aperture>();
+            for(int i=0; i < panels.Count; i++)
+            {
+                Panel panel = panels[i];
+                if(panel == null)
+                {
+                    continue;
+                }
+
+                panel = Create.Panel(panel);
+                List<Aperture> apertures_Panel = panel.Apertures;
+                if(apertures_Panel != null && apertures_Panel.Count != 0)
+                {
+                    apertures_Panel.RemoveAll(x => x == null);
+                    apertures.AddRange(apertures_Panel);
+                    panel.RemoveApertures();
+                }
+
+                panels[i] = panel;
+            }
+
+            apertures = apertures.Fit(panels, 0.5, maxDistance, tolerance);
+
             List<Panel> result = new List<Panel>();
             foreach (Tuple<int, List<int>> tuple in tuples)
             {
@@ -210,34 +233,6 @@ namespace SAM.Analytical.Solver.Grasshopper
 
                 if (panel_Old == null)
                     continue;
-
-                List<Aperture> apertures = null;
-                if(panels_Old.Count > 0)
-                {
-                    foreach(Panel panel_Temp in panels_Old)
-                    {
-                        List<Aperture> apertures_Temp = panel_Temp.Apertures;
-                        if(apertures_Temp != null && apertures_Temp.Count != 0)
-                        {
-                            if (apertures == null)
-                            {
-                                apertures = new List<Aperture>();
-                            }
-
-                            foreach(Aperture aperture in apertures_Temp)
-                            {
-                                Aperture aperture_Temp = Query.Fit(aperture, face3D, 0.5, Core.Tolerance.Distance);
-                                aperture_Temp = aperture_Temp == null ? aperture : aperture_Temp;
-                                apertures.Add(aperture_Temp);
-                            }
-                        }
-                    }
-                    
-                    panels_Old.Remove(panel_Old);
-                    panel_Old = Create.Panel(panel_Old);
-                    panel_Old.RemoveApertures();
-
-                }
 
                 Guid guid = panel_Old.Guid;
                 if (result.Find(x => x.Guid == guid) != null)

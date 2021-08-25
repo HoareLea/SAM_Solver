@@ -121,7 +121,8 @@ namespace SAM.Analytical.Solver.Grasshopper
             }
 
             double tolerance = Core.Tolerance.Distance;
-            double maxDistance = 0.3;
+            double maxDistance = 0.55;
+            double minArea = Core.Tolerance.MacroDistance;
 
             List<Aperture> apertures = new List<Aperture>();
             for(int i=0; i < panels.Count; i++)
@@ -143,8 +144,6 @@ namespace SAM.Analytical.Solver.Grasshopper
 
                 panels[i] = panel;
             }
-
-            apertures = apertures.Fit(panels, 0.5, maxDistance, tolerance);
 
             List<Panel> result = new List<Panel>();
             foreach (Tuple<int, List<int>> tuple in tuples)
@@ -238,9 +237,18 @@ namespace SAM.Analytical.Solver.Grasshopper
                 if (result.Find(x => x.Guid == guid) != null)
                     guid = Guid.NewGuid();
 
-                Panel panel_New = Create.Panel(guid, panel_Old, face3D, apertures, true, Core.Tolerance.MacroDistance, maxDistance);
+                Panel panel_New = Create.Panel(guid, panel_Old, face3D);
 
                 result.Add(panel_New);
+            }
+
+            apertures = apertures.Fit(result, 0.5, maxDistance, tolerance);
+            foreach(Panel panel in result)
+            {
+                foreach(Aperture aperture in apertures)
+                {
+                    Modify.AddApertures(panel, aperture.ApertureConstruction, aperture.GetFace3D(), true, minArea, maxDistance, tolerance);
+                }
             }
 
             List<Panel> result_Unused = new List<Panel>();

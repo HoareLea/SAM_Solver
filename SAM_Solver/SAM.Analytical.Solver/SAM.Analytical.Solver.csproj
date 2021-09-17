@@ -43,13 +43,13 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="SAM.Analytical">
-      <HintPath>..\..\..\SAM\build\SAM.Analytical.dll</HintPath>
+      <HintPath>..\..\..\Nowy folder\build\SAM.Analytical.dll</HintPath>
     </Reference>
     <Reference Include="SAM.Core">
-      <HintPath>..\..\..\SAM\build\SAM.Core.dll</HintPath>
+      <HintPath>..\..\..\Nowy folder\build\SAM.Core.dll</HintPath>
     </Reference>
     <Reference Include="SAM.Geometry">
-      <HintPath>..\..\..\SAM\build\SAM.Geometry.dll</HintPath>
+      <HintPath>..\..\..\Nowy folder\build\SAM.Geometry.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

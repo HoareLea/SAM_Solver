@@ -46,24 +46,24 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="SAM.Analytical, Version=1.0.7798.15100, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\SAM\build\SAM.Analytical.dll</HintPath>
+      <HintPath>..\..\..\Nowy folder\build\SAM.Analytical.dll</HintPath>
     </Reference>
     <Reference Include="SAM.Analytical.Grasshopper">
-      <HintPath>..\..\..\SAM\build\SAM.Analytical.Grasshopper.dll</HintPath>
+      <HintPath>..\..\..\Nowy folder\build\SAM.Analytical.Grasshopper.dll</HintPath>
     </Reference>
     <Reference Include="SAM.Core, Version=1.0.7798.15099, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\SAM\build\SAM.Core.dll</HintPath>
+      <HintPath>..\..\..\Nowy folder\build\SAM.Core.dll</HintPath>
     </Reference>
     <Reference Include="SAM.Core.Grasshopper">
-      <HintPath>..\..\..\SAM\build\SAM.Core.Grasshopper.dll</HintPath>
+      <HintPath>..\..\..\Nowy folder\build\SAM.Core.Grasshopper.dll</HintPath>
     </Reference>
     <Reference Include="SAM.Geometry, Version=1.0.7798.15100, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\SAM\build\SAM.Geometry.dll</HintPath>
+      <HintPath>..\..\..\Nowy folder\build\SAM.Geometry.dll</HintPath>
     </Reference>
     <Reference Include="SAM.Geometry.Grasshopper">
-      <HintPath>..\..\..\SAM\build\SAM.Geometry.Grasshopper.dll</HintPath>
+      <HintPath>..\..\..\Nowy folder\build\SAM.Geometry.Grasshopper.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

@@ -7,6 +7,7 @@ namespace SAM.Geometry.Solver
 {
     public class Grid2D : SAMObject
     {
+
         private List<Segment2D> segment2Ds;
 
         public Grid2D(IEnumerable<Segment2D> segment2Ds)

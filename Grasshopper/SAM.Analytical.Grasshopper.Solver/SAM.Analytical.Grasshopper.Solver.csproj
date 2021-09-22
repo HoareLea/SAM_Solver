@@ -75,6 +75,10 @@
     <Reference Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Classes\ExtensionSolver.cs" />
+    <Compile Include="Classes\GraphSolver.cs" />
+    <Compile Include="Classes\SnapSolver_GH.cs" />
+    <Compile Include="Classes\SnappedWall.cs" />
     <Compile Include="Component\PanelFromSnapSolver.cs" />
     <Compile Include="Component\SnapSolver.cs" />
     <Compile Include="Component\SnapSolver_v2.cs" />
@@ -100,7 +104,6 @@
     <None Include="Resources\HL_Logo24.png" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Classes\" />
     <Folder Include="Convert\ToGrasshopper\" />
     <Folder Include="Convert\ToRhino\" />
     <Folder Include="Modify\" />

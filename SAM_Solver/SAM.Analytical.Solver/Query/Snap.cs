@@ -95,7 +95,7 @@ namespace SAM.Analytical.Solver
                 }
 
                 //If we assume that section of one panel creates single segment2D then
-                //we can axtract all the points from segmentable2Ds and then gets extremes
+                //we can extract all the points from segmentable2Ds and then gets extremes
                 List<Point2D> point2Ds = keyValuePair.Value.UniquePoint2Ds(tolerance_Distance);
                 point2Ds.ExtremePoints(out Point2D point2D_1, out Point2D point2D_2);
                 if(point2D_1.Distance(point2D_2) >= tolerance_Distance)

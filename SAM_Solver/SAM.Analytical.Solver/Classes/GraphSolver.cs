@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using SAM.Geometry.Solver;
 using SAM.Geometry.Planar;
 using SAM.Geometry.Spatial;
+using SAM.Math;
 
 namespace SAM.Analytical.Solver.Classes
 {
@@ -35,6 +36,7 @@ namespace SAM.Analytical.Solver.Classes
                 {
                     continue;
                 }
+
                 Segment2D thisEdge = Edges[i].GetLine();
                 if (thisEdge.GetLength() < Tolerance)
                 {
@@ -55,67 +57,72 @@ namespace SAM.Analytical.Solver.Classes
             return uniqueEdges;
         }
 
-        private void AddEdge(Line edge, double weight)
-        {
-            Node nodeFrom = Nodes.FirstOrDefault(nd => nd.IsCoincident(edge.From, Tolerance));
+        private void AddEdge(Segment2D edge, double weight)
+        {           
+            Node nodeFrom = Nodes.FirstOrDefault(nd => nd.IsCoincident(edge.GetStart(), Tolerance));
             if (nodeFrom == null)
             {
-                nodeFrom = new Node(edge.From, weight);
+                nodeFrom = new Node(edge.GetStart(), weight);
                 Nodes.Add(nodeFrom);
             }
             else
             {
-                nodeFrom.MergeIn(edge.From, weight);
+                nodeFrom.MergeIn(edge.GetStart(), weight);
             }
-            Node nodeTo = Nodes.FirstOrDefault(nd => nd.IsCoincident(edge.To, Tolerance));
+            Node nodeTo = Nodes.FirstOrDefault(nd => nd.IsCoincident(edge.GetEnd(), Tolerance));
             if (nodeTo == null)
             {
-                nodeTo = new Node(edge.To, weight);
+                nodeTo = new Node(edge.GetEnd(), weight);
                 Nodes.Add(nodeTo);
             }
             else
             {
-                nodeTo.MergeIn(edge.To, weight);
+                nodeTo.MergeIn(edge.GetStart(), weight);
             }
             Edges.Add(new Edge(Edges.Count, nodeFrom, nodeTo));
         }
 
         private class Node
         {
-            public Point3d Location { get; private set; }
+            public Point2D Location { get; private set; }
             public List<double> Weights { get; private set; }
-            public List<Point3d> CoincidentPoints { get; private set; }
+            public List<Point2D> CoincidentPoints { get; private set; }
 
-            public Node(Point3d pt, double weight)
+            public Node(Point2D pt, double weight)
             {
                 Location = pt;
                 Weights = new List<double>() { weight };
-                CoincidentPoints = new List<Point3d>() { pt };
+                CoincidentPoints = new List<Point2D>() { pt };
             }
 
-            private Point3d CalculateLocation(double weightTolerance = 0.000001)
+            private Point2D CalculateLocation(double weightTolerance = 0.000001)
             {
                 double maxWeight = Weights.Max();
-                Point3d pointSum = new Point3d(0, 0, 0);
+                Point2D pointSum = new Point2D(0, 0);
                 int count = 0;
                 for (int i = 0; i < Weights.Count; i++)
                 {
-                    if (RhinoMath.EpsilonEquals(Weights[i], maxWeight, weightTolerance))
+                    if (SAM.Core.Query.AlmostEqual(Weights[i], maxWeight, weightTolerance))
                     {
-                        pointSum += CoincidentPoints[i];
+                        //pointSum += CoincidentPoints[i];
+                        pointSum = new Point2D(pointSum.X + CoincidentPoints[i].X,
+                            pointSum.Y + CoincidentPoints[i].Y);
                         count++;
                     }
                 }
-                return pointSum / count;
+                //return pointSum / count;
+                return new Point2D(pointSum.X / count, pointSum.Y / count);
             }
 
-            public bool IsCoincident(Point3d point, double tolerance)
+            public bool IsCoincident(Point2D point, double tolerance)
             {
                 double tolerance2 = tolerance * tolerance;
-                return CoincidentPoints.Any(pt => pt.DistanceToSquared(point) <= tolerance2);
+                //return CoincidentPoints.Any(pt => pt.DistanceToSquared(point) <= tolerance2);
+                return CoincidentPoints.Any(pt => (pt.X - point.X) * (pt.X - point.X) +
+                    (pt.Y - point.Y) * (pt.Y - point.Y) <= tolerance2);
             }
 
-            public void MergeIn(Point3d point, double weight)
+            public void MergeIn(Point2D point, double weight)
             {
                 Weights.Add(weight);
                 CoincidentPoints.Add(point);
@@ -136,11 +143,11 @@ namespace SAM.Analytical.Solver.Classes
             }
             public double GetLength()
             {
-                return From.Location.DistanceTo(To.Location);
+                return From.Location.Distance(To.Location);
             }
-            public Line GetLine()
+            public Segment2D GetLine()
             {
-                return new Line(From.Location, To.Location);
+                return new Segment2D(From.Location, To.Location);
             }
             public bool Equals(Edge other)
             {

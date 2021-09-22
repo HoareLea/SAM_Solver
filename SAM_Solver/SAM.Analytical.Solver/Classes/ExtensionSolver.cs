@@ -1,4 +1,4 @@
-﻿using Rhino.Geometry;
+﻿using SAM.Geometry.Planar;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,7 +13,7 @@ namespace SAM.Analytical.Solver.Classes
         private List<Intersection> _intersections { get; set; }
         private List<Edge> _edges { get; set; }
 
-        public ExtensionSolver(List<Line> sourceLines, List<double> maxExtensions, double tolerance)
+        public ExtensionSolver(List<Segment2D> sourceLines, List<double> maxExtensions, double tolerance)
         {
             Tolerance = tolerance;
             _intersections = new List<Intersection>();
@@ -23,9 +23,9 @@ namespace SAM.Analytical.Solver.Classes
                 AddEdge(i, sourceLines[i], maxExtensions[i]);
             }
         }
-        public List<Line> Solve()
+        public List<Segment2D> Solve()
         {
-            List<Line> extendedLines = new List<Line>();
+            List<Segment2D> extendedLines = new List<Segment2D>();
             //reset
             for (int i = 0; i < _intersections.Count; i++)
             { // mark all demanded intersections as inactive
@@ -70,7 +70,7 @@ namespace SAM.Analytical.Solver.Classes
         }
 
         // Adds an Edge and any new resulting intersections
-        private void AddEdge(int index, Line line, double maxExtension)
+        private void AddEdge(int index, Segment2D line, double maxExtension)
         {
             Edge e = new Edge(index, line, maxExtension);
             for (int i = 0; i < _edges.Count; i++)
@@ -87,9 +87,9 @@ namespace SAM.Analytical.Solver.Classes
         private class Intersection
         {
             public bool IsActive { get; set; }
-            public Point3d Location { get; private set; }
+            public Point2D Location { get; private set; }
             public HalfEdge[] Participants { get; private set; }
-            public Intersection(Point3d intersectionPoint, List<HalfEdge> participants)
+            public Intersection(Point2D intersectionPoint, List<HalfEdge> participants)
             {
                 IsActive = false;
                 Location = intersectionPoint;
@@ -124,7 +124,7 @@ namespace SAM.Analytical.Solver.Classes
                     }
                     else
                     { // the only cost is extension beyond its current furthest point
-                        Point3d currentEnd = Participants[i].GetFarthestActiveIntersection();
+                        Point2D currentEnd = Participants[i].GetFarthestActiveIntersection();
                         double currentEndParam = Participants[i].ExtensionSegment.ClosestParameter(currentEnd);
                         if (intersectionParamOnExtension > currentEndParam)
                         { // assign different cost to trimming and extending
@@ -150,29 +150,29 @@ namespace SAM.Analytical.Solver.Classes
         {
             public Edge Parent { get; private set; }
             public bool IsNaked { get; set; }
-            public Point3d OriginalEnd { get; private set; }
+            public Point2D OriginalEnd { get; private set; }
             public double OriginalEndOnExtensionParam { get; private set; }
-            public Line ExtensionSegment { get; private set; }
-            public Line FullSegment { get; private set; }
+            public Segment2D ExtensionSegment { get; private set; }
+            public Segment2D FullSegment { get; private set; }
             public List<Intersection> Intersections { get; private set; }
 
             public static void CreateHalves(Edge parent, out HalfEdge startHalf, out HalfEdge endHalf)
             {
                 startHalf = new HalfEdge();
                 endHalf = new HalfEdge();
-                startHalf.OriginalEnd = parent.BaseLine.From;
-                endHalf.OriginalEnd = parent.BaseLine.To;
+                startHalf.OriginalEnd = parent.BaseLine.GetStart();
+                endHalf.OriginalEnd = parent.BaseLine.GetEnd();
                 startHalf.Parent = parent;
                 endHalf.Parent = parent;
-                double extensionAsParameter = parent.MaxExtension / parent.BaseLine.Length;
+                double extensionAsParameter = parent.MaxExtension / parent.BaseLine.GetLength();
                 double startT0 = extensionAsParameter <= 0.5 ? extensionAsParameter : 0.5;
                 double startT1 = -1 * extensionAsParameter;
-                startHalf.ExtensionSegment = new Line(parent.BaseLine.PointAt(startT0), parent.BaseLine.PointAt(startT1));
-                startHalf.FullSegment = new Line(parent.BaseLine.PointAt(0.5), parent.BaseLine.PointAt(startT1));
+                startHalf.ExtensionSegment = new Segment2D(parent.BaseLine.PointAt(startT0), parent.BaseLine.PointAt(startT1));
+                startHalf.FullSegment = new Segment2D(parent.BaseLine.PointAt(0.5), parent.BaseLine.PointAt(startT1));
                 double endT0 = (1 - extensionAsParameter) >= 0.5 ? (1 - extensionAsParameter) : 0.5;
                 double endT1 = 1 + extensionAsParameter;
-                endHalf.ExtensionSegment = new Line(parent.BaseLine.PointAt(endT0), parent.BaseLine.PointAt(endT1));
-                endHalf.FullSegment = new Line(parent.BaseLine.PointAt(0.5), parent.BaseLine.PointAt(endT1));
+                endHalf.ExtensionSegment = new Segment2D(parent.BaseLine.PointAt(endT0), parent.BaseLine.PointAt(endT1));
+                endHalf.FullSegment = new Segment2D(parent.BaseLine.PointAt(0.5), parent.BaseLine.PointAt(endT1));
                 startHalf.OriginalEndOnExtensionParam = startHalf.ExtensionSegment.ClosestParameter(startHalf.OriginalEnd);
                 endHalf.OriginalEndOnExtensionParam = endHalf.ExtensionSegment.ClosestParameter(endHalf.OriginalEnd);
             }
@@ -181,14 +181,16 @@ namespace SAM.Analytical.Solver.Classes
             {
                 Parent = null;
                 IsNaked = true;
-                FullSegment = Line.Unset;
-                ExtensionSegment = Line.Unset;
+                //FullSegment = Line.Unset;
+                //ExtensionSegment = Line.Unset;
+                FullSegment = new Segment2D(Point2D.Invalid, Point2D.Invalid);
+                ExtensionSegment = new Segment2D(Point2D.Invalid, Point2D.Invalid);
                 Intersections = new List<Intersection>();
             }
 
-            public Point3d GetFarthestActiveIntersection()
+            public Point2D GetFarthestActiveIntersection()
             {
-                Point3d farthestPoint = Point3d.Unset;
+                Point2D farthestPoint = Point2D.Invalid;
                 double farthestParam = -1;
                 for (int i = 0; i < Intersections.Count; i++)
                 {
@@ -210,14 +212,22 @@ namespace SAM.Analytical.Solver.Classes
             public bool TryRegisterIntersections(HalfEdge other, double tolerance, out Intersection x)
             {
                 bool intersected = false;
-                double thisParam = 0;
-                double otherParam = 0;
+                //double thisParam = 0;
+                //double otherParam = 0;
+                //BoundingBox2D bboxThis = this.FullSegment.GetBoundingBox();
+                //BoundingBox2D bboxOther = other.FullSegment.GetBoundingBox();
                 x = null;
-                intersected = Rhino.Geometry.Intersect.Intersection.LineLine(this.FullSegment, other.FullSegment, out thisParam, out otherParam, tolerance, true);
+
+                intersected = this.FullSegment.Intersect(other.FullSegment, tolerance);
+                //intersected = bboxThis.InRange(bboxOther, tolerance);
+                //intersected = Rhino.Geometry.Intersect.Intersection.LineLine(this.FullSegment, other.FullSegment, 
+                //    out thisParam, out otherParam, tolerance, true);
+
                 if (intersected)
                 {
                     //Point3d intersectionPoint = (this.ExtensionSegment.PointAt(thisParam) + other.FullSegment.PointAt(otherParam)) / 2; // average for precision?
-                    Point3d intersectionPoint = this.FullSegment.PointAt(thisParam);
+                    Point2D intersectionPoint = this.FullSegment.Intersection(other.FullSegment, true, tolerance);
+                    //Point3d intersectionPoint = this.FullSegment.PointAt(thisParam);
                     // check if any is a true participant of the intersection
                     List<HalfEdge> trueParticipants = new List<HalfEdge>();
                     bool thisParticipates = false;
@@ -253,18 +263,19 @@ namespace SAM.Analytical.Solver.Classes
         private class Edge
         {
             public int Index { get; private set; }
-            public Line BaseLine { get; private set; }
-            public Line ExtendedLine { get; private set; }
+            public Segment2D BaseLine { get; private set; }
+            public Segment2D ExtendedLine { get; private set; }
             public double MaxExtension { get; private set; }
             public HalfEdge StartHalf { get; private set; }
             public HalfEdge EndHalf { get; private set; }
 
-            public Edge(int index, Line line, double maxExtension)
+            public Edge(int index, Segment2D line, double maxExtension)
             {
                 Index = index;
                 BaseLine = line;
-                Line extended = line;
-                extended.Extend(maxExtension, maxExtension);
+                Segment2D extended = line;
+                extended.Extend(maxExtension, true, true);
+                //extended.Extend(maxExtension, maxExtension);
                 ExtendedLine = extended;
                 MaxExtension = maxExtension;
                 HalfEdge start = null;
@@ -307,21 +318,21 @@ namespace SAM.Analytical.Solver.Classes
                 EndHalf.IsNaked = true;
             }
 
-            public Line GetResult()
+            public Segment2D GetResult()
             {
-                Point3d newStart = StartHalf.GetFarthestActiveIntersection();
-                Point3d newEnd = EndHalf.GetFarthestActiveIntersection();
+                Point2D newStart = StartHalf.GetFarthestActiveIntersection();
+                Point2D newEnd = EndHalf.GetFarthestActiveIntersection();
 
-                if (newStart == Point3d.Unset)
+                if (newStart == Point2D.Invalid)
                 {
-                    newStart = BaseLine.From;
+                    newStart = BaseLine.GetStart();
                 }
-                if (newEnd == Point3d.Unset)
+                if (newEnd == Point2D.Invalid)
                 {
-                    newEnd = BaseLine.To;
+                    newEnd = BaseLine.GetEnd();
                 }
 
-                return new Line(newStart, newEnd);
+                return new Segment2D(newStart, newEnd);
             }
         }
     }

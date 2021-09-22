@@ -110,25 +110,25 @@ namespace SAM.Analytical.Solver.Classes
                 double cost = 0;
                 for (int i = 0; i < Participants.Length; i++)
                 {
-                    double intersectionParamOnExtension = Participants[i].ExtensionSegment.ClosestParameter(this.Location);
+                    double intersectionParamOnExtension = Participants[i].ExtensionSegment.GetParameter(this.Location);
                     if (Participants[i].IsNaked)
                     {
                         if (intersectionParamOnExtension > Participants[i].OriginalEndOnExtensionParam)
                         { // assign different cost to trimming and extending
-                            cost += Participants[i].OriginalEnd.DistanceTo(this.Location);
+                            cost += Participants[i].OriginalEnd.Distance(this.Location);
                         }
                         else
                         {
-                            cost += Participants[i].OriginalEnd.DistanceTo(this.Location) / 2; // trimming is twice cheaper
+                            cost += Participants[i].OriginalEnd.Distance(this.Location) / 2; // trimming is twice cheaper
                         }
                     }
                     else
                     { // the only cost is extension beyond its current furthest point
                         Point2D currentEnd = Participants[i].GetFarthestActiveIntersection();
-                        double currentEndParam = Participants[i].ExtensionSegment.ClosestParameter(currentEnd);
+                        double currentEndParam = Participants[i].ExtensionSegment.GetParameter(currentEnd);
                         if (intersectionParamOnExtension > currentEndParam)
                         { // assign different cost to trimming and extending
-                            cost += currentEnd.DistanceTo(this.Location);
+                            cost += currentEnd.Distance(this.Location);
                         }
                         else
                         {
@@ -167,14 +167,14 @@ namespace SAM.Analytical.Solver.Classes
                 double extensionAsParameter = parent.MaxExtension / parent.BaseLine.GetLength();
                 double startT0 = extensionAsParameter <= 0.5 ? extensionAsParameter : 0.5;
                 double startT1 = -1 * extensionAsParameter;
-                startHalf.ExtensionSegment = new Segment2D(parent.BaseLine.PointAt(startT0), parent.BaseLine.PointAt(startT1));
-                startHalf.FullSegment = new Segment2D(parent.BaseLine.PointAt(0.5), parent.BaseLine.PointAt(startT1));
+                startHalf.ExtensionSegment = new Segment2D(parent.BaseLine.Point2D(startT0), parent.BaseLine.Point2D(startT1));
+                startHalf.FullSegment = new Segment2D(parent.BaseLine.Point2D(0.5), parent.BaseLine.Point2D(startT1));
                 double endT0 = (1 - extensionAsParameter) >= 0.5 ? (1 - extensionAsParameter) : 0.5;
                 double endT1 = 1 + extensionAsParameter;
-                endHalf.ExtensionSegment = new Segment2D(parent.BaseLine.PointAt(endT0), parent.BaseLine.PointAt(endT1));
-                endHalf.FullSegment = new Segment2D(parent.BaseLine.PointAt(0.5), parent.BaseLine.PointAt(endT1));
-                startHalf.OriginalEndOnExtensionParam = startHalf.ExtensionSegment.ClosestParameter(startHalf.OriginalEnd);
-                endHalf.OriginalEndOnExtensionParam = endHalf.ExtensionSegment.ClosestParameter(endHalf.OriginalEnd);
+                endHalf.ExtensionSegment = new Segment2D(parent.BaseLine.Point2D(endT0), parent.BaseLine.Point2D(endT1));
+                endHalf.FullSegment = new Segment2D(parent.BaseLine.Point2D(0.5), parent.BaseLine.Point2D(endT1));
+                startHalf.OriginalEndOnExtensionParam = startHalf.ExtensionSegment.GetParameter(startHalf.OriginalEnd);
+                endHalf.OriginalEndOnExtensionParam = endHalf.ExtensionSegment.GetParameter(endHalf.OriginalEnd);
             }
 
             private HalfEdge()
@@ -198,7 +198,7 @@ namespace SAM.Analytical.Solver.Classes
                     {
                         continue;
                     }
-                    double thisParam = this.ExtensionSegment.ClosestParameter(Intersections[i].Location);
+                    double thisParam = this.ExtensionSegment.GetParameter(Intersections[i].Location);
                     if (thisParam > farthestParam)
                     {
                         farthestParam = thisParam;
@@ -232,12 +232,12 @@ namespace SAM.Analytical.Solver.Classes
                     List<HalfEdge> trueParticipants = new List<HalfEdge>();
                     bool thisParticipates = false;
                     bool otherParticipates = false;
-                    if (this.ExtensionSegment.DistanceTo(intersectionPoint, true) <= tolerance)
+                    if (this.ExtensionSegment.Distance(intersectionPoint) <= tolerance)
                     {
                         trueParticipants.Add(this);
                         thisParticipates = true;
                     }
-                    if (other.ExtensionSegment.DistanceTo(intersectionPoint, true) <= tolerance)
+                    if (other.ExtensionSegment.Distance(intersectionPoint) <= tolerance)
                     {
                         trueParticipants.Add(other);
                         otherParticipates = true;

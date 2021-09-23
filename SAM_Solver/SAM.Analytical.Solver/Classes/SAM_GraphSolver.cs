@@ -10,12 +10,12 @@ using SAM.Math;
 
 namespace SAM.Analytical.Solver.Classes
 {
-    public class GraphSolver
+    public class SAM_GraphSolver
     {
         public double Tolerance { get; private set; }
         private List<Edge> Edges { get; set; }
         private List<Node> Nodes { get; set; }
-        public GraphSolver(List<Segment2D> lines, List<double> weights, double snapTolerance)
+        public SAM_GraphSolver(List<Segment2D> lines, List<double> weights, double snapTolerance)
         {
             Tolerance = snapTolerance;
             Edges = new List<Edge>();
@@ -118,8 +118,9 @@ namespace SAM.Analytical.Solver.Classes
             {
                 double tolerance2 = tolerance * tolerance;
                 //return CoincidentPoints.Any(pt => pt.DistanceToSquared(point) <= tolerance2);
-                return CoincidentPoints.Any(pt => (pt.X - point.X) * (pt.X - point.X) +
-                    (pt.Y - point.Y) * (pt.Y - point.Y) <= tolerance2);
+                return CoincidentPoints.Any(pt => pt.AlmostEquals(point, tolerance));
+                //return CoincidentPoints.Any(pt => (pt.X - point.X) * (pt.X - point.X) +
+                //    (pt.Y - point.Y) * (pt.Y - point.Y) <= tolerance2);
             }
 
             public void MergeIn(Point2D point, double weight)

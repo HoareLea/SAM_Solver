@@ -12,6 +12,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Classes
 
     public class SnapSolver_GH
     {
+        //TODO: USE SAM tolerances where is meaningfull SAM.Core.Tolerance....
         private double _minTolerance = Math.Pow(10, -9);
         private double _extensionLimiter = 0.49;
         private static double _modelTolerance = Math.Pow(10, -3);

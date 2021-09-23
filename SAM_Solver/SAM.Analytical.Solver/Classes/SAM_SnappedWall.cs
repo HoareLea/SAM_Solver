@@ -1,5 +1,5 @@
-﻿using Rhino;
-using Rhino.Geometry;
+﻿using SAM.Geometry.Planar;
+using SAM.Geometry.Spatial;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,10 +8,10 @@ using System.Threading.Tasks;
 
 namespace SAM.Analytical.Solver.Classes
 {
-    public class SnappedWall
+    public class SAM_SnappedWall
     {
-        private Line _projectedAxis = default(Line);
-        public Line ProjectedAxis
+        private Segment2D _projectedAxis = default(Segment2D);
+        public Segment2D ProjectedAxis
         {
             get
             {
@@ -20,12 +20,12 @@ namespace SAM.Analytical.Solver.Classes
             private set
             {
                 _projectedAxis = value;
-                Length = _projectedAxis.Length;
+                Length = _projectedAxis.GetLength();
             }
         }
         public List<int> SourceIndices { get; private set; }
-        public List<Line> SourceSegments { get; private set; }
-        public Interval OriginalHeight { get; private set; }
+        public List<Segment2D> SourceSegments { get; private set; }
+        public double[] OriginalHeight { get; private set; } = new double[2];
         public double Elevation { get; private set; }
         public double Weight { get; private set; }
         public double BucketSize { get; private set; }
@@ -34,21 +34,27 @@ namespace SAM.Analytical.Solver.Classes
         public bool NakedStart { get; private set; }
         public bool NakedEnd { get; private set; }
 
-        public SnappedWall(int sourceIndex, Line axis, double weight, double bucketSize, double maxExtension, Interval originalHeight)
+        public SAM_SnappedWall(int sourceIndex, Segment3D axis, double weight, double bucketSize, double maxExtension, double[] originalHeight)
         {
-            Elevation = (axis.From.Z + axis.To.Z) / 2;
-            axis.Transform(Transform.PlanarProjection(Plane.WorldXY));
+            Elevation = (axis.GetStart().Z + axis.GetEnd().Z) / 2;
+            //axis.Transform(Transform.PlanarProjection(Plane.WorldXY));
             SourceIndices = new List<int>();
             SourceIndices.Add(sourceIndex);
-            SourceSegments = new List<Line>();
-            SourceSegments.Add(axis);
-            ProjectedAxis = axis;
+            SourceSegments = new List<Segment2D>();
+            var projectedAxis = Segment3DPlanarProjection(axis, Plane.WorldXY);
+            SourceSegments.Add(projectedAxis);
+            ProjectedAxis = projectedAxis;
             Weight = weight;
             BucketSize = bucketSize;
             MaxExtension = maxExtension;
             OriginalHeight = originalHeight;
             NakedStart = true;
             NakedEnd = true;
+        }
+        private Segment2D Segment3DPlanarProjection(Segment3D inputSegment, Plane destinationPlane)
+        {
+            var projectedSegment3D = destinationPlane.Project(inputSegment);
+            return destinationPlane.Convert(projectedSegment3D);
         }
 
         public void ResetNakedStatus()
@@ -57,19 +63,21 @@ namespace SAM.Analytical.Solver.Classes
             NakedEnd = true;
         }
 
-        public void UpdateNakedStatus(SnappedWall other)
+        public void UpdateNakedStatus(SAM_SnappedWall other)
         {
-            if (!RhinoMath.EpsilonEquals(this.Elevation, other.Elevation, SnapSolver_GH.ModelTolerance))
-            { // different levels, doesn't matter
+            //if (!RhinoMath.EpsilonEquals(this.Elevation, other.Elevation, SAM_SnapSolver_GH.ModelTolerance))
+            if (SAM.Core.Query.AlmostEqual(this.Elevation, other.Elevation, SAM_SnapSolver.ModelTolerance))
+                { // different levels, doesn't matter
                 return;
             }
-            Point3d start = ProjectedAxis.From;
-            Point3d end = ProjectedAxis.To;
-            if (NakedStart && other.ProjectedAxis.MinimumDistanceTo(start) <= SnapSolver_GH.SAMTolerance)
+            Point2D start = ProjectedAxis.GetStart();
+            Point2D end = ProjectedAxis.GetEnd();
+            //if (NakedStart && other.ProjectedAxis.MinimumDistanceTo(start) <= SAM_SnapSolver.SAMTolerance)
+            if (NakedStart && other.ProjectedAxis.Distance(start) <= SAM_SnapSolver.SAMTolerance)
             {
                 NakedStart = false;
             }
-            if (NakedEnd && other.ProjectedAxis.MinimumDistanceTo(end) <= SnapSolver_GH.SAMTolerance)
+            if (NakedEnd && other.ProjectedAxis.Distance(end) <= SAM_SnapSolver.SAMTolerance)
             {
                 NakedEnd = false;
             }
@@ -86,8 +94,14 @@ namespace SAM.Analytical.Solver.Classes
             return surface.ToBrep();
         }
 
-        private Brep GetBrep(Line segment)
+        private Face3D GetBrep(Segment2D baseLine)
         {
+            var base3D = Plane.WorldXY.Convert(baseLine);
+            Polygon3D plgn = new Polygon3D(new List<Point3D> {base3D[0], base3D[1], 
+                (Point3D)base3D[1].GetMoved(Vector3D.WorldZ), (Point3D)base3D[0].GetMoved(Vector3D.WorldZ)});
+
+            return new Face3D(plgn);
+
             LineCurve bottomLine = new LineCurve(segment);
             bottomLine.Transform(Transform.Translation(new Vector3d(0, 0, OriginalHeight.Min)));
             LineCurve topLine = new LineCurve(segment);
@@ -141,7 +155,7 @@ namespace SAM.Analytical.Solver.Classes
                 bool isNew = true; // check the START
                 for (int i = 0; i < splitParams.Count; i++)
                 {
-                    if (RhinoMath.EpsilonEquals(splitParams[i], fromParam, SnapSolver_GH.SAMTolerance))
+                    if (RhinoMath.EpsilonEquals(splitParams[i], fromParam, SAM_SnapSolver.SAMTolerance))
                     {
                         isNew = false;
                         if (splitParams[i] != 0 && splitParams[i] != 1)
@@ -157,7 +171,7 @@ namespace SAM.Analytical.Solver.Classes
                 isNew = true; // same for the END param
                 for (int i = 0; i < splitParams.Count; i++)
                 {
-                    if (RhinoMath.EpsilonEquals(splitParams[i], toParam, SnapSolver_GH.SAMTolerance))
+                    if (RhinoMath.EpsilonEquals(splitParams[i], toParam, SAM_SnapSolver.SAMTolerance))
                     {
                         isNew = false;
                         if (splitParams[i] != 0 && splitParams[i] != 1)
@@ -179,11 +193,11 @@ namespace SAM.Analytical.Solver.Classes
                 Line piece = new Line(ProjectedAxis.PointAt(splitParams[i]), ProjectedAxis.PointAt(splitParams[i + 1]));
                 // shorten the current piece to avoid taking neighbors indices
                 Line testPiece = piece;
-                testPiece.Extend(-1.5 * SnapSolver_GH.ModelTolerance, -1.5 * SnapSolver_GH.ModelTolerance);
+                testPiece.Extend(-1.5 * SAM_SnapSolver.ModelTolerance, -1.5 * SAM_SnapSolver.ModelTolerance);
                 List<int> indices = new List<int>();
                 for (int j = 0; j < SourceSegments.Count; j++)
                 {
-                    if (testPiece.MinimumDistanceTo(SourceSegments[j]) < SnapSolver_GH.ModelTolerance)
+                    if (testPiece.MinimumDistanceTo(SourceSegments[j]) < SAM_SnapSolver.ModelTolerance)
                     {
                         indices.Add(SourceIndices[j]);
                     }
@@ -345,7 +359,7 @@ namespace SAM.Analytical.Solver.Classes
             UpdateEndPoints(newAxis.From, newAxis.To, stretch: true);
         }
 
-        public bool TryBucketSnap(SnappedWall other, out bool otherMergedIn)
+        public bool TryBucketSnap(SAM_SnappedWall other, out bool otherMergedIn)
         {
             otherMergedIn = false;
 
@@ -365,7 +379,7 @@ namespace SAM.Analytical.Solver.Classes
             {
                 return false;
             }
-            double angleToleranceRad = fully ? SnapSolver_GH.ToleranceAngleRad : SnapSolver_GH.ArcToleranceAngleRad; // if the neighbour is fully contained in the bucket, allow for larger angle tolerance
+            double angleToleranceRad = fully ? SAM_SnapSolver.ToleranceAngleRad : SAM_SnapSolver.ArcToleranceAngleRad; // if the neighbour is fully contained in the bucket, allow for larger angle tolerance
 
             bool areColinear = IsRoughlyColinearWith(other, angleToleranceRad);
             if (!areColinear)
@@ -378,7 +392,7 @@ namespace SAM.Analytical.Solver.Classes
             Interval otherRange = new Interval(snappedStartParam, snappedEndParam);
             otherRange.MakeIncreasing();
 
-            if (RhinoMath.EpsilonEquals(this.Elevation, other.Elevation, SnapSolver_GH.ModelTolerance)) // same level - merge in
+            if (RhinoMath.EpsilonEquals(this.Elevation, other.Elevation, SAM_SnapSolver.ModelTolerance)) // same level - merge in
             {
                 otherMergedIn = true;
                 Interval thisNewRange = new Interval(Math.Min(otherRange.Min, 0), Math.Max(otherRange.Max, 1));
@@ -408,7 +422,7 @@ namespace SAM.Analytical.Solver.Classes
 
                 //check if anything has changed
                 double delta = newStart.DistanceTo(other.ProjectedAxis.From) + newEnd.DistanceTo(other.ProjectedAxis.To);
-                if (delta < SnapSolver_GH.SAMTolerance)
+                if (delta < SAM_SnapSolver.SAMTolerance)
                 {
                     return false;
                 }
@@ -422,10 +436,10 @@ namespace SAM.Analytical.Solver.Classes
             Line previousAxis = ProjectedAxis;
             ProjectedAxis = new Line(newStart, newEnd);
             // source segments need to be adjusted here
-            SnapSourceSegments(previousAxis, SnapSolver_GH.MinWallSegmentLength, stretch);
+            SnapSourceSegments(previousAxis, SAM_SnapSolver.MinWallSegmentLength, stretch);
         }
 
-        public List<SnappedWall> SnapSegmentsSplitAndExplode(List<Point3d> additionalSplitLocations, double snappingDistance, bool allowMovingEnds = false)
+        public List<SAM_SnappedWall> SnapSegmentsSplitAndExplode(List<Point3d> additionalSplitLocations, double snappingDistance, bool allowMovingEnds = false)
         {
             additionalSplitLocations = additionalSplitLocations.Select(pt => ProjectedAxis.ClosestPoint(pt, true)).ToList(); // make sure they lie on the axis
             bool[] splitMade = new bool[additionalSplitLocations.Count];
@@ -443,7 +457,7 @@ namespace SAM.Analytical.Solver.Classes
                 if (!allowMovingEnds)
                 {
                     double closestParam = ProjectedAxis.ClosestParameter(segmentEndPoints[i]);
-                    if (RhinoMath.EpsilonEquals(closestParam, 0, SnapSolver_GH.ModelTolerance) || RhinoMath.EpsilonEquals(closestParam, 1, SnapSolver_GH.ModelTolerance))
+                    if (RhinoMath.EpsilonEquals(closestParam, 0, SAM_SnapSolver.ModelTolerance) || RhinoMath.EpsilonEquals(closestParam, 1, SAM_SnapSolver.ModelTolerance))
                     {
                         continue;
                     }
@@ -477,7 +491,7 @@ namespace SAM.Analytical.Solver.Classes
                 bool isNew = true; // check the START
                 for (int i = 0; i < splitParams.Count; i++)
                 {
-                    if (RhinoMath.EpsilonEquals(splitParams[i], fromParam, SnapSolver_GH.SAMTolerance))
+                    if (RhinoMath.EpsilonEquals(splitParams[i], fromParam, SAM_SnapSolver.SAMTolerance))
                     {
                         isNew = false;
                         if (splitParams[i] != 0 && splitParams[i] != 1)
@@ -493,7 +507,7 @@ namespace SAM.Analytical.Solver.Classes
                 isNew = true; // same for the END param
                 for (int i = 0; i < splitParams.Count; i++)
                 {
-                    if (RhinoMath.EpsilonEquals(splitParams[i], toParam, SnapSolver_GH.SAMTolerance))
+                    if (RhinoMath.EpsilonEquals(splitParams[i], toParam, SAM_SnapSolver.SAMTolerance))
                     {
                         isNew = false;
                         if (splitParams[i] != 0 && splitParams[i] != 1)
@@ -519,7 +533,7 @@ namespace SAM.Analytical.Solver.Classes
                 bool isNew = true; // same for the END param
                 for (int j = 0; j < splitParams.Count; j++)
                 {
-                    if (RhinoMath.EpsilonEquals(splitParams[j], newSplit, SnapSolver_GH.SAMTolerance))
+                    if (RhinoMath.EpsilonEquals(splitParams[j], newSplit, SAM_SnapSolver.SAMTolerance))
                     {
                         isNew = false;
                         if (splitParams[j] != 0 && splitParams[j] != 1)
@@ -542,11 +556,11 @@ namespace SAM.Analytical.Solver.Classes
                 Line piece = new Line(ProjectedAxis.PointAt(splitParams[i]), ProjectedAxis.PointAt(splitParams[i + 1]));
                 // shorten the current piece to avoid taking neighbours' indices
                 Line testPiece = piece;
-                testPiece.Extend(-1.5 * SnapSolver_GH.ModelTolerance, -1.5 * SnapSolver_GH.ModelTolerance);
+                testPiece.Extend(-1.5 * SAM_SnapSolver.ModelTolerance, -1.5 * SAM_SnapSolver.ModelTolerance);
                 List<int> indices = new List<int>();
                 for (int j = 0; j < SourceSegments.Count; j++)
                 {
-                    if (testPiece.MinimumDistanceTo(SourceSegments[j]) < SnapSolver_GH.ModelTolerance)
+                    if (testPiece.MinimumDistanceTo(SourceSegments[j]) < SAM_SnapSolver.ModelTolerance)
                     {
                         indices.Add(SourceIndices[j]);
                     }
@@ -556,16 +570,16 @@ namespace SAM.Analytical.Solver.Classes
             }
 
             // create a new wall from each segment
-            List<SnappedWall> splitWalls = new List<SnappedWall>();
+            List<SAM_SnappedWall> splitWalls = new List<SAM_SnappedWall>();
             for (int i = 0; i < splitSegments.Count; i++)
             {
-                if (splitSegments[i].Length < SnapSolver_GH.SAMTolerance || sourceIndices[i].Count < 1)
+                if (splitSegments[i].Length < SAM_SnapSolver.SAMTolerance || sourceIndices[i].Count < 1)
                 {
                     continue;
                 }
                 Line newAxis = splitSegments[i];
                 newAxis.Transform(Transform.Translation(new Vector3d(0, 0, Elevation)));
-                SnappedWall wallSegment = new SnappedWall(sourceIndices[i][0], newAxis, Weight, BucketSize, MaxExtension, OriginalHeight);
+                SAM_SnappedWall wallSegment = new SnappedWall(sourceIndices[i][0], newAxis, Weight, BucketSize, MaxExtension, OriginalHeight);
                 // add the rest of the source indices
                 for (int j = 1; j < sourceIndices[i].Count; j++)
                 {
@@ -732,7 +746,7 @@ namespace SAM.Analytical.Solver.Classes
             }
         }
 
-        public bool IsRoughlyColinearWith(SnappedWall other, double angleToleranceRad)
+        public bool IsRoughlyColinearWith(SAM_SnappedWall other, double angleToleranceRad)
         {
             double minAbsDot = Math.Cos(angleToleranceRad);
             Vector3d directionA = this.ProjectedAxis.Direction;
@@ -770,7 +784,7 @@ namespace SAM.Analytical.Solver.Classes
             return averageDistance;
         }
 
-        private bool BucketContains(SnappedWall other, out bool fully)
+        private bool BucketContains(SAM_SnappedWall other, out bool fully)
         {
             fully = false;
             Line dominantLine = this.ProjectedAxis;

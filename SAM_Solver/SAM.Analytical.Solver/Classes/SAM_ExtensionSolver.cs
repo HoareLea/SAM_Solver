@@ -7,13 +7,13 @@ using System.Threading.Tasks;
 
 namespace SAM.Analytical.Solver.Classes
 {
-    public class ExtensionSolver
+    public class SAM_ExtensionSolver
     {
         public double Tolerance { get; private set; }
         private List<Intersection> _intersections { get; set; }
         private List<Edge> _edges { get; set; }
 
-        public ExtensionSolver(List<Segment2D> sourceLines, List<double> maxExtensions, double tolerance)
+        public SAM_ExtensionSolver(List<Segment2D> sourceLines, List<double> maxExtensions, double tolerance)
         {
             Tolerance = tolerance;
             _intersections = new List<Intersection>();

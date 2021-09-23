@@ -102,7 +102,7 @@ namespace SAM.Analytical.Solver.Classes
                 int count = 0;
                 for (int i = 0; i < Weights.Count; i++)
                 {
-                    if (SAM.Core.Query.AlmostEqual(Weights[i], maxWeight, weightTolerance))
+                    if (Core.Query.AlmostEqual(Weights[i], maxWeight, weightTolerance))
                     {
                         //pointSum += CoincidentPoints[i];
                         pointSum = new Point2D(pointSum.X + CoincidentPoints[i].X,

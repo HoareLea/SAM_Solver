@@ -11,6 +11,7 @@ namespace SAM.Analytical.Solver.Classes
     public class SAM_SnappedWall
     {
         private Segment2D _projectedAxis = default(Segment2D);
+        private Plane _projectionPlane = Plane.WorldXY;
         public Segment2D ProjectedAxis
         {
             get
@@ -25,7 +26,7 @@ namespace SAM.Analytical.Solver.Classes
         }
         public List<int> SourceIndices { get; private set; }
         public List<Segment2D> SourceSegments { get; private set; }
-        public double[] OriginalHeight { get; private set; } = new double[2];
+        public Core.Range<double> OriginalHeight { get; private set; }
         public double Elevation { get; private set; }
         public double Weight { get; private set; }
         public double BucketSize { get; private set; }
@@ -34,7 +35,7 @@ namespace SAM.Analytical.Solver.Classes
         public bool NakedStart { get; private set; }
         public bool NakedEnd { get; private set; }
 
-        public SAM_SnappedWall(int sourceIndex, Segment3D axis, double weight, double bucketSize, double maxExtension, double[] originalHeight)
+        public SAM_SnappedWall(int sourceIndex, Segment3D axis, double weight, double bucketSize, double maxExtension, Core.Range<double> originalHeight)
         {
             Elevation = (axis.GetStart().Z + axis.GetEnd().Z) / 2;
             //axis.Transform(Transform.PlanarProjection(Plane.WorldXY));
@@ -66,12 +67,12 @@ namespace SAM.Analytical.Solver.Classes
         public void UpdateNakedStatus(SAM_SnappedWall other)
         {
             //if (!RhinoMath.EpsilonEquals(this.Elevation, other.Elevation, SAM_SnapSolver_GH.ModelTolerance))
-            if (SAM.Core.Query.AlmostEqual(this.Elevation, other.Elevation, SAM_SnapSolver.ModelTolerance))
+            if (Core.Query.AlmostEqual(this.Elevation, other.Elevation, SAM_SnapSolver.ModelTolerance))
                 { // different levels, doesn't matter
                 return;
             }
-            Point2D start = ProjectedAxis.GetStart();
-            Point2D end = ProjectedAxis.GetEnd();
+            Point2D start = ProjectedAxis.Start;
+            Point2D end = ProjectedAxis.End;
             //if (NakedStart && other.ProjectedAxis.MinimumDistanceTo(start) <= SAM_SnapSolver.SAMTolerance)
             if (NakedStart && other.ProjectedAxis.Distance(start) <= SAM_SnapSolver.SAMTolerance)
             {
@@ -83,37 +84,61 @@ namespace SAM.Analytical.Solver.Classes
             }
         }
 
-        public Brep GetBrep()
+        //not supposed to have references
+        public Face3D GetBrep()
         {
-            LineCurve bottomLine = new LineCurve(ProjectedAxis);
-            bottomLine.Transform(Transform.Translation(new Vector3d(0, 0, OriginalHeight.Min)));
-            LineCurve topLine = new LineCurve(ProjectedAxis);
-            topLine.Transform(Transform.Translation(new Vector3d(0, 0, OriginalHeight.Max)));
+            var base3d = this._projectionPlane.Convert(this.ProjectedAxis);
+            var bottomElevation = this.OriginalHeight.Min;
+            var topElevation = this.OriginalHeight.Max;
 
-            var surface = NurbsSurface.CreateRuledSurface(bottomLine, topLine);
-            return surface.ToBrep();
+            var bottomVector = new Vector3D(0, 0, bottomElevation);
+            var topVector = new Vector3D(0, 0, topElevation);
+
+            var facePoints = new List<Point3D> {
+                (Point3D) base3d[0].GetMoved(bottomVector), (Point3D) base3d[1].GetMoved(bottomVector),
+                (Point3D) base3d[1].GetMoved(topVector), (Point3D) base3d[0].GetMoved(topVector)};
+
+            var faceContour = new Polygon3D(facePoints);
+
+            return new Face3D(faceContour);
+            //LineCurve bottomLine = new LineCurve(ProjectedAxis);
+            //bottomLine.Transform(Transform.Translation(new Vector3d(0, 0, OriginalHeight.Min)));
+            //LineCurve topLine = new LineCurve(ProjectedAxis);
+            //topLine.Transform(Transform.Translation(new Vector3d(0, 0, OriginalHeight.Max)));
+
+            //var surface = NurbsSurface.CreateRuledSurface(bottomLine, topLine);
+            //return surface.ToBrep();
         }
 
-        private Face3D GetBrep(Segment2D baseLine)
+        private Face3D GetBrep(Segment2D segment)
         {
-            var base3D = Plane.WorldXY.Convert(baseLine);
-            Polygon3D plgn = new Polygon3D(new List<Point3D> {base3D[0], base3D[1], 
-                (Point3D)base3D[1].GetMoved(Vector3D.WorldZ), (Point3D)base3D[0].GetMoved(Vector3D.WorldZ)});
+            var base3d = this._projectionPlane.Convert(segment);
+            var bottomElevation = this.OriginalHeight.Min;
+            var topElevation = this.OriginalHeight.Max;
 
-            return new Face3D(plgn);
+            var bottomVector = new Vector3D(0, 0, bottomElevation);
+            var topVector = new Vector3D(0, 0, topElevation);
 
-            LineCurve bottomLine = new LineCurve(segment);
-            bottomLine.Transform(Transform.Translation(new Vector3d(0, 0, OriginalHeight.Min)));
-            LineCurve topLine = new LineCurve(segment);
-            topLine.Transform(Transform.Translation(new Vector3d(0, 0, OriginalHeight.Max)));
+            var facePoints = new List<Point3D> {
+                (Point3D) base3d[0].GetMoved(bottomVector), (Point3D) base3d[1].GetMoved(bottomVector),
+                (Point3D) base3d[1].GetMoved(topVector), (Point3D) base3d[0].GetMoved(topVector)};
 
-            var surface = NurbsSurface.CreateRuledSurface(bottomLine, topLine);
-            return surface.ToBrep();
+            var faceContour = new Polygon3D(facePoints);
+
+            return new Face3D(faceContour);
+
+            //LineCurve bottomLine = new LineCurve(segment);
+            //bottomLine.Transform(Transform.Translation(new Vector3d(0, 0, OriginalHeight.Min)));
+            //LineCurve topLine = new LineCurve(segment);
+            //topLine.Transform(Transform.Translation(new Vector3d(0, 0, OriginalHeight.Max)));
+
+            //var surface = NurbsSurface.CreateRuledSurface(bottomLine, topLine);
+            //return surface.ToBrep();
         }
 
-        public List<Brep> GetBreps(out List<List<int>> sourceIndices)
+        public List<Face3D> GetBreps(out List<List<int>> sourceIndices)
         {
-            List<Brep> surfaces = new List<Brep>();
+            List<Face3D> surfaces = new List<Face3D>();
             sourceIndices = new List<List<int>>();
 
             //HashSet<double> splitParams = new HashSet<double>();
@@ -147,15 +172,15 @@ namespace SAM.Analytical.Solver.Classes
             List<double> splitParams = new List<double>();
             splitParams.Add(0);
             splitParams.Add(1);
-            foreach (Line segment in SourceSegments)
+            foreach (Segment2D segment in SourceSegments)
             {
-                double fromParam = RhinoMath.Clamp(ProjectedAxis.ClosestParameter(segment.From), 0, 1);
-                double toParam = RhinoMath.Clamp(ProjectedAxis.ClosestParameter(segment.To), 0, 1);
+                double fromParam = SAM_Clamp(GetClosestParameter(ProjectedAxis, segment.Start), 0, 1);
+                double toParam = SAM_Clamp(GetClosestParameter(ProjectedAxis, segment.End), 0, 1);
                 // check if the params are already on the list
                 bool isNew = true; // check the START
                 for (int i = 0; i < splitParams.Count; i++)
                 {
-                    if (RhinoMath.EpsilonEquals(splitParams[i], fromParam, SAM_SnapSolver.SAMTolerance))
+                    if (Core.Query.AlmostEqual(splitParams[i], fromParam, SAM_SnapSolver.SAMTolerance))
                     {
                         isNew = false;
                         if (splitParams[i] != 0 && splitParams[i] != 1)
@@ -171,7 +196,7 @@ namespace SAM.Analytical.Solver.Classes
                 isNew = true; // same for the END param
                 for (int i = 0; i < splitParams.Count; i++)
                 {
-                    if (RhinoMath.EpsilonEquals(splitParams[i], toParam, SAM_SnapSolver.SAMTolerance))
+                    if (Core.Query.AlmostEqual(splitParams[i], toParam, SAM_SnapSolver.SAMTolerance))
                     {
                         isNew = false;
                         if (splitParams[i] != 0 && splitParams[i] != 1)
@@ -187,17 +212,17 @@ namespace SAM.Analytical.Solver.Classes
             }
             splitParams.Sort();
 
-            List<Line> splitSegments = new List<Line>();
+            List<Segment2D> splitSegments = new List<Segment2D>();
             for (int i = 0; i < splitParams.Count - 1; i++)
             {
-                Line piece = new Line(ProjectedAxis.PointAt(splitParams[i]), ProjectedAxis.PointAt(splitParams[i + 1]));
+                Segment2D piece = new Segment2D(ProjectedAxis.GetPoint(splitParams[i]), ProjectedAxis.GetPoint(splitParams[i + 1]));
                 // shorten the current piece to avoid taking neighbors indices
-                Line testPiece = piece;
-                testPiece.Extend(-1.5 * SAM_SnapSolver.ModelTolerance, -1.5 * SAM_SnapSolver.ModelTolerance);
+                Segment2D testPiece = piece;
+                testPiece.Extend(-1.5 * SAM_SnapSolver.ModelTolerance, true, true);
                 List<int> indices = new List<int>();
                 for (int j = 0; j < SourceSegments.Count; j++)
                 {
-                    if (testPiece.MinimumDistanceTo(SourceSegments[j]) < SAM_SnapSolver.ModelTolerance)
+                    if (testPiece.Distance(SourceSegments[j]) < SAM_SnapSolver.ModelTolerance)
                     {
                         indices.Add(SourceIndices[j]);
                     }
@@ -206,7 +231,7 @@ namespace SAM.Analytical.Solver.Classes
                 sourceIndices.Add(indices);
             }
 
-            foreach (Line s in splitSegments)
+            foreach (Segment2D s in splitSegments)
             {
                 surfaces.Add(GetBrep(s));
             }
@@ -218,25 +243,25 @@ namespace SAM.Analytical.Solver.Classes
         }
 
 
-        private double OrthoDistance2d(Point3d ptA, Point3d ptB)
+        private double OrthoDistance2d(Point2D ptA, Point2D ptB)
         {
-            double distance = Math.Abs(ptA.X - ptB.X);
-            distance += Math.Abs(ptA.Y - ptB.Y);
+            double distance = System.Math.Abs(ptA.X - ptB.X);
+            distance += System.Math.Abs(ptA.Y - ptB.Y);
             return distance;
         }
 
-        public bool TrySnapIfNaked(List<Point3d> possibleAnchors, double snappingDistance, out string report)
+        public bool TrySnapIfNaked(List<Point2D> possibleAnchors, double snappingDistance, out string report)
         {
             // TODO: checking if the node is naked should not be limited to the nodes - we need to check if it touches any wall as well
             //snappingDistance = MaxExtension;
-            double maxOrtho2dDistance = snappingDistance * Math.Sqrt(2); // don't look for points further than this
-            Point3d start = ProjectedAxis.From;
-            Point3d end = ProjectedAxis.To;
-            var startSnapCandidates = new List<Point3d>();
-            var endSnapCandidates = new List<Point3d>();
+            double maxOrtho2dDistance = snappingDistance * System.Math.Sqrt(2); // don't look for points further than this
+            Point2D start = ProjectedAxis.Start;
+            Point2D end = ProjectedAxis.End;
+            var startSnapCandidates = new List<Point2D>();
+            var endSnapCandidates = new List<Point2D>();
             bool startIsNaked = this.NakedStart;
             bool endIsNaked = this.NakedEnd;
-            foreach (Point3d anchorCandidate in possibleAnchors)
+            foreach (Point2D anchorCandidate in possibleAnchors)
             {
                 if (startIsNaked)
                 {
@@ -273,26 +298,25 @@ namespace SAM.Analytical.Solver.Classes
                 report = "Not snapped because no nodes are naked";
                 return false;
             }
-            Point3d newStart = Point3d.Unset;
-            Point3d newEnd = Point3d.Unset;
-            double minDot = Math.Cos(2 * Math.PI / 3); // allow for 120 degrees
+            Point2D newStart = Point2D.Invalid;
+            Point2D newEnd = Point2D.Invalid;
+            double minDot = System.Math.Cos(2 * System.Math.PI / 3); // allow for 120 degrees
                                                        //double minDot = -1; // allow for 120 degrees
 
             if (startIsNaked && startSnapCandidates.Count > 0) // find the best anchor
             {
-                Vector3d startExtensionDirection = ProjectedAxis.UnitTangent * -1;
-                Point3d closestCandidate = Point3d.Unset;
+                Vector2D startExtensionDirection = ProjectedAxis.Direction.Unit * -1;
+                Point2D closestCandidate = Point2D.Invalid;
                 double shortestDistance = double.PositiveInfinity;
-                foreach (Point3d candidate in startSnapCandidates)
+                foreach (Point2D candidate in startSnapCandidates)
                 {
-                    Vector3d snapDirection = candidate - start;
-                    snapDirection.Unitize();
+                    Vector2D snapDirection = (candidate - start).Unit;
                     double dot = startExtensionDirection * snapDirection;
                     if (dot <= minDot) // snap only forward
                     {
                         continue;
                     }
-                    double distance = candidate.DistanceTo(start);
+                    double distance = candidate.Distance(start);
                     if (distance < shortestDistance && distance < snappingDistance)
                     {
                         closestCandidate = candidate;
@@ -307,19 +331,18 @@ namespace SAM.Analytical.Solver.Classes
 
             if (endIsNaked && endSnapCandidates.Count > 0) // find the best anchor
             {
-                Vector3d endExtensionDirection = ProjectedAxis.UnitTangent;
-                Point3d closestCandidate = Point3d.Unset;
+                Vector2D endExtensionDirection = ProjectedAxis.Direction.Unit;
+                Point2D closestCandidate = Point2D.Invalid;
                 double shortestDistance = double.PositiveInfinity;
-                foreach (Point3d candidate in endSnapCandidates)
+                foreach (Point2D candidate in endSnapCandidates)
                 {
-                    Vector3d snapDirection = candidate - end;
-                    snapDirection.Unitize();
+                    Vector2D snapDirection = (candidate - end).Unit;
                     double dot = endExtensionDirection * snapDirection;
                     if (dot <= minDot) // snap only forward
                     {
                         continue;
                     }
-                    double distance = candidate.DistanceTo(end);
+                    double distance = candidate.Distance(end);
                     if (distance < shortestDistance && distance < snappingDistance)
                     {
                         closestCandidate = candidate;
@@ -332,31 +355,31 @@ namespace SAM.Analytical.Solver.Classes
                 }
             }
 
-            if ((newStart == Point3d.Unset) && (newEnd == Point3d.Unset))
+            if ((newStart == Point2D.Invalid) && (newEnd == Point2D.Invalid))
             {
                 report = "Not snapped because no anchors are within range";
                 return false;
             }
 
-            if (newStart != Point3d.Unset)
+            if (newStart != Point2D.Invalid)
             {
                 this.NakedStart = false;
             }
-            if (newEnd != Point3d.Unset)
+            if (newEnd != Point2D.Invalid)
             {
                 this.NakedEnd = false;
             }
-            newStart = (newStart == Point3d.Unset) ? ProjectedAxis.From : newStart;
-            newEnd = (newEnd == Point3d.Unset) ? ProjectedAxis.To : newEnd;
+            newStart = (newStart == Point2D.Invalid) ? ProjectedAxis.Start : newStart;
+            newEnd = (newEnd == Point2D.Invalid) ? ProjectedAxis.End : newEnd;
             UpdateEndPoints(newStart, newEnd, stretch: true);
             //ProjectedAxis = new Line(newStart, newEnd);
             report = "Snapped.";
             return true;
         }
 
-        public void UpdateWithTrim(Line newAxis)
+        public void UpdateWithTrim(Segment2D newAxis)
         {
-            UpdateEndPoints(newAxis.From, newAxis.To, stretch: true);
+            UpdateEndPoints(newAxis.Start, newAxis.End, stretch: true);
         }
 
         public bool TryBucketSnap(SAM_SnappedWall other, out bool otherMergedIn)
@@ -387,41 +410,41 @@ namespace SAM.Analytical.Solver.Classes
                 return false;
             }
 
-            double snappedStartParam = this.ProjectedAxis.ClosestParameter(other.ProjectedAxis.From);
-            double snappedEndParam = this.ProjectedAxis.ClosestParameter(other.ProjectedAxis.To);
-            Interval otherRange = new Interval(snappedStartParam, snappedEndParam);
-            otherRange.MakeIncreasing();
+            double snappedStartParam = GetClosestParameter(this.ProjectedAxis, other.ProjectedAxis.Start);
+            double snappedEndParam = GetClosestParameter(this.ProjectedAxis, other.ProjectedAxis.End);
+            Core.Range<double> otherRange = new Core.Range<double>(snappedStartParam, snappedEndParam);
+            otherRange = MakeRangeIncreasing(otherRange);
 
-            if (RhinoMath.EpsilonEquals(this.Elevation, other.Elevation, SAM_SnapSolver.ModelTolerance)) // same level - merge in
+            if (Core.Query.AlmostEqual(this.Elevation, other.Elevation, SAM_SnapSolver.ModelTolerance)) // same level - merge in
             {
                 otherMergedIn = true;
-                Interval thisNewRange = new Interval(Math.Min(otherRange.Min, 0), Math.Max(otherRange.Max, 1));
-                Point3d newStart = this.ProjectedAxis.PointAt(thisNewRange.Min);
-                Point3d newEnd = this.ProjectedAxis.PointAt(thisNewRange.Max);
+                Core.Range<double> thisNewRange = new Core.Range<double>(System.Math.Min(otherRange.Min, 0), System.Math.Max(otherRange.Max, 1));
+                Point2D newStart = this.ProjectedAxis.GetPoint(thisNewRange.Min);
+                Point2D newEnd = this.ProjectedAxis.GetPoint(thisNewRange.Max);
                 SourceIndices.AddRange(other.SourceIndices);
                 SourceSegments.AddRange(other.SourceSegments);
                 // todo: compare weights and decide whether to average or snap
                 double weightTolerance = this.Weight * 0.01;
-                if (RhinoMath.EpsilonEquals(this.Weight, other.Weight, weightTolerance)) // both have the same weight
+                if (Core.Query.AlmostEqual(this.Weight, other.Weight, weightTolerance)) // both have the same weight
                 {
                     // find an average position and increase the bucket size accordingly
-                    Vector3d mergeDirection = this.ProjectedAxis.ClosestPoint(other.ProjectedAxis.From, limitToFiniteSegment: false) - other.ProjectedAxis.From;
+                    Vector2D mergeDirection = this.ProjectedAxis.Closest(other.ProjectedAxis.Start, false) - other.ProjectedAxis.Start;
                     mergeDirection /= 2;
                     this.BucketSize += mergeDirection.Length;
-                    newStart -= mergeDirection;
-                    newEnd -= mergeDirection;
+                    newStart = new Point2D(newStart.X - mergeDirection.X, newStart.Y - mergeDirection.Y);
+                    newEnd = new Point2D(newEnd.X - mergeDirection.X, newEnd.Y - mergeDirection.Y);
                 }
                 UpdateEndPoints(newStart, newEnd, stretch: false);
             }
             else // just snap the other
             {
                 otherMergedIn = false;
-                Point3d newStart = this.ProjectedAxis.PointAt(snappedStartParam);
-                Point3d newEnd = this.ProjectedAxis.PointAt(snappedEndParam);
+                Point2D newStart = this.ProjectedAxis.GetPoint(snappedStartParam);
+                Point2D newEnd = this.ProjectedAxis.GetPoint(snappedEndParam);
                 other.UpdateEndPoints(newStart, newEnd, stretch: true);
 
                 //check if anything has changed
-                double delta = newStart.DistanceTo(other.ProjectedAxis.From) + newEnd.DistanceTo(other.ProjectedAxis.To);
+                double delta = newStart.Distance(other.ProjectedAxis.Start) + newEnd.Distance(other.ProjectedAxis.End);
                 if (delta < SAM_SnapSolver.SAMTolerance)
                 {
                     return false;
@@ -431,40 +454,47 @@ namespace SAM.Analytical.Solver.Classes
             return true;
         }
 
-        private void UpdateEndPoints(Point3d newStart, Point3d newEnd, bool stretch = false)
+        private Core.Range<double> MakeRangeIncreasing(Core.Range<double> range)
         {
-            Line previousAxis = ProjectedAxis;
-            ProjectedAxis = new Line(newStart, newEnd);
+            if (range.Min > range.Max)
+                return new Core.Range<double>(range.Max, range.Min);
+            else return range;
+        }
+
+        private void UpdateEndPoints(Point2D newStart, Point2D newEnd, bool stretch = false)
+        {
+            Segment2D previousAxis = ProjectedAxis;
+            ProjectedAxis = new Segment2D(newStart, newEnd);
             // source segments need to be adjusted here
             SnapSourceSegments(previousAxis, SAM_SnapSolver.MinWallSegmentLength, stretch);
         }
 
-        public List<SAM_SnappedWall> SnapSegmentsSplitAndExplode(List<Point3d> additionalSplitLocations, double snappingDistance, bool allowMovingEnds = false)
+        public List<SAM_SnappedWall> SnapSegmentsSplitAndExplode(List<Point2D> additionalSplitLocations, double snappingDistance, bool allowMovingEnds = false)
         {
-            additionalSplitLocations = additionalSplitLocations.Select(pt => ProjectedAxis.ClosestPoint(pt, true)).ToList(); // make sure they lie on the axis
+            additionalSplitLocations = additionalSplitLocations.Select(pt => ProjectedAxis.Closest(pt, true)).ToList(); // make sure they lie on the axis
             bool[] splitMade = new bool[additionalSplitLocations.Count];
 
             // first, snap the segments' end points to the split locations
-            Point3d[] segmentEndPoints = new Point3d[SourceSegments.Count * 2];
+            Point2D[] segmentEndPoints = new Point2D[SourceSegments.Count * 2];
             for (int i = 0; i < SourceSegments.Count; i++)
             {
-                segmentEndPoints[2 * i] = SourceSegments[i].From;
-                segmentEndPoints[2 * i + 1] = SourceSegments[i].To;
+                segmentEndPoints[2 * i] = SourceSegments[i].Start;
+                segmentEndPoints[2 * i + 1] = SourceSegments[i].End;
             }
 
             for (int i = 0; i < segmentEndPoints.Length; i++)
             {
                 if (!allowMovingEnds)
                 {
-                    double closestParam = ProjectedAxis.ClosestParameter(segmentEndPoints[i]);
-                    if (RhinoMath.EpsilonEquals(closestParam, 0, SAM_SnapSolver.ModelTolerance) || RhinoMath.EpsilonEquals(closestParam, 1, SAM_SnapSolver.ModelTolerance))
+                    double closestParam = GetClosestParameter(ProjectedAxis, segmentEndPoints[i]);
+                    if (Core.Query.AlmostEqual(closestParam, 0, SAM_SnapSolver.ModelTolerance) || Core.Query.AlmostEqual(closestParam, 1, SAM_SnapSolver.ModelTolerance))
                     {
                         continue;
                     }
                 }
                 for (int j = 0; j < additionalSplitLocations.Count; j++)
                 {
-                    if (segmentEndPoints[i].DistanceTo(additionalSplitLocations[j]) <= snappingDistance)
+                    if (segmentEndPoints[i].Distance(additionalSplitLocations[j]) <= snappingDistance)
                     {
                         segmentEndPoints[i] = additionalSplitLocations[j];
                         splitMade[j] = true;
@@ -474,7 +504,7 @@ namespace SAM.Analytical.Solver.Classes
             //recreate the segments
             for (int i = 0; i < SourceSegments.Count; i++)
             {
-                Line snappedSegment = new Line(segmentEndPoints[2 * i], segmentEndPoints[2 * i + 1]);
+                Segment2D snappedSegment = new Segment2D(segmentEndPoints[2 * i], segmentEndPoints[2 * i + 1]);
                 SourceSegments[i] = snappedSegment;
             }
 
@@ -482,16 +512,16 @@ namespace SAM.Analytical.Solver.Classes
             List<double> splitParams = new List<double>();
             splitParams.Add(0.0);
             splitParams.Add(1.0);
-            foreach (Line segment in SourceSegments)
+            foreach (Segment2D segment in SourceSegments)
             {
-                double fromParam = RhinoMath.Clamp(ProjectedAxis.ClosestParameter(segment.From), 0, 1);
-                double toParam = RhinoMath.Clamp(ProjectedAxis.ClosestParameter(segment.To), 0, 1);
+                double fromParam = SAM_Clamp(GetClosestParameter(ProjectedAxis, segment.Start), 0, 1);
+                double toParam = SAM_Clamp(GetClosestParameter(ProjectedAxis, segment.End), 0, 1);
 
                 // check if the params are already on the list
                 bool isNew = true; // check the START
                 for (int i = 0; i < splitParams.Count; i++)
                 {
-                    if (RhinoMath.EpsilonEquals(splitParams[i], fromParam, SAM_SnapSolver.SAMTolerance))
+                    if (Core.Query.AlmostEqual(splitParams[i], fromParam, SAM_SnapSolver.SAMTolerance))
                     {
                         isNew = false;
                         if (splitParams[i] != 0 && splitParams[i] != 1)
@@ -507,7 +537,7 @@ namespace SAM.Analytical.Solver.Classes
                 isNew = true; // same for the END param
                 for (int i = 0; i < splitParams.Count; i++)
                 {
-                    if (RhinoMath.EpsilonEquals(splitParams[i], toParam, SAM_SnapSolver.SAMTolerance))
+                    if (Core.Query.AlmostEqual(splitParams[i], toParam, SAM_SnapSolver.SAMTolerance))
                     {
                         isNew = false;
                         if (splitParams[i] != 0 && splitParams[i] != 1)
@@ -529,11 +559,11 @@ namespace SAM.Analytical.Solver.Classes
                 { // already covered by adjusting the segments
                     continue;
                 }
-                double newSplit = RhinoMath.Clamp(ProjectedAxis.ClosestParameter(additionalSplitLocations[i]), 0, 1);
+                double newSplit = SAM_Clamp(GetClosestParameter(ProjectedAxis, additionalSplitLocations[i]), 0, 1);
                 bool isNew = true; // same for the END param
                 for (int j = 0; j < splitParams.Count; j++)
                 {
-                    if (RhinoMath.EpsilonEquals(splitParams[j], newSplit, SAM_SnapSolver.SAMTolerance))
+                    if (Core.Query.AlmostEqual(splitParams[j], newSplit, SAM_SnapSolver.SAMTolerance))
                     {
                         isNew = false;
                         if (splitParams[j] != 0 && splitParams[j] != 1)
@@ -549,18 +579,18 @@ namespace SAM.Analytical.Solver.Classes
             }
             splitParams.Sort();
 
-            List<Line> splitSegments = new List<Line>();
+            List<Segment2D> splitSegments = new List<Segment2D>();
             List<List<int>> sourceIndices = new List<List<int>>();
             for (int i = 0; i < splitParams.Count - 1; i++)
             {
-                Line piece = new Line(ProjectedAxis.PointAt(splitParams[i]), ProjectedAxis.PointAt(splitParams[i + 1]));
+                Segment2D piece = new Segment2D(ProjectedAxis.GetPoint(splitParams[i]), ProjectedAxis.GetPoint(splitParams[i + 1]));
                 // shorten the current piece to avoid taking neighbours' indices
-                Line testPiece = piece;
-                testPiece.Extend(-1.5 * SAM_SnapSolver.ModelTolerance, -1.5 * SAM_SnapSolver.ModelTolerance);
+                Segment2D testPiece = piece;
+                testPiece.Extend(-1.5 * SAM_SnapSolver.ModelTolerance, true, true);
                 List<int> indices = new List<int>();
                 for (int j = 0; j < SourceSegments.Count; j++)
                 {
-                    if (testPiece.MinimumDistanceTo(SourceSegments[j]) < SAM_SnapSolver.ModelTolerance)
+                    if (testPiece.Distance(SourceSegments[j]) < SAM_SnapSolver.ModelTolerance)
                     {
                         indices.Add(SourceIndices[j]);
                     }
@@ -573,13 +603,14 @@ namespace SAM.Analytical.Solver.Classes
             List<SAM_SnappedWall> splitWalls = new List<SAM_SnappedWall>();
             for (int i = 0; i < splitSegments.Count; i++)
             {
-                if (splitSegments[i].Length < SAM_SnapSolver.SAMTolerance || sourceIndices[i].Count < 1)
+                if (splitSegments[i].GetLength() < SAM_SnapSolver.SAMTolerance || sourceIndices[i].Count < 1)
                 {
                     continue;
                 }
-                Line newAxis = splitSegments[i];
-                newAxis.Transform(Transform.Translation(new Vector3d(0, 0, Elevation)));
-                SAM_SnappedWall wallSegment = new SnappedWall(sourceIndices[i][0], newAxis, Weight, BucketSize, MaxExtension, OriginalHeight);
+                Segment2D newAxis = splitSegments[i];
+                var newAxis3D = this._projectionPlane.Convert(newAxis);
+                newAxis3D.GetMoved(new Vector3D(0, 0, Elevation));
+                SAM_SnappedWall wallSegment = new SAM_SnappedWall(sourceIndices[i][0], newAxis3D, Weight, BucketSize, MaxExtension, OriginalHeight);
                 // add the rest of the source indices
                 for (int j = 1; j < sourceIndices[i].Count; j++)
                 {
@@ -591,65 +622,72 @@ namespace SAM.Analytical.Solver.Classes
             return splitWalls;
         }
 
-        private void SnapSourceSegments(Line previousAxis, double snappingTolerance, bool stretchEnds = false)
+        private double SAM_Clamp(double parameter, double bottom, double top)
+        {
+            if (parameter < bottom) return bottom;
+            if (parameter > top) return top;
+            return parameter;
+        }
+
+        private void SnapSourceSegments(Segment2D previousAxis, double snappingTolerance, bool stretchEnds = false)
         {
             for (int i = 0; i < SourceSegments.Count; i++)
             {
-                Line currentSegment = SourceSegments[i];
+                Segment2D currentSegment = SourceSegments[i];
 
-                Point3d snappedStart = ProjectedAxis.ClosestPoint(currentSegment.From, false);
-                Point3d snappedEnd = ProjectedAxis.ClosestPoint(currentSegment.To, false);
+                Point2D snappedStart = ProjectedAxis.Closest(currentSegment.Start, false);
+                Point2D snappedEnd = ProjectedAxis.Closest(currentSegment.End, false);
 
                 if (stretchEnds)
                 {
-                    Point3d previousStart = previousAxis.ClosestPoint(currentSegment.From, false);
-                    Point3d previousEnd = previousAxis.ClosestPoint(currentSegment.To, false);
+                    Point2D previousStart = previousAxis.Closest(currentSegment.Start, false);
+                    Point2D previousEnd = previousAxis.Closest(currentSegment.End, false);
 
-                    if (previousStart.DistanceTo(previousAxis.From) <= snappingTolerance)
+                    if (previousStart.Distance(previousAxis.Start) <= snappingTolerance)
                     {
-                        snappedStart = ProjectedAxis.From;
+                        snappedStart = ProjectedAxis.Start;
                     }
-                    if (previousStart.DistanceTo(previousAxis.To) <= snappingTolerance)
+                    if (previousStart.Distance(previousAxis.End) <= snappingTolerance)
                     {
-                        snappedStart = ProjectedAxis.To;
+                        snappedStart = ProjectedAxis.End;
                     }
-                    if (previousEnd.DistanceTo(previousAxis.From) <= snappingTolerance)
+                    if (previousEnd.Distance(previousAxis.Start) <= snappingTolerance)
                     {
-                        snappedEnd = ProjectedAxis.From;
+                        snappedEnd = ProjectedAxis.Start;
                     }
-                    if (previousEnd.DistanceTo(previousAxis.To) <= snappingTolerance)
+                    if (previousEnd.Distance(previousAxis.End) <= snappingTolerance)
                     {
-                        snappedEnd = ProjectedAxis.To;
+                        snappedEnd = ProjectedAxis.End;
                     }
                 }
 
                 // clamp to finite segment
-                double startParam = ProjectedAxis.ClosestParameter(snappedStart);
-                RhinoMath.Clamp(startParam, 0, 1);
-                double endParam = ProjectedAxis.ClosestParameter(snappedEnd);
-                RhinoMath.Clamp(endParam, 0, 1);
+                double startParam = GetClosestParameter(ProjectedAxis, snappedStart);
+                //RhinoMath.Clamp(startParam, 0, 1);
+                double endParam = GetClosestParameter(ProjectedAxis, snappedEnd);
+                //RhinoMath.Clamp(endParam, 0, 1);
 
-                snappedStart = ProjectedAxis.PointAt(startParam);
-                snappedEnd = ProjectedAxis.PointAt(endParam);
+                snappedStart = ProjectedAxis.GetPoint(startParam);
+                snappedEnd = ProjectedAxis.GetPoint(endParam);
 
-                if (snappedStart.DistanceTo(ProjectedAxis.From) <= snappingTolerance)
+                if (snappedStart.Distance(ProjectedAxis.Start) <= snappingTolerance)
                 {
-                    snappedStart = ProjectedAxis.From;
+                    snappedStart = ProjectedAxis.Start;
                 }
-                if (snappedEnd.DistanceTo(ProjectedAxis.To) <= snappingTolerance)
+                if (snappedEnd.Distance(ProjectedAxis.End) <= snappingTolerance)
                 {
-                    snappedEnd = ProjectedAxis.To;
+                    snappedEnd = ProjectedAxis.End;
                 }
 
-                SourceSegments[i] = new Line(snappedStart, snappedEnd);
+                SourceSegments[i] = new Segment2D(snappedStart, snappedEnd);
             }
 
             // now snap the points together to remove gaps
-            Point3d[] segmentEndPoints = new Point3d[SourceSegments.Count * 2];
+            Point2D[] segmentEndPoints = new Point2D[SourceSegments.Count * 2];
             for (int i = 0; i < SourceSegments.Count; i++)
             {
-                segmentEndPoints[2 * i] = SourceSegments[i].From;
-                segmentEndPoints[2 * i + 1] = SourceSegments[i].To;
+                segmentEndPoints[2 * i] = SourceSegments[i].Start;
+                segmentEndPoints[2 * i + 1] = SourceSegments[i].End;
             }
 
 
@@ -669,7 +707,7 @@ namespace SAM.Analytical.Solver.Classes
                     {
                         continue;
                     }
-                    if (segmentEndPoints[i].DistanceTo(segmentEndPoints[j]) <= snappingTolerance)
+                    if (segmentEndPoints[i].Distance(segmentEndPoints[j]) <= snappingTolerance)
                     {
                         indicesToSnap.Add(j);
                     }
@@ -697,11 +735,11 @@ namespace SAM.Analytical.Solver.Classes
                 bool snapToEnd = false;
                 foreach (int p in indicesToSnap)
                 {
-                    if (segmentEndPoints[p].DistanceTo(ProjectedAxis.From) <= snappingTolerance)
+                    if (segmentEndPoints[p].Distance(ProjectedAxis.Start) <= snappingTolerance)
                     {
                         snapToStart = true;
                     }
-                    if (segmentEndPoints[p].DistanceTo(ProjectedAxis.To) <= snappingTolerance)
+                    if (segmentEndPoints[p].Distance(ProjectedAxis.End) <= snappingTolerance)
                     {
                         snapToEnd = true;
                     }
@@ -711,22 +749,22 @@ namespace SAM.Analytical.Solver.Classes
                     continue;
                 }
 
-                Point3d averagePt = new Point3d();
+                Point2D averagePt = new Point2D();
                 if (snapToStart)
                 {
-                    averagePt = ProjectedAxis.From;
+                    averagePt = ProjectedAxis.Start;
                 }
                 else if (snapToEnd)
                 {
-                    averagePt = ProjectedAxis.To;
+                    averagePt = ProjectedAxis.End;
                 }
                 else
                 { // calculate an average position
                     foreach (int p in indicesToSnap)
                     {
-                        averagePt += segmentEndPoints[p];
+                        averagePt = new Point2D(averagePt.X + segmentEndPoints[p].X, averagePt.Y + segmentEndPoints[p].Y);
                     }
-                    averagePt /= indicesToSnap.Count;
+                    averagePt = new Point2D(averagePt.X / indicesToSnap.Count, averagePt.Y / indicesToSnap.Count);
                 }
                 foreach (int p in indicesToSnap)
                 {
@@ -741,19 +779,18 @@ namespace SAM.Analytical.Solver.Classes
 
             for (int i = 0; i < SourceSegments.Count; i++)
             {
-                Line snappedSegment = new Line(segmentEndPoints[2 * i], segmentEndPoints[2 * i + 1]);
+                Segment2D snappedSegment = new Segment2D(segmentEndPoints[2 * i], segmentEndPoints[2 * i + 1]);
                 SourceSegments[i] = snappedSegment;
             }
         }
 
         public bool IsRoughlyColinearWith(SAM_SnappedWall other, double angleToleranceRad)
         {
-            double minAbsDot = Math.Cos(angleToleranceRad);
-            Vector3d directionA = this.ProjectedAxis.Direction;
-            Vector3d directionB = other.ProjectedAxis.Direction;
-            directionA.Unitize();
-            directionB.Unitize();
-            double absDotProduct = Math.Abs(directionA * directionB);
+            double minAbsDot = System.Math.Cos(angleToleranceRad);
+            Vector2D directionA = this.ProjectedAxis.Direction.Unit;
+            Vector2D directionB = other.ProjectedAxis.Direction.Unit;
+
+            double absDotProduct = System.Math.Abs(directionA * directionB);
             if (absDotProduct < minAbsDot) // too large difference in direction
             {
                 return false;
@@ -761,43 +798,42 @@ namespace SAM.Analytical.Solver.Classes
             return true;
         }
 
-        private double MaxProjectionDistance(Line lineA, Line lineB)
+        private double MaxProjectionDistance(Segment2D lineA, Segment2D lineB)
         {
             // calculate average projection distance between lines' end points
-            double maxDistance = lineA.ClosestPoint(lineB.From, limitToFiniteSegment: false).DistanceTo(lineB.From);
-            maxDistance = Math.Max(maxDistance, lineA.ClosestPoint(lineB.To, limitToFiniteSegment: false).DistanceTo(lineB.To));
+            double maxDistance = lineA.Closest(lineB.Start, false).Distance(lineB.Start);
+            maxDistance = System.Math.Max(maxDistance, lineA.Closest(lineB.End, false).Distance(lineB.End));
 
             return maxDistance;
         }
 
 
-        private double LineProjectionDistance(Line lineA, Line lineB)
+        private double LineProjectionDistance(Segment2D lineA, Segment2D lineB)
         {
             // calculate average projection distance between lines' end points
             double averageDistance = 0;
-            averageDistance += lineA.ClosestPoint(lineB.From, limitToFiniteSegment: false).DistanceTo(lineB.From);
-            averageDistance += lineA.ClosestPoint(lineB.To, limitToFiniteSegment: false).DistanceTo(lineB.To);
-            averageDistance += lineB.ClosestPoint(lineA.From, limitToFiniteSegment: false).DistanceTo(lineA.From);
-            averageDistance += lineB.ClosestPoint(lineA.To, limitToFiniteSegment: false).DistanceTo(lineA.To);
+            averageDistance += lineA.Closest(lineB.Start, false).Distance(lineB.Start);
+            averageDistance += lineA.Closest(lineB.End, false).Distance(lineB.End);
+            averageDistance += lineB.Closest(lineA.Start, false).Distance(lineA.Start);
+            averageDistance += lineB.Closest(lineA.End, false).Distance(lineA.End);
             averageDistance /= 4;
 
             return averageDistance;
         }
-
         private bool BucketContains(SAM_SnappedWall other, out bool fully)
         {
             fully = false;
-            Line dominantLine = this.ProjectedAxis;
-            Line otherLine = other.ProjectedAxis;
-            double paramFrom = dominantLine.ClosestParameter(otherLine.From);
-            double paramTo = dominantLine.ClosestParameter(otherLine.To);
+            Segment2D dominantLine = this.ProjectedAxis;
+            Segment2D otherLine = other.ProjectedAxis;
+            double paramFrom = GetClosestParameter(dominantLine, otherLine.Start);
+            double paramTo = GetClosestParameter(dominantLine, otherLine.End);
 
             double paramBucketMargin = this.MaxExtension / this.Length;
-            Interval dominantRange = new Interval(-paramBucketMargin, 1 + paramBucketMargin);
+            Core.Range<double> dominantRange = new Core.Range<double>(-paramBucketMargin, 1 + paramBucketMargin);
             //Interval dominantRange = new Interval(-0.05, 1.05);
 
-            bool containsStart = dominantRange.IncludesParameter(paramFrom, strict: false);
-            bool containsEnd = dominantRange.IncludesParameter(paramTo, strict: false);
+            bool containsStart = dominantRange.In(paramFrom);
+            bool containsEnd = dominantRange.In(paramTo);
             fully = containsStart && containsEnd;
 
             if (containsStart || containsEnd)
@@ -806,14 +842,19 @@ namespace SAM.Analytical.Solver.Classes
                 return true;
             }
 
-            Interval otherRange = new Interval(paramFrom, paramTo);
-            if (otherRange.IncludesInterval(dominantRange, strict: false))
+            Core.Range<double> otherRange = new Core.Range<double>(paramFrom, paramTo);
+            if (otherRange.In(dominantRange.Min) && otherRange.In(dominantRange.Max))
             {
                 fully = true;
                 //Debug.Print("By other - this{0}, other{1}, fully:{2}", this.SourceIndices[0], other.SourceIndices[0], fully);
                 return true;
             }
             return false;
+        }
+        private double GetClosestParameter(Segment2D segment, Point2D point)
+        {
+            var pointClosestToSegment = segment.Closest(point);
+            return segment.GetParameter(pointClosestToSegment);
         }
     }
 }

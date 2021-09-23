@@ -11,7 +11,6 @@ namespace SAM.Analytical.Solver.Classes
     public class SAM_SnappedWall
     {
         private Segment2D _projectedAxis = default(Segment2D);
-        private Plane _projectionPlane = Plane.WorldXY;
         public Segment2D ProjectedAxis
         {
             get
@@ -85,9 +84,9 @@ namespace SAM.Analytical.Solver.Classes
         }
 
         //not supposed to have references
-        public Face3D GetBrep()
+        public Face3D GetFace3D()
         {
-            var base3d = this._projectionPlane.Convert(this.ProjectedAxis);
+            var base3d = SAM_SnapSolver.ProjectionPlane.Convert(this.ProjectedAxis);
             var bottomElevation = this.OriginalHeight.Min;
             var topElevation = this.OriginalHeight.Max;
 
@@ -112,7 +111,7 @@ namespace SAM.Analytical.Solver.Classes
 
         private Face3D GetBrep(Segment2D segment)
         {
-            var base3d = this._projectionPlane.Convert(segment);
+            var base3d = SAM_SnapSolver.ProjectionPlane.Convert(segment);
             var bottomElevation = this.OriginalHeight.Min;
             var topElevation = this.OriginalHeight.Max;
 
@@ -174,8 +173,8 @@ namespace SAM.Analytical.Solver.Classes
             splitParams.Add(1);
             foreach (Segment2D segment in SourceSegments)
             {
-                double fromParam = SAM_Clamp(GetClosestParameter(ProjectedAxis, segment.Start), 0, 1);
-                double toParam = SAM_Clamp(GetClosestParameter(ProjectedAxis, segment.End), 0, 1);
+                double fromParam = SAM_Clamp(SAM_SnapSolver.SAM_GetClosestParameter(ProjectedAxis, segment.Start), 0, 1);
+                double toParam = SAM_Clamp(SAM_SnapSolver.SAM_GetClosestParameter(ProjectedAxis, segment.End), 0, 1);
                 // check if the params are already on the list
                 bool isNew = true; // check the START
                 for (int i = 0; i < splitParams.Count; i++)
@@ -410,8 +409,8 @@ namespace SAM.Analytical.Solver.Classes
                 return false;
             }
 
-            double snappedStartParam = GetClosestParameter(this.ProjectedAxis, other.ProjectedAxis.Start);
-            double snappedEndParam = GetClosestParameter(this.ProjectedAxis, other.ProjectedAxis.End);
+            double snappedStartParam = SAM_SnapSolver.SAM_GetClosestParameter(this.ProjectedAxis, other.ProjectedAxis.Start);
+            double snappedEndParam = SAM_SnapSolver.SAM_GetClosestParameter(this.ProjectedAxis, other.ProjectedAxis.End);
             Core.Range<double> otherRange = new Core.Range<double>(snappedStartParam, snappedEndParam);
             otherRange = MakeRangeIncreasing(otherRange);
 
@@ -486,7 +485,7 @@ namespace SAM.Analytical.Solver.Classes
             {
                 if (!allowMovingEnds)
                 {
-                    double closestParam = GetClosestParameter(ProjectedAxis, segmentEndPoints[i]);
+                    double closestParam = SAM_SnapSolver.SAM_GetClosestParameter(ProjectedAxis, segmentEndPoints[i]);
                     if (Core.Query.AlmostEqual(closestParam, 0, SAM_SnapSolver.ModelTolerance) || Core.Query.AlmostEqual(closestParam, 1, SAM_SnapSolver.ModelTolerance))
                     {
                         continue;
@@ -514,8 +513,8 @@ namespace SAM.Analytical.Solver.Classes
             splitParams.Add(1.0);
             foreach (Segment2D segment in SourceSegments)
             {
-                double fromParam = SAM_Clamp(GetClosestParameter(ProjectedAxis, segment.Start), 0, 1);
-                double toParam = SAM_Clamp(GetClosestParameter(ProjectedAxis, segment.End), 0, 1);
+                double fromParam = SAM_Clamp(SAM_SnapSolver.SAM_GetClosestParameter(ProjectedAxis, segment.Start), 0, 1);
+                double toParam = SAM_Clamp(SAM_SnapSolver.SAM_GetClosestParameter(ProjectedAxis, segment.End), 0, 1);
 
                 // check if the params are already on the list
                 bool isNew = true; // check the START
@@ -559,7 +558,7 @@ namespace SAM.Analytical.Solver.Classes
                 { // already covered by adjusting the segments
                     continue;
                 }
-                double newSplit = SAM_Clamp(GetClosestParameter(ProjectedAxis, additionalSplitLocations[i]), 0, 1);
+                double newSplit = SAM_Clamp(SAM_SnapSolver.SAM_GetClosestParameter(ProjectedAxis, additionalSplitLocations[i]), 0, 1);
                 bool isNew = true; // same for the END param
                 for (int j = 0; j < splitParams.Count; j++)
                 {
@@ -608,7 +607,7 @@ namespace SAM.Analytical.Solver.Classes
                     continue;
                 }
                 Segment2D newAxis = splitSegments[i];
-                var newAxis3D = this._projectionPlane.Convert(newAxis);
+                var newAxis3D = SAM_SnapSolver.ProjectionPlane.Convert(newAxis);
                 newAxis3D.GetMoved(new Vector3D(0, 0, Elevation));
                 SAM_SnappedWall wallSegment = new SAM_SnappedWall(sourceIndices[i][0], newAxis3D, Weight, BucketSize, MaxExtension, OriginalHeight);
                 // add the rest of the source indices
@@ -621,14 +620,6 @@ namespace SAM.Analytical.Solver.Classes
             }
             return splitWalls;
         }
-
-        private double SAM_Clamp(double parameter, double bottom, double top)
-        {
-            if (parameter < bottom) return bottom;
-            if (parameter > top) return top;
-            return parameter;
-        }
-
         private void SnapSourceSegments(Segment2D previousAxis, double snappingTolerance, bool stretchEnds = false)
         {
             for (int i = 0; i < SourceSegments.Count; i++)
@@ -662,9 +653,9 @@ namespace SAM.Analytical.Solver.Classes
                 }
 
                 // clamp to finite segment
-                double startParam = GetClosestParameter(ProjectedAxis, snappedStart);
+                double startParam = SAM_SnapSolver.SAM_GetClosestParameter(ProjectedAxis, snappedStart);
                 //RhinoMath.Clamp(startParam, 0, 1);
-                double endParam = GetClosestParameter(ProjectedAxis, snappedEnd);
+                double endParam = SAM_SnapSolver.SAM_GetClosestParameter(ProjectedAxis, snappedEnd);
                 //RhinoMath.Clamp(endParam, 0, 1);
 
                 snappedStart = ProjectedAxis.GetPoint(startParam);
@@ -825,8 +816,8 @@ namespace SAM.Analytical.Solver.Classes
             fully = false;
             Segment2D dominantLine = this.ProjectedAxis;
             Segment2D otherLine = other.ProjectedAxis;
-            double paramFrom = GetClosestParameter(dominantLine, otherLine.Start);
-            double paramTo = GetClosestParameter(dominantLine, otherLine.End);
+            double paramFrom = SAM_SnapSolver.SAM_GetClosestParameter(dominantLine, otherLine.Start);
+            double paramTo = SAM_SnapSolver.SAM_GetClosestParameter(dominantLine, otherLine.End);
 
             double paramBucketMargin = this.MaxExtension / this.Length;
             Core.Range<double> dominantRange = new Core.Range<double>(-paramBucketMargin, 1 + paramBucketMargin);
@@ -851,10 +842,11 @@ namespace SAM.Analytical.Solver.Classes
             }
             return false;
         }
-        private double GetClosestParameter(Segment2D segment, Point2D point)
+        private double SAM_Clamp(double parameter, double bottom, double top)
         {
-            var pointClosestToSegment = segment.Closest(point);
-            return segment.GetParameter(pointClosestToSegment);
+            if (parameter < bottom) return bottom;
+            if (parameter > top) return top;
+            return parameter;
         }
     }
 }

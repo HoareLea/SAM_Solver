@@ -135,7 +135,7 @@ namespace SAM.Analytical.Solver.Classes
             //return surface.ToBrep();
         }
 
-        public List<Face3D> GetBreps(out List<List<int>> sourceIndices)
+        public List<Face3D> GetFaces3D(out List<List<int>> sourceIndices)
         {
             List<Face3D> surfaces = new List<Face3D>();
             sourceIndices = new List<List<int>>();
@@ -654,9 +654,9 @@ namespace SAM.Analytical.Solver.Classes
 
                 // clamp to finite segment
                 double startParam = SAM_SnapSolver.SAM_GetClosestParameter(ProjectedAxis, snappedStart);
-                //RhinoMath.Clamp(startParam, 0, 1);
+                startParam = SAM_Clamp(startParam, 0, 1);
                 double endParam = SAM_SnapSolver.SAM_GetClosestParameter(ProjectedAxis, snappedEnd);
-                //RhinoMath.Clamp(endParam, 0, 1);
+                endParam = SAM_Clamp(endParam, 0, 1);
 
                 snappedStart = ProjectedAxis.GetPoint(startParam);
                 snappedEnd = ProjectedAxis.GetPoint(endParam);

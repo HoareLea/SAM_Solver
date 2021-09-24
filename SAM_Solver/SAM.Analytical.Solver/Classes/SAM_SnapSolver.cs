@@ -137,37 +137,28 @@ namespace SAM.Analytical.Solver.Classes
             MarkNakedNodes(snapped);
 
             SortedList<double, List<SAM_SnappedWall>> snappedWallsPerFloor = SortWallsByElevation(snapped);
-            GH_Path levelPath = new GH_Path(0);
-            foreach (double level in snappedWallsPerFloor.Keys)
+            //GH_Path levelPath = new GH_Path(0);
+            for (int i = 0; i < snappedWallsPerFloor.Keys.Count; i++)
             {
-                SnappedWalls.EnsurePath(levelPath);
-                NakedEnds.EnsurePath(levelPath);
-                List<SAM_SnappedWall> currentFloor = snappedWallsPerFloor[level];
-                int segmentCount = 0;
-                for (int i = 0; i < currentFloor.Count; i++)
+                NakedEnds.Add(new List<Point2D>());
+                List<SAM_SnappedWall> currentFloor = snappedWallsPerFloor[snappedWallsPerFloor.Keys[i]];
+                for (int j = 0; j < currentFloor.Count; j++)
                 {
                     List<List<int>> source = new List<List<int>>();
-                    List<Face3D> wallSegments = currentFloor[i].GetBreps(out source);
-                    for (int j = 0; j < wallSegments.Count; j++)
-                    {
-                        GH_Path wallPath = levelPath.AppendElement(segmentCount);
-                        SnappedSources.EnsurePath(wallPath);
-                        SnappedWalls.Add(wallSegments[j], levelPath);
-                        SnappedSources.AddRange(source[j], wallPath);
-                        segmentCount++;
-                    }
+                    List<Face3D> wallSegments = currentFloor[j].GetFaces3D(out source);
+                    SnappedWalls.Add(wallSegments);
+                    SnappedSources.AddRange(source);
 
                     //GH_Path wallPath = levelPath.AppendElement(i);
                     //snappedSources.EnsurePath(wallPath);
                     //snappedWalls.Add(currentFloor[i].GetBrep(), levelPath);
                     //snappedSources.AddRange(currentFloor[i].SourceIndices, wallPath);
 
-                    if (currentFloor[i].NakedStart)
-                        NakedEnds.Add(currentFloor[i].ProjectedAxis.Start, levelPath);
-                    if (currentFloor[i].NakedEnd)
-                        NakedEnds.Add(currentFloor[i].ProjectedAxis.End, levelPath);
+                    if (currentFloor[j].NakedStart)
+                        NakedEnds[i].Add(currentFloor[j].ProjectedAxis.Start);
+                    if (currentFloor[j].NakedEnd)
+                        NakedEnds[i].Add(currentFloor[j].ProjectedAxis.End);
                 }
-                levelPath = levelPath.Increment(0);
             }
         }
         private static SortedList<double, List<SAM_SnappedWall>> SortWallsByElevation(List<SAM_SnappedWall> walls)
@@ -201,7 +192,7 @@ namespace SAM.Analytical.Solver.Classes
         }
         private static List<SAM_SnappedWall> CreateGraph(List<SAM_SnappedWall> walls, double snappingDistance)
         {
-            SAM_GraphSolver solver = new SAM_GraphSolver(walls.Select(w => w.ProjectedAxis).EndList(), walls.Select(w => w.Weight).EndList(), snappingDistance);
+            SAM_GraphSolver solver = new SAM_GraphSolver(walls.Select(w => w.ProjectedAxis).ToList(), walls.Select(w => w.Weight).ToList(), snappingDistance);
             List<List<int>> sourceIndices = new List<List<int>>();
             List<Segment2D> newAxes = solver.Solve(out sourceIndices);
 
@@ -227,7 +218,7 @@ namespace SAM.Analytical.Solver.Classes
                     Segment3D axis = ProjectionPlane.Convert(currentAxis);
                     axis.GetMoved(new Vector3D(0, 0, elevation));
                     // TODO: why those values are assigned to all new walls?
-                    List<int> sources = floor.Value.SelectMany(wall => wall.SourceIndices).EndList();
+                    List<int> sources = floor.Value.SelectMany(wall => wall.SourceIndices).ToList();
                     double weight = floor.Value.Select(wall => wall.Weight).Max();
                     double bucketSize = floor.Value.Select(wall => wall.BucketSize).Max();
                     double maxExtension = floor.Value.Select(wall => wall.MaxExtension).Max();
@@ -302,7 +293,8 @@ namespace SAM.Analytical.Solver.Classes
                             {
                                 continue;
                             }
-                            if (anchors.Any(a => OrthoDistance2d(thisLevelWalls[colinearId].ProjectedAxis.Start, a) < distTol) || anchors.Any(b => OrthoDistance2d(thisLevelWalls[colinearId].ProjectedAxis.End, b) < distTol))
+                            if (anchors.Any(a => OrthoDistance2d(thisLevelWalls[colinearId].ProjectedAxis.Start, a) < distTol) || 
+                                anchors.Any(b => OrthoDistance2d(thisLevelWalls[colinearId].ProjectedAxis.End, b) < distTol))
                             {
                                 processed[colinearId] = true;
                                 anyMatch = true;
@@ -315,7 +307,7 @@ namespace SAM.Analytical.Solver.Classes
 
                     double elevation = floor.Key;
 
-                    List<double> parameters = anchors.Select(a => masterAxis.ClosestParameter(a)).EndList();
+                    List<double> parameters = anchors.Select(a => SAM_GetClosestParameter(masterAxis,a)).ToList();
                     double minParam = parameters.Min();
                     double maxParam = parameters.Max();
 
@@ -323,7 +315,8 @@ namespace SAM.Analytical.Solver.Classes
                     var masterAxis3D = ProjectionPlane.Convert(masterAxis);
                     masterAxis3D.GetMoved(new Vector3D(0, 0, elevation));                    
 
-                    SAM_SnappedWall mergedWall = new SAM_SnappedWall(masterWall.SourceIndices[0], masterAxis3D, masterWall.Weight, masterWall.BucketSize, masterWall.MaxExtension, masterWall.OriginalHeight);
+                    SAM_SnappedWall mergedWall = new SAM_SnappedWall(masterWall.SourceIndices[0], masterAxis3D, 
+                        masterWall.Weight, masterWall.BucketSize, masterWall.MaxExtension, masterWall.OriginalHeight);
                     for (int m = 1; m < masterWall.SourceIndices.Count; m++)
                     {
                         mergedWall.SourceIndices.Add(masterWall.SourceIndices[m]);
@@ -365,10 +358,12 @@ namespace SAM.Analytical.Solver.Classes
                     Segment2D otherExtended = walls[j].ProjectedAxis;
                     currentExtended.Extend(SAM_SnapSolver.ModelTolerance, true, true);
                     otherExtended.Extend(SAM_SnapSolver.ModelTolerance, true, true);
-                    if (Rhino.Geometry.Intersect.Intersection.LineLine(currentExtended, otherExtended, out myParam, out theirParam, SAM_SnapSolver.SAMTolerance, finiteSegments: true))
+                    //if (Rhino.Geometry.Intersect.Intersection.LineLine(currentExtended, otherExtended, 
+                    //    out myParam, out theirParam, SAM_SnapSolver.SAMTolerance, finiteSegments: true))
+                    if(currentExtended.Intersect(otherExtended, SAM_SnapSolver.SAMTolerance))
                     {
                         //StartExtensionParam = System.Math.Max(StartExtensionParam, myParam);
-                        intersections.Add(currentExtended.GetPoint(myParam));
+                        intersections.Add(currentExtended.Intersection(otherExtended, true, SAM_SnapSolver.SAMTolerance));
                     }
                 }
                 //Print("Intersections:{0}", walls[i].Elevation);
@@ -386,7 +381,7 @@ namespace SAM.Analytical.Solver.Classes
         }
         private static void SnapOpenNodes(List<SAM_SnappedWall> walls, double snappingDistance)
         {
-            List<SAM_SnappedWall> wallsByLength = walls.OrderBy(w => w.Length).EndList(); // start snapping from the shortest
+            List<SAM_SnappedWall> wallsByLength = walls.OrderBy(w => w.Length).ToList(); // start snapping from the shortest
             for (int i = 0; i < wallsByLength.Count; i++)
             {
                 SAM_SnappedWall currentWall = wallsByLength[i];
@@ -415,9 +410,9 @@ namespace SAM.Analytical.Solver.Classes
         {
 
             // arrange the walls from the most to the least important
-            walls = walls.OrderBy(w => w.Length).EndList(); // ternary order
-            walls = walls.OrderBy(w => w.BucketSize).EndList(); // secondary order
-            walls = walls.OrderBy(w => w.Weight).EndList(); // primary order
+            walls = walls.OrderBy(w => w.Length).ToList(); // ternary order
+            walls = walls.OrderBy(w => w.BucketSize).ToList(); // secondary order
+            walls = walls.OrderBy(w => w.Weight).ToList(); // primary order
             walls.Reverse(); // from the largest to the smallest
                              // the walls are now arranged first by weight, then by bucket size
 
@@ -481,18 +476,11 @@ namespace SAM.Analytical.Solver.Classes
         }
         private static void TrimAndExtendWalls(List<SAM_SnappedWall> walls)
         {
-            foreach (var wall in walls)
-            {
-                //Debug.Print("---Current wall elevation: {0:N12}", wall.Elevation);
-            }
-
             var wallsPerFloor = SortWallsByElevation(walls);
-            //Debug.Print("Number of walls: {0}", walls.Count);
             foreach (var floor in wallsPerFloor)
             {
-                //Debug.Print("Floor: {0}, NumWalls: {1}", floor.Key, floor.Value.Count);
-                var axes = floor.Value.Select(wall => wall.ProjectedAxis).EndList();
-                var extensions = floor.Value.Select(wall => wall.MaxExtension).EndList();
+                var axes = floor.Value.Select(wall => wall.ProjectedAxis).ToList();
+                var extensions = floor.Value.Select(wall => wall.MaxExtension).ToList();
                 SAM_ExtensionSolver solver = new SAM_ExtensionSolver(axes, extensions, SAM_SnapSolver.SAMTolerance);
                 var newAxes = solver.Solve();
                 for (int i = 0; i < floor.Value.Count; i++)
@@ -503,7 +491,8 @@ namespace SAM.Analytical.Solver.Classes
 
             MarkNakedNodes(walls);
         }
-        private static List<SAM_SnappedWall> RegisterWalls(List<Face3D> panelsBrep, List<double> bucketSizes, List<double> weights, List<double> maxExtensions, List<Core.Range<double>> levels, double levelOffset, double extensionLimiter)
+        private static List<SAM_SnappedWall> RegisterWalls(List<Face3D> panelsBrep, List<double> bucketSizes, 
+            List<double> weights, List<double> maxExtensions, List<Core.Range<double>> levels, double levelOffset, double extensionLimiter)
         {
             var walls = new List<SAM_SnappedWall>();
 
@@ -517,20 +506,17 @@ namespace SAM.Analytical.Solver.Classes
                 for (int i = 0; i < panelsBrep.Count; i++)
                 {
                     Face3D thiswall = panelsBrep[i];
+                    List<Segment3D> intc = null;
 
-                    Segment2D[] intc = null;
-                    Point2D[] intp = null;
-
-                    if (Rhino.Geometry.Intersect.Intersection.BrepPlane(thiswall, currentPlane, SAM_SnapSolver.ModelTolerance, out intc, out intp))
+                    //if (Rhino.Geometry.Intersect.Intersection.BrepPlane(thiswall, currentPlane, SAM_SnapSolver.ModelTolerance, out intc, out intp))
+                    if(SAM_IntersectionSucceedWithResult(thiswall, currentPlane, out intc))
                     {
-                        foreach (Segment2D segment in intc)
-                        {
-                            if (segment.IsLinear(SAM_SnapSolver.ModelTolerance))
-                            {
-                                Segment3D section = new Segment3D(segment.GetStart(), segment.GetEnd());
-                                SAM_SnappedWall wall = new SAM_SnappedWall(i, section, weights[i], bucketSizes[i], System.Math.Min(maxExtensions[i], section.Length * extensionLimiter), currentHeight);
-                                walls.Add(wall);
-                            }
+                        foreach (Segment3D segment in intc)
+                        {                            
+                            Segment3D section3D = new Segment3D(segment.GetStart(), segment.GetEnd());
+                            SAM_SnappedWall wall = new SAM_SnappedWall(i, section3D, weights[i], bucketSizes[i], 
+                                System.Math.Min(maxExtensions[i], section3D.GetLength() * extensionLimiter), currentHeight);
+                            walls.Add(wall);
                         }
                     }
                 }
@@ -538,6 +524,8 @@ namespace SAM.Analytical.Solver.Classes
 
             return walls;
         }
+
+
         private static List<double> AdjustListLength(List<double> values, int targetCount, double defaultValue)
         {
             List<double> newValues = new List<double>();
@@ -571,6 +559,15 @@ namespace SAM.Analytical.Solver.Classes
             }
 
             return newValues;
+        }
+        private static bool SAM_IntersectionSucceedWithResult(Face3D face, Plane plane, out List<Segment3D> resultingSegments3D)
+        {
+            var intersectionResult = plane.PlanarIntersectionResult(face);
+
+            resultingSegments3D = new List<Segment3D>();
+            resultingSegments3D.AddRange(intersectionResult.GetGeometry3Ds<Segment3D>());
+
+            return intersectionResult.Intersecting;
         }
         public static double SAM_GetClosestParameter(Segment2D segment, Point2D point)
         {

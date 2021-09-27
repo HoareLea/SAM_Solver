@@ -17,7 +17,9 @@ namespace SAM.Geometry.Solver
             var intersectionResult = plane.PlanarIntersectionResult(face);
 
             resultingSegments3D = new List<Segment3D>();
-            resultingSegments3D.AddRange(intersectionResult.GetGeometry3Ds<Segment3D>());
+            var intersectionGeometry = intersectionResult.GetGeometry3Ds<Segment3D>();
+            if (intersectionGeometry == null) return false;
+            resultingSegments3D?.AddRange(intersectionGeometry);
 
             return intersectionResult.Intersecting;
         }

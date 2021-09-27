@@ -789,7 +789,7 @@ namespace SAM.Geometry.Solver
         }
 
         private double MaxProjectionDistance(Segment2D lineA, Segment2D lineB)
-        {
+       {
             // calculate average projection distance between lines' end points
             double maxDistance = lineA.Closest(lineB.Start, false).Distance(lineB.Start);
             maxDistance = System.Math.Max(maxDistance, lineA.Closest(lineB.End, false).Distance(lineB.End));

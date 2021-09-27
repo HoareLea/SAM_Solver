@@ -9,7 +9,7 @@ namespace SAM.Analytical.Solver
 {
     public static partial class Query
     {
-        public static void Snap(this List<Panel> panels,
+        public static void Snap_v2(this List<Panel> panels,
            double elevation,
            Grid2D grid2D,
            Func<Panel, double> bucketSizes,

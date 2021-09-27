@@ -68,13 +68,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Classes\SAM_ExtensionSolver.cs" />
-    <Compile Include="Classes\SAM_GraphSolver.cs" />
-    <Compile Include="Classes\SAM_SnappedWall.cs" />
-    <Compile Include="Classes\SAM_SnapSolver.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Query\Snap.cs" />
-    <Compile Include="Query\Snap_v2.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SAM.Geometry.Solver\SAM.Geometry.Solver.csproj">
@@ -84,6 +79,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Classes\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

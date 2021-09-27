@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SAM.Analytical.Solver.Classes
+namespace SAM.Geometry.Solver.Classes
 {
     public class SAM_SnappedWall
     {

@@ -6,9 +6,8 @@ using System.Threading.Tasks;
 using SAM.Geometry.Solver;
 using SAM.Geometry.Planar;
 using SAM.Geometry.Spatial;
-using SAM.Math;
 
-namespace SAM.Analytical.Solver.Classes
+namespace SAM.Geometry.Solver.Classes
 {
     public class SAM_GraphSolver
     {

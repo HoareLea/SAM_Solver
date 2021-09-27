@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace SAM.Analytical.Solver.Classes
+namespace SAM.Geometry.Solver.Classes
 {
     //eliminate dataTrees, eleiminate gh references
 
@@ -148,11 +148,6 @@ namespace SAM.Analytical.Solver.Classes
                     List<Face3D> wallSegments = currentFloor[j].GetFaces3D(out source);
                     SnappedWalls.Add(wallSegments);
                     SnappedSources.AddRange(source);
-
-                    //GH_Path wallPath = levelPath.AppendElement(i);
-                    //snappedSources.EnsurePath(wallPath);
-                    //snappedWalls.Add(currentFloor[i].GetBrep(), levelPath);
-                    //snappedSources.AddRange(currentFloor[i].SourceIndices, wallPath);
 
                     if (currentFloor[j].NakedStart)
                         NakedEnds[i].Add(currentFloor[j].ProjectedAxis.Start);

@@ -46,17 +46,17 @@
       <HintPath>..\..\packages\Newtonsoft.Json.13.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="SAM.Analytical">
-      <HintPath>..\..\..\Nowy folder\build\SAM.Analytical.dll</HintPath>
+      <HintPath>..\..\..\SAM\build\SAM.Analytical.dll</HintPath>
     </Reference>
     <Reference Include="SAM.Core">
-      <HintPath>..\..\..\Nowy folder\build\SAM.Core.dll</HintPath>
+      <HintPath>..\..\..\SAM\build\SAM.Core.dll</HintPath>
     </Reference>
     <Reference Include="SAM.Geometry">
-      <HintPath>..\..\..\Nowy folder\build\SAM.Geometry.dll</HintPath>
+      <HintPath>..\..\..\SAM\build\SAM.Geometry.dll</HintPath>
     </Reference>
     <Reference Include="SAM.Math, Version=1.0.7930.31667, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\Nowy folder\build\SAM.Math.dll</HintPath>
+      <HintPath>..\..\..\SAM\build\SAM.Math.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

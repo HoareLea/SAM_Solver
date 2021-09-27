@@ -76,7 +76,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            var panelsBrep = new List<Brep>();
+            var panelsBrep = new List<GH_ObjectWrapper>();
             var bucketSizes = new List<double>();
             var weights = new List<double>();
             var maxExtensions = new List<double>();
@@ -102,20 +102,21 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
             if (!DA.GetData(9, ref toleranceAngleRad)) return;
             if (!DA.GetData(10, ref arcToleranceAngleRad)) return;
 
+            List<Face3D> face3Ds = new List<Face3D>();
 
-            var SnapSolver = new SnapSolver_GH(panelsBrep, bucketSizes, weights, maxExtensions, levels,
-                levelSectionOffset, nakedNodeSnapDistance, minWallSegmentLength, toleranceDistance,
-                toleranceAngleRad, arcToleranceAngleRad);
+            foreach(GH_ObjectWrapper objectWrapper in panelsBrep)
+            {
+                if(objectWrapper.TryGetSAMGeometries(out List<Face3D> face3Ds_Temp) && face3Ds_Temp != null)
+                {
+                    face3Ds.AddRange(face3Ds_Temp);
+                }
+            }
 
-            SnapSolver.Execute();
 
-            Face3D face3D = null;
-            var a = face3D.ToGrasshopper();
 
-            Brep br = new Brep();
-            br.ToSAM();
+            Geometry.Solver.Query.Snap_v2(face3Ds, out List<Face3D> result);
 
-            List<Face3D> outputCollection = new List<Face3D>();
+            List<Brep> breps = result?.ConvertAll(x => x.ToRhino_Brep());
 
             //List<GH_ObjectWrapper> objectWrappers = new List<GH_ObjectWrapper>(br,
             //    out );
@@ -124,13 +125,13 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
 
             //Geometry.Grasshopper.Query.TryGetSAMGeometries()
 
-            var snappedWallsSurfaces = SnapSolver.SnappedWalls;
-            var snappedWallSources = SnapSolver.SnappedSources;
-            var nakedEnds = SnapSolver.NakedEnds;
+            //var snappedWallsSurfaces = surfaces;
+            //var snappedWallSources = null;//SnapSolver.SnappedSources;
+            //var nakedEnds = null//SnapSolver.NakedEnds;
 
-            DA.SetDataTree(0, snappedWallsSurfaces);
-            DA.SetDataTree(1, snappedWallSources);
-            DA.SetDataTree(2, nakedEnds);
+            //DA.SetDataTree(0, snappedWallsSurfaces);
+            //DA.SetDataTree(1, snappedWallSources);
+            //DA.SetDataTree(2, nakedEnds);
         }
     }
 }

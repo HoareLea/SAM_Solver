@@ -131,7 +131,7 @@ namespace SAM.Analytical.Solver.Grasshopper
                 }
             }
 
-            Core.Solver.Query.Snap(panelBreps, Levels, bucket, grid, gap, angle, toler, Origin, fixedlines, out OutputWalls, out OutputIds, out SlabOutlines, out Axes);
+            Core.Grasshopper.Solver.Query.Snap(panelBreps, Levels, bucket, grid, gap, angle, toler, Origin, fixedlines, out OutputWalls, out OutputIds, out SlabOutlines, out Axes);
 
             GH_Structure<GH_Brep> walls = new GH_Structure<GH_Brep>();
             GH_Structure<GH_Integer> wallids = new GH_Structure<GH_Integer>();

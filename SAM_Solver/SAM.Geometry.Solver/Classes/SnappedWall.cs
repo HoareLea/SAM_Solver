@@ -1,14 +1,11 @@
 ﻿using SAM.Geometry.Planar;
 using SAM.Geometry.Spatial;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace SAM.Geometry.Solver.Classes
+namespace SAM.Geometry.Solver
 {
-    public class SAM_SnappedWall
+    public class SnappedWall
     {
         private Segment2D _projectedAxis = default(Segment2D);
         public Segment2D ProjectedAxis
@@ -34,7 +31,7 @@ namespace SAM.Geometry.Solver.Classes
         public bool NakedStart { get; private set; }
         public bool NakedEnd { get; private set; }
 
-        public SAM_SnappedWall(int sourceIndex, Segment3D axis, double weight, double bucketSize, double maxExtension, Core.Range<double> originalHeight)
+        public SnappedWall(int sourceIndex, Segment3D axis, double weight, double bucketSize, double maxExtension, Core.Range<double> originalHeight)
         {
             Elevation = (axis.GetStart().Z + axis.GetEnd().Z) / 2;
             //axis.Transform(Transform.PlanarProjection(Plane.WorldXY));
@@ -63,21 +60,21 @@ namespace SAM.Geometry.Solver.Classes
             NakedEnd = true;
         }
 
-        public void UpdateNakedStatus(SAM_SnappedWall other)
+        public void UpdateNakedStatus(SnappedWall other)
         {
             //if (!RhinoMath.EpsilonEquals(this.Elevation, other.Elevation, SAM_SnapSolver_GH.ModelTolerance))
-            if (Core.Query.AlmostEqual(this.Elevation, other.Elevation, SAM_SnapSolver.ModelTolerance))
+            if (Core.Query.AlmostEqual(this.Elevation, other.Elevation, SnapSolver.ModelTolerance))
                 { // different levels, doesn't matter
                 return;
             }
             Point2D start = ProjectedAxis.Start;
             Point2D end = ProjectedAxis.End;
             //if (NakedStart && other.ProjectedAxis.MinimumDistanceTo(start) <= SAM_SnapSolver.SAMTolerance)
-            if (NakedStart && other.ProjectedAxis.Distance(start) <= SAM_SnapSolver.SAMTolerance)
+            if (NakedStart && other.ProjectedAxis.Distance(start) <= SnapSolver.SAMTolerance)
             {
                 NakedStart = false;
             }
-            if (NakedEnd && other.ProjectedAxis.Distance(end) <= SAM_SnapSolver.SAMTolerance)
+            if (NakedEnd && other.ProjectedAxis.Distance(end) <= SnapSolver.SAMTolerance)
             {
                 NakedEnd = false;
             }
@@ -86,7 +83,7 @@ namespace SAM.Geometry.Solver.Classes
         //not supposed to have references
         public Face3D GetFace3D()
         {
-            var base3d = SAM_SnapSolver.ProjectionPlane.Convert(this.ProjectedAxis);
+            var base3d = SnapSolver.ProjectionPlane.Convert(this.ProjectedAxis);
             var bottomElevation = this.OriginalHeight.Min;
             var topElevation = this.OriginalHeight.Max;
 
@@ -111,7 +108,7 @@ namespace SAM.Geometry.Solver.Classes
 
         private Face3D GetBrep(Segment2D segment)
         {
-            var base3d = SAM_SnapSolver.ProjectionPlane.Convert(segment);
+            var base3d = SnapSolver.ProjectionPlane.Convert(segment);
             var bottomElevation = this.OriginalHeight.Min;
             var topElevation = this.OriginalHeight.Max;
 
@@ -173,13 +170,13 @@ namespace SAM.Geometry.Solver.Classes
             splitParams.Add(1);
             foreach (Segment2D segment in SourceSegments)
             {
-                double fromParam = SAM_Clamp(SAM_SnapSolver.SAM_ClosestParameter(ProjectedAxis, segment.Start), 0, 1);
-                double toParam = SAM_Clamp(SAM_SnapSolver.SAM_ClosestParameter(ProjectedAxis, segment.End), 0, 1);
+                double fromParam = SAM_Clamp(SnapSolver.SAM_ClosestParameter(ProjectedAxis, segment.Start), 0, 1);
+                double toParam = SAM_Clamp(SnapSolver.SAM_ClosestParameter(ProjectedAxis, segment.End), 0, 1);
                 // check if the params are already on the list
                 bool isNew = true; // check the START
                 for (int i = 0; i < splitParams.Count; i++)
                 {
-                    if (Core.Query.AlmostEqual(splitParams[i], fromParam, SAM_SnapSolver.SAMTolerance))
+                    if (Core.Query.AlmostEqual(splitParams[i], fromParam, SnapSolver.SAMTolerance))
                     {
                         isNew = false;
                         if (splitParams[i] != 0 && splitParams[i] != 1)
@@ -195,7 +192,7 @@ namespace SAM.Geometry.Solver.Classes
                 isNew = true; // same for the END param
                 for (int i = 0; i < splitParams.Count; i++)
                 {
-                    if (Core.Query.AlmostEqual(splitParams[i], toParam, SAM_SnapSolver.SAMTolerance))
+                    if (Core.Query.AlmostEqual(splitParams[i], toParam, SnapSolver.SAMTolerance))
                     {
                         isNew = false;
                         if (splitParams[i] != 0 && splitParams[i] != 1)
@@ -217,11 +214,11 @@ namespace SAM.Geometry.Solver.Classes
                 Segment2D piece = new Segment2D(ProjectedAxis.GetPoint(splitParams[i]), ProjectedAxis.GetPoint(splitParams[i + 1]));
                 // shorten the current piece to avoid taking neighbors indices
                 Segment2D testPiece = piece;
-                testPiece.Extend(-1.5 * SAM_SnapSolver.ModelTolerance, true, true);
+                testPiece.Extend(-1.5 * SnapSolver.ModelTolerance, true, true);
                 List<int> indices = new List<int>();
                 for (int j = 0; j < SourceSegments.Count; j++)
                 {
-                    if (testPiece.Distance(SourceSegments[j]) < SAM_SnapSolver.ModelTolerance)
+                    if (testPiece.Distance(SourceSegments[j]) < SnapSolver.ModelTolerance)
                     {
                         indices.Add(SourceIndices[j]);
                     }
@@ -381,7 +378,7 @@ namespace SAM.Geometry.Solver.Classes
             UpdateEndPoints(newAxis.Start, newAxis.End, stretch: true);
         }
 
-        public bool TryBucketSnap(SAM_SnappedWall other, out bool otherMergedIn)
+        public bool TryBucketSnap(SnappedWall other, out bool otherMergedIn)
         {
             otherMergedIn = false;
 
@@ -401,7 +398,7 @@ namespace SAM.Geometry.Solver.Classes
             {
                 return false;
             }
-            double angleToleranceRad = fully ? SAM_SnapSolver.ToleranceAngleRad : SAM_SnapSolver.ArcToleranceAngleRad; // if the neighbour is fully contained in the bucket, allow for larger angle tolerance
+            double angleToleranceRad = fully ? SnapSolver.ToleranceAngleRad : SnapSolver.ArcToleranceAngleRad; // if the neighbour is fully contained in the bucket, allow for larger angle tolerance
 
             bool areColinear = IsRoughlyColinearWith(other, angleToleranceRad);
             if (!areColinear)
@@ -409,12 +406,12 @@ namespace SAM.Geometry.Solver.Classes
                 return false;
             }
 
-            double snappedStartParam = SAM_SnapSolver.SAM_ClosestParameter(this.ProjectedAxis, other.ProjectedAxis.Start);
-            double snappedEndParam = SAM_SnapSolver.SAM_ClosestParameter(this.ProjectedAxis, other.ProjectedAxis.End);
+            double snappedStartParam = SnapSolver.SAM_ClosestParameter(this.ProjectedAxis, other.ProjectedAxis.Start);
+            double snappedEndParam = SnapSolver.SAM_ClosestParameter(this.ProjectedAxis, other.ProjectedAxis.End);
             Core.Range<double> otherRange = new Core.Range<double>(snappedStartParam, snappedEndParam);
             otherRange = MakeRangeIncreasing(otherRange);
 
-            if (Core.Query.AlmostEqual(this.Elevation, other.Elevation, SAM_SnapSolver.ModelTolerance)) // same level - merge in
+            if (Core.Query.AlmostEqual(this.Elevation, other.Elevation, SnapSolver.ModelTolerance)) // same level - merge in
             {
                 otherMergedIn = true;
                 Core.Range<double> thisNewRange = new Core.Range<double>(System.Math.Min(otherRange.Min, 0), System.Math.Max(otherRange.Max, 1));
@@ -444,7 +441,7 @@ namespace SAM.Geometry.Solver.Classes
 
                 //check if anything has changed
                 double delta = newStart.Distance(other.ProjectedAxis.Start) + newEnd.Distance(other.ProjectedAxis.End);
-                if (delta < SAM_SnapSolver.SAMTolerance)
+                if (delta < SnapSolver.SAMTolerance)
                 {
                     return false;
                 }
@@ -465,10 +462,10 @@ namespace SAM.Geometry.Solver.Classes
             Segment2D previousAxis = ProjectedAxis;
             ProjectedAxis = new Segment2D(newStart, newEnd);
             // source segments need to be adjusted here
-            SnapSourceSegments(previousAxis, SAM_SnapSolver.MinWallSegmentLength, stretch);
+            SnapSourceSegments(previousAxis, SnapSolver.MinWallSegmentLength, stretch);
         }
 
-        public List<SAM_SnappedWall> SnapSegmentsSplitAndExplode(List<Point2D> additionalSplitLocations, double snappingDistance, bool allowMovingEnds = false)
+        public List<SnappedWall> SnapSegmentsSplitAndExplode(List<Point2D> additionalSplitLocations, double snappingDistance, bool allowMovingEnds = false)
         {
             additionalSplitLocations = additionalSplitLocations.Select(pt => ProjectedAxis.Closest(pt, true)).ToList(); // make sure they lie on the axis
             bool[] splitMade = new bool[additionalSplitLocations.Count];
@@ -485,8 +482,8 @@ namespace SAM.Geometry.Solver.Classes
             {
                 if (!allowMovingEnds)
                 {
-                    double closestParam = SAM_SnapSolver.SAM_ClosestParameter(ProjectedAxis, segmentEndPoints[i]);
-                    if (Core.Query.AlmostEqual(closestParam, 0, SAM_SnapSolver.ModelTolerance) || Core.Query.AlmostEqual(closestParam, 1, SAM_SnapSolver.ModelTolerance))
+                    double closestParam = SnapSolver.SAM_ClosestParameter(ProjectedAxis, segmentEndPoints[i]);
+                    if (Core.Query.AlmostEqual(closestParam, 0, SnapSolver.ModelTolerance) || Core.Query.AlmostEqual(closestParam, 1, SnapSolver.ModelTolerance))
                     {
                         continue;
                     }
@@ -513,14 +510,14 @@ namespace SAM.Geometry.Solver.Classes
             splitParams.Add(1.0);
             foreach (Segment2D segment in SourceSegments)
             {
-                double fromParam = SAM_Clamp(SAM_SnapSolver.SAM_ClosestParameter(ProjectedAxis, segment.Start), 0, 1);
-                double toParam = SAM_Clamp(SAM_SnapSolver.SAM_ClosestParameter(ProjectedAxis, segment.End), 0, 1);
+                double fromParam = SAM_Clamp(SnapSolver.SAM_ClosestParameter(ProjectedAxis, segment.Start), 0, 1);
+                double toParam = SAM_Clamp(SnapSolver.SAM_ClosestParameter(ProjectedAxis, segment.End), 0, 1);
 
                 // check if the params are already on the list
                 bool isNew = true; // check the START
                 for (int i = 0; i < splitParams.Count; i++)
                 {
-                    if (Core.Query.AlmostEqual(splitParams[i], fromParam, SAM_SnapSolver.SAMTolerance))
+                    if (Core.Query.AlmostEqual(splitParams[i], fromParam, SnapSolver.SAMTolerance))
                     {
                         isNew = false;
                         if (splitParams[i] != 0 && splitParams[i] != 1)
@@ -536,7 +533,7 @@ namespace SAM.Geometry.Solver.Classes
                 isNew = true; // same for the END param
                 for (int i = 0; i < splitParams.Count; i++)
                 {
-                    if (Core.Query.AlmostEqual(splitParams[i], toParam, SAM_SnapSolver.SAMTolerance))
+                    if (Core.Query.AlmostEqual(splitParams[i], toParam, SnapSolver.SAMTolerance))
                     {
                         isNew = false;
                         if (splitParams[i] != 0 && splitParams[i] != 1)
@@ -558,11 +555,11 @@ namespace SAM.Geometry.Solver.Classes
                 { // already covered by adjusting the segments
                     continue;
                 }
-                double newSplit = SAM_Clamp(SAM_SnapSolver.SAM_ClosestParameter(ProjectedAxis, additionalSplitLocations[i]), 0, 1);
+                double newSplit = SAM_Clamp(SnapSolver.SAM_ClosestParameter(ProjectedAxis, additionalSplitLocations[i]), 0, 1);
                 bool isNew = true; // same for the END param
                 for (int j = 0; j < splitParams.Count; j++)
                 {
-                    if (Core.Query.AlmostEqual(splitParams[j], newSplit, SAM_SnapSolver.SAMTolerance))
+                    if (Core.Query.AlmostEqual(splitParams[j], newSplit, SnapSolver.SAMTolerance))
                     {
                         isNew = false;
                         if (splitParams[j] != 0 && splitParams[j] != 1)
@@ -585,11 +582,11 @@ namespace SAM.Geometry.Solver.Classes
                 Segment2D piece = new Segment2D(ProjectedAxis.GetPoint(splitParams[i]), ProjectedAxis.GetPoint(splitParams[i + 1]));
                 // shorten the current piece to avoid taking neighbours' indices
                 Segment2D testPiece = piece;
-                testPiece.Extend(-1.5 * SAM_SnapSolver.ModelTolerance, true, true);
+                testPiece.Extend(-1.5 * SnapSolver.ModelTolerance, true, true);
                 List<int> indices = new List<int>();
                 for (int j = 0; j < SourceSegments.Count; j++)
                 {
-                    if (testPiece.Distance(SourceSegments[j]) < SAM_SnapSolver.ModelTolerance)
+                    if (testPiece.Distance(SourceSegments[j]) < SnapSolver.ModelTolerance)
                     {
                         indices.Add(SourceIndices[j]);
                     }
@@ -599,17 +596,17 @@ namespace SAM.Geometry.Solver.Classes
             }
 
             // create a new wall from each segment
-            List<SAM_SnappedWall> splitWalls = new List<SAM_SnappedWall>();
+            List<SnappedWall> splitWalls = new List<SnappedWall>();
             for (int i = 0; i < splitSegments.Count; i++)
             {
-                if (splitSegments[i].GetLength() < SAM_SnapSolver.SAMTolerance || sourceIndices[i].Count < 1)
+                if (splitSegments[i].GetLength() < SnapSolver.SAMTolerance || sourceIndices[i].Count < 1)
                 {
                     continue;
                 }
                 Segment2D newAxis = splitSegments[i];
-                var newAxis3D = SAM_SnapSolver.ProjectionPlane.Convert(newAxis);
+                var newAxis3D = SnapSolver.ProjectionPlane.Convert(newAxis);
                 newAxis3D.GetMoved(new Vector3D(0, 0, Elevation));
-                SAM_SnappedWall wallSegment = new SAM_SnappedWall(sourceIndices[i][0], newAxis3D, Weight, BucketSize, MaxExtension, OriginalHeight);
+                SnappedWall wallSegment = new SnappedWall(sourceIndices[i][0], newAxis3D, Weight, BucketSize, MaxExtension, OriginalHeight);
                 // add the rest of the source indices
                 for (int j = 1; j < sourceIndices[i].Count; j++)
                 {
@@ -653,9 +650,9 @@ namespace SAM.Geometry.Solver.Classes
                 }
 
                 // clamp to finite segment
-                double startParam = SAM_SnapSolver.SAM_ClosestParameter(ProjectedAxis, snappedStart);
+                double startParam = SnapSolver.SAM_ClosestParameter(ProjectedAxis, snappedStart);
                 startParam = SAM_Clamp(startParam, 0, 1);
-                double endParam = SAM_SnapSolver.SAM_ClosestParameter(ProjectedAxis, snappedEnd);
+                double endParam = SnapSolver.SAM_ClosestParameter(ProjectedAxis, snappedEnd);
                 endParam = SAM_Clamp(endParam, 0, 1);
 
                 snappedStart = ProjectedAxis.GetPoint(startParam);
@@ -775,7 +772,7 @@ namespace SAM.Geometry.Solver.Classes
             }
         }
 
-        public bool IsRoughlyColinearWith(SAM_SnappedWall other, double angleToleranceRad)
+        public bool IsRoughlyColinearWith(SnappedWall other, double angleToleranceRad)
         {
             double minAbsDot = System.Math.Cos(angleToleranceRad);
             Vector2D directionA = this.ProjectedAxis.Direction.Unit;
@@ -811,13 +808,13 @@ namespace SAM.Geometry.Solver.Classes
 
             return averageDistance;
         }
-        private bool BucketContains(SAM_SnappedWall other, out bool fully)
+        private bool BucketContains(SnappedWall other, out bool fully)
         {
             fully = false;
             Segment2D dominantLine = this.ProjectedAxis;
             Segment2D otherLine = other.ProjectedAxis;
-            double paramFrom = SAM_SnapSolver.SAM_ClosestParameter(dominantLine, otherLine.Start);
-            double paramTo = SAM_SnapSolver.SAM_ClosestParameter(dominantLine, otherLine.End);
+            double paramFrom = SnapSolver.SAM_ClosestParameter(dominantLine, otherLine.Start);
+            double paramTo = SnapSolver.SAM_ClosestParameter(dominantLine, otherLine.End);
 
             double paramBucketMargin = this.MaxExtension / this.Length;
             Core.Range<double> dominantRange = new Core.Range<double>(-paramBucketMargin, 1 + paramBucketMargin);
@@ -844,7 +841,7 @@ namespace SAM.Geometry.Solver.Classes
         }
 
         /// <summary>
-       -- /// explanation - clamp goes to SAM.Core
+        /// explanation - clamp goes to SAM.Core
         /// </summary>
         /// <param name="parameter"></param>
         /// <param name="bottom"></param>

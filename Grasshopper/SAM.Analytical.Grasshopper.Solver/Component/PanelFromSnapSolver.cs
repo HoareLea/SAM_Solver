@@ -133,7 +133,7 @@ namespace SAM.Analytical.Solver.Grasshopper
                     continue;
                 }
 
-                panel = Create.Panel(panel);
+                panel = Analytical.Create.Panel(panel);
                 List<Aperture> apertures_Panel = panel.Apertures;
                 if(apertures_Panel != null && apertures_Panel.Count != 0)
                 {
@@ -237,7 +237,7 @@ namespace SAM.Analytical.Solver.Grasshopper
                 if (result.Find(x => x.Guid == guid) != null)
                     guid = Guid.NewGuid();
 
-                Panel panel_New = Create.Panel(guid, panel_Old, face3D);
+                Panel panel_New = Analytical.Create.Panel(guid, panel_Old, face3D);
 
                 result.Add(panel_New);
             }

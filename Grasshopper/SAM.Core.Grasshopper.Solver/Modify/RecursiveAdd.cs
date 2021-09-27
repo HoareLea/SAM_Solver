@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace SAM.Core.Solver
+namespace SAM.Core.Grasshopper.Solver
 {
     public static partial class Modify
     {

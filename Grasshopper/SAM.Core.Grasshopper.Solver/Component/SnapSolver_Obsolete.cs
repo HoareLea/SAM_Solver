@@ -6,7 +6,7 @@ using SAM.Core.Grasshopper;
 using System;
 using System.Collections.Generic;
 
-namespace SAM.Core.Solver.Grasshopper.Obsolete_20200709
+namespace SAM.Core.Grasshopper.Solver.Obsolete_20200709
 {
     [Obsolete("Obsolete since 2020-07-09 Version 1")]
     public class SnapSolver: GH_SAMComponent
@@ -179,11 +179,11 @@ namespace SAM.Solver.Grasshopper.Obsolete_20200710
                     }
                 }
 
-                Core.Solver.Query.Snap(breps, Levels, bucket, grid, gap, angle, toler, Origin, fixedlines, out OutputWalls, out SlabOutlines);
+                Core.Grasshopper.Solver.Query.Snap(breps, Levels, bucket, grid, gap, angle, toler, Origin, fixedlines, out OutputWalls, out SlabOutlines);
             }
             else
             {
-                Core.Solver.Query.Snap(breps, Levels, bucket, grid, gap, angle, toler, Origin, out OutputWalls, out SlabOutlines);
+                Core.Grasshopper.Solver.Query.Snap(breps, Levels, bucket, grid, gap, angle, toler, Origin, out OutputWalls, out SlabOutlines);
             }
 
             GH_Structure<GH_Brep> walls = new GH_Structure<GH_Brep>();

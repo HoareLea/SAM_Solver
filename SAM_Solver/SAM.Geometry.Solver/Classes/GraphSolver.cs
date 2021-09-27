@@ -1,20 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SAM.Geometry.Solver;
 using SAM.Geometry.Planar;
 using SAM.Geometry.Spatial;
 
-namespace SAM.Geometry.Solver.Classes
+namespace SAM.Geometry.Solver
 {
-    public class SAM_GraphSolver
+    public class GraphSolver
     {
         public double Tolerance { get; private set; }
         private List<Edge> Edges { get; set; }
         private List<Node> Nodes { get; set; }
-        public SAM_GraphSolver(List<Segment2D> lines, List<double> weights, double snapTolerance)
+        public GraphSolver(List<Segment2D> lines, List<double> weights, double snapTolerance)
         {
             Tolerance = snapTolerance;
             Edges = new List<Edge>();

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SAM.Geometry.Solver.Query
+namespace SAM.Geometry.Solver
 {
     public static partial class Query
     {

@@ -1,7 +1,7 @@
 ﻿using Rhino.Geometry;
 using System.Collections.Generic;
 
-namespace SAM.Core.Solver
+namespace SAM.Core.Grasshopper.Solver
 {
     public static partial class Query
     {

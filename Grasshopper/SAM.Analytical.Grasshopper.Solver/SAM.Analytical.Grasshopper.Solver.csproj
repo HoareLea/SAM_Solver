@@ -46,24 +46,27 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="SAM.Analytical, Version=1.0.7798.15100, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\Nowy folder\build\SAM.Analytical.dll</HintPath>
+      <HintPath>..\..\..\SAM\build\SAM.Analytical.dll</HintPath>
     </Reference>
     <Reference Include="SAM.Analytical.Grasshopper">
-      <HintPath>..\..\..\Nowy folder\build\SAM.Analytical.Grasshopper.dll</HintPath>
+      <HintPath>..\..\..\SAM\build\SAM.Analytical.Grasshopper.dll</HintPath>
+    </Reference>
+    <Reference Include="SAM.Architectural.Grasshopper">
+      <HintPath>..\..\..\SAM\build\SAM.Architectural.Grasshopper.dll</HintPath>
     </Reference>
     <Reference Include="SAM.Core, Version=1.0.7798.15099, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\Nowy folder\build\SAM.Core.dll</HintPath>
+      <HintPath>..\..\..\SAM\build\SAM.Core.dll</HintPath>
     </Reference>
     <Reference Include="SAM.Core.Grasshopper">
-      <HintPath>..\..\..\Nowy folder\build\SAM.Core.Grasshopper.dll</HintPath>
+      <HintPath>..\..\..\SAM\build\SAM.Core.Grasshopper.dll</HintPath>
     </Reference>
     <Reference Include="SAM.Geometry, Version=1.0.7798.15100, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\Nowy folder\build\SAM.Geometry.dll</HintPath>
+      <HintPath>..\..\..\SAM\build\SAM.Geometry.dll</HintPath>
     </Reference>
     <Reference Include="SAM.Geometry.Grasshopper">
-      <HintPath>..\..\..\Nowy folder\build\SAM.Geometry.Grasshopper.dll</HintPath>
+      <HintPath>..\..\..\SAM\build\SAM.Geometry.Grasshopper.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -122,6 +125,10 @@
     <None Include="Resources\SAM_Solver.png" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\SAM_Solver\SAM.Geometry.Solver\SAM.Geometry.Solver.csproj">
+      <Project>{5c870a26-7017-472b-9e68-fdd828367df4}</Project>
+      <Name>SAM.Geometry.Solver</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SAM.Core.Grasshopper.Solver\SAM.Core.Grasshopper.Solver.csproj">
       <Project>{cbeb4724-6ef0-48d3-b634-384fe2300d6c}</Project>
       <Name>SAM.Core.Grasshopper.Solver</Name>

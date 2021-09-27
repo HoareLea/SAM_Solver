@@ -1,19 +1,16 @@
 ﻿using SAM.Geometry.Planar;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace SAM.Geometry.Solver.Classes
+namespace SAM.Geometry.Solver
 {
-    public class SAM_ExtensionSolver
+    public class ExtensionSolver
     {
         public double Tolerance { get; private set; }
         private List<Intersection> _intersections { get; set; }
         private List<Edge> _edges { get; set; }
 
-        public SAM_ExtensionSolver(List<Segment2D> sourceLines, List<double> maxExtensions, double tolerance)
+        public ExtensionSolver(List<Segment2D> sourceLines, List<double> maxExtensions, double tolerance)
         {
             Tolerance = tolerance;
             _intersections = new List<Intersection>();

@@ -1,17 +1,15 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
-using SAM.Geometry.Solver;
-using SAM.Geometry.Planar;
-using SAM.Geometry.Spatial;
-using System;
 
-namespace SAM.Analytical.Solver
+using SAM.Geometry.Spatial;
+
+
+namespace SAM.Geometry.Solver
 {
     public static partial class Query
     {
-        public static void Snap_v2(inputy, Face3D costam, out outputy)
+        public static void Snap_v2(this IEnumerable<Face3D> face3Ds, out List<Face3D> result)
         {
-           
+            throw new System.NotImplementedException();
         }
     }
 }

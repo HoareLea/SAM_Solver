@@ -5,11 +5,14 @@ using Rhino.Geometry;
 using SAM.Analytical.Grasshopper.Solver.Classes;
 using SAM.Analytical.Grasshopper.Solver.Properties;
 using SAM.Core.Grasshopper;
+using SAM.Geometry.Spatial;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SAM.Geometry.Grasshopper;
+using Grasshopper.Kernel.Types;
 
 namespace SAM.Analytical.Grasshopper.Solver.Component
 {
@@ -39,7 +42,10 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             //TODO: write better descriptions and verify information, full Sentencies with "."
-            pManager.AddBrepParameter("_panelsBrep", "Panels Brep",
+            //defaults: _name_
+            //no default value : _name
+            //optional - no default, no obligation for the input : name_
+            pManager.AddBrepParameter("_panelsBrep", "PB",
                 "Panels represented as a list of surface brep geometry.", GH_ParamAccess.list);
             pManager.AddNumberParameter("_bucketSizes", "BS", "Bucket size per panel.", GH_ParamAccess.list);
             pManager.AddNumberParameter("_weights", "W", "a list of weighs or the panels", GH_ParamAccess.list);
@@ -56,10 +62,10 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
-            pManager.AddBrepParameter("Snapped walls surfaces", "SWSrfs", "a tree of surface representations of snapped walls", GH_ParamAccess.tree);
-            pManager.AddIntegerParameter("Snapped walls sources", "SWSrc", "the indexes of SnappedWallsSurfaces parent surfaces from _panelsBrep",
+            pManager.AddBrepParameter("snappedWallsSurfaces", "SWSrfs", "a tree of surface representations of snapped walls", GH_ParamAccess.tree);
+            pManager.AddIntegerParameter("snappedWallsSources", "SWSrc", "the indexes of SnappedWallsSurfaces parent surfaces from _panelsBrep",
                 GH_ParamAccess.tree);
-            pManager.AddPointParameter("Naked ends", "NE", "naked verticies of linear representation left after snapping", GH_ParamAccess.tree);
+            pManager.AddPointParameter("nakedEnds", "NE", "naked verticies of linear representation left after snapping", GH_ParamAccess.tree);
         }
 
         private bool CheckTolerance()
@@ -75,6 +81,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
             var weights = new List<double>();
             var maxExtensions = new List<double>();
             var levels = new List<Interval>();
+
             var levelSectionOffset = new double();
             var nakedNodeSnapDistance = new double();
             var minWallSegmentLength = new double();
@@ -101,6 +108,21 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
                 toleranceAngleRad, arcToleranceAngleRad);
 
             SnapSolver.Execute();
+
+            Face3D face3D = null;
+            var a = face3D.ToGrasshopper();
+
+            Brep br = new Brep();
+            br.ToSAM();
+
+            List<Face3D> outputCollection = new List<Face3D>();
+
+            //List<GH_ObjectWrapper> objectWrappers = new List<GH_ObjectWrapper>(br,
+            //    out );
+
+
+
+            //Geometry.Grasshopper.Query.TryGetSAMGeometries()
 
             var snappedWallsSurfaces = SnapSolver.SnappedWalls;
             var snappedWallSources = SnapSolver.SnappedSources;

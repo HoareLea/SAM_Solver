@@ -1,5 +1,6 @@
 ﻿using SAM.Geometry.Planar;
 using SAM.Geometry.Spatial;
+using SAM.Geometry.Solver.Query;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -302,7 +303,7 @@ namespace SAM.Geometry.Solver.Classes
 
                     double elevation = floor.Key;
 
-                    List<double> parameters = anchors.Select(a => SAM_GetClosestParameter(masterAxis,a)).ToList();
+                    List<double> parameters = anchors.Select(a => SAM_ClosestParameter(masterAxis,a)).ToList();
                     double minParam = parameters.Min();
                     double maxParam = parameters.Max();
 
@@ -504,7 +505,7 @@ namespace SAM.Geometry.Solver.Classes
                     List<Segment3D> intc = null;
 
                     //if (Rhino.Geometry.Intersect.Intersection.BrepPlane(thiswall, currentPlane, SAM_SnapSolver.ModelTolerance, out intc, out intp))
-                    if(SAM_IntersectionSucceedWithResult(thiswall, currentPlane, out intc))
+                    if(thiswall.Intersecting(currentPlane, out intc))
                     {
                         foreach (Segment3D segment in intc)
                         {                            
@@ -555,16 +556,7 @@ namespace SAM.Geometry.Solver.Classes
 
             return newValues;
         }
-        private static bool SAM_IntersectionSucceedWithResult(Face3D face, Plane plane, out List<Segment3D> resultingSegments3D)
-        {
-            var intersectionResult = plane.PlanarIntersectionResult(face);
-
-            resultingSegments3D = new List<Segment3D>();
-            resultingSegments3D.AddRange(intersectionResult.GetGeometry3Ds<Segment3D>());
-
-            return intersectionResult.Intersecting;
-        }
-        public static double SAM_GetClosestParameter(Segment2D segment, Point2D point)
+        public static double SAM_ClosestParameter(Segment2D segment, Point2D point)
         {
             var pointClosestToSegment = segment.Closest(point);
             return segment.GetParameter(pointClosestToSegment);

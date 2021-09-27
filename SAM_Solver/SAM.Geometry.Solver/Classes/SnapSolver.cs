@@ -10,7 +10,7 @@ namespace SAM.Geometry.Solver
     public class SnapSolver
     {
         public static Plane ProjectionPlane { get; } = Plane.WorldXY;
-        //TODO: USE SAM tolerances where is meaningfull SAM.Core.Endlerance....
+        //TODO: USE SAM tolerances where is meaningfull SAM.Core.Tolerance....
         private double _minTolerance = System.Math.Pow(10, -9);
         private double _extensionLimiter = 0.49;
         private static double _modelTolerance = System.Math.Pow(10, -3);

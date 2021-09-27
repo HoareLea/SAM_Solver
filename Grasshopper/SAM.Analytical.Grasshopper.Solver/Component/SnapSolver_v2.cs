@@ -13,6 +13,7 @@ using System.Text;
 using System.Threading.Tasks;
 using SAM.Geometry.Grasshopper;
 using Grasshopper.Kernel.Types;
+using SAM.Core;
 
 namespace SAM.Analytical.Grasshopper.Solver.Component
 {
@@ -76,7 +77,6 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            //var panelsBrep = new List<GH_ObjectWrapper>();
             var panelsBrep = new List<Brep>();
             var bucketSizes = new List<double>();
             var weights = new List<double>();
@@ -103,36 +103,78 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
             if (!DA.GetData(9, ref toleranceAngleRad)) return;
             if (!DA.GetData(10, ref arcToleranceAngleRad)) return;
 
-            var SnapSolver = new SnapSolver_GH(panelsBrep, bucketSizes, weights, maxExtensions, levels, 
-                levelSectionOffset, nakedNodeSnapDistance, minWallSegmentLength, toleranceDistance, toleranceAngleRad, arcToleranceAngleRad);
+            #region Grasshopper implementation
 
-            SnapSolver.Execute();
+            //var SnapSolver = new SnapSolver_GH(panelsBrep, bucketSizes, weights, maxExtensions, levels, 
+            //    levelSectionOffset, nakedNodeSnapDistance, minWallSegmentLength, toleranceDistance, toleranceAngleRad, arcToleranceAngleRad);
 
-            //List<Face3D> face3Ds = new List<Face3D>();
+            //SnapSolver.Execute();
 
-            //foreach(GH_ObjectWrapper objectWrapper in panelsBrep)
-            //{
-            //    if(objectWrapper.TryGetSAMGeometries(out List<Face3D> face3Ds_Temp) && face3Ds_Temp != null)
-            //    {
-            //        face3Ds.AddRange(face3Ds_Temp);
-            //    }
-            //}
+            //var snappedWallsSurfaces = SnapSolver.SnappedWalls;
+            //var snappedWallSources = SnapSolver.SnappedSources;
+            //var nakedEnds = SnapSolver.NakedEnds;
 
+            #endregion
 
+            #region Grasshopper based pure SAM implementation test
 
-            //Geometry.Solver.Query.Snap_v2(face3Ds, out List<Face3D> result);
+            List<GH_ObjectWrapper> panelsBrepForSAM = panelsBrep
+                ?.Select(pb => new GH_ObjectWrapper(pb))
+                .ToList();
 
-            //List<Brep> breps = result?.ConvertAll(x => x.ToRhino_Brep());
-            ////Geometry.Grasshopper.Query.TryGetSAMGeometries()
+            List<Face3D> panelFace3Ds = new List<Face3D>();
+            foreach (GH_ObjectWrapper objectWrapper in panelsBrepForSAM)
+                if (objectWrapper.TryGetSAMGeometries(out List<Face3D> face3Ds_Temp) && face3Ds_Temp != null)
+                    panelFace3Ds.AddRange(face3Ds_Temp);
 
-             
-            var snappedWallsSurfaces = SnapSolver.SnappedWalls;
-            var snappedWallSources = SnapSolver.SnappedSources;
-            var nakedEnds = SnapSolver.NakedEnds;
+            List<Range<double>> levelsForSAM = new List<Range<double>>();
+            foreach (Interval level in levels)
+                levelsForSAM.Add(new Range<double>(level.Min, level.Max));
+            
+            var SAM_SnapSolver_Test = new SAM.Geometry.Solver.SnapSolver(
+                panelFace3Ds, bucketSizes, weights, maxExtensions, levelsForSAM,
+                levelSectionOffset, nakedNodeSnapDistance, minWallSegmentLength,
+                toleranceDistance, toleranceAngleRad, arcToleranceAngleRad);
+
+            SAM_SnapSolver_Test.Execute();
+
+            var snappedWallsBrep = new List<List<Brep>>();
+            foreach (var walls in SAM_SnapSolver_Test.SnappedWalls)
+            {
+                var brepWalls = walls?.ConvertAll(f => f.ToRhino_Brep()).ToList();
+                snappedWallsBrep.Add(brepWalls);
+            }
+            var snappedWallsSurfaces = ListOfListsToTree<Brep>(snappedWallsBrep);
+
+            var nakedEndsPoint3d = new List<List<Point3d>>();
+            foreach (var points in SAM_SnapSolver_Test.NakedEnds)
+            {
+                var points3d = points?.ConvertAll(p => new Point3d(p.X, p.Y, p.Z)).ToList();
+                nakedEndsPoint3d.Add(points3d);
+            }
+            var nakedEnds = ListOfListsToTree<Point3d>(nakedEndsPoint3d);
+
+            var snappedWallSources = ListOfListsToTree<int>(SAM_SnapSolver_Test.SnappedSources);           
 
             DA.SetDataTree(0, snappedWallsSurfaces);
             DA.SetDataTree(1, snappedWallSources);
             DA.SetDataTree(2, nakedEnds);
+
+            //Geometry.Solver.Query.Snap_v2(face3Ds, out List<Face3D> result);
+            //List<Brep> breps = result?.ConvertAll(x => x.ToRhino_Brep());
+            ////Geometry.Grasshopper.Query.TryGetSAMGeometries()
+            #endregion
+        }
+        private DataTree<T> ListOfListsToTree<T>(List<List<T>> list)
+        {
+            DataTree<T> tree = new DataTree<T>();
+            int i = 0;
+            foreach (List<T> innerList in list)
+            {
+                tree.AddRange(innerList, new GH_Path(new int[] { 0, i }));
+                i++;
+            }
+            return tree;
         }
     }
 }

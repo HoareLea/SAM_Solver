@@ -8,7 +8,6 @@ using System.Linq;
 
 namespace SAM.Analytical.Grasshopper.Solver.Classes
 {
-    //eliminate dataTrees, eleiminate gh references
 
     public class SnapSolver_GH
     {

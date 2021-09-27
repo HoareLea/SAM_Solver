@@ -1,7 +1,9 @@
 ﻿using SAM.Geometry.Planar;
 using SAM.Geometry.Spatial;
+using SAM.Core;
 using System.Collections.Generic;
 using System.Linq;
+using SAM.Core.Solver;
 
 namespace SAM.Geometry.Solver
 {
@@ -170,8 +172,8 @@ namespace SAM.Geometry.Solver
             splitParams.Add(1);
             foreach (Segment2D segment in SourceSegments)
             {
-                double fromParam = SAM_Clamp(SnapSolver.SAM_ClosestParameter(ProjectedAxis, segment.Start), 0, 1);
-                double toParam = SAM_Clamp(SnapSolver.SAM_ClosestParameter(ProjectedAxis, segment.End), 0, 1);
+                double fromParam = ProjectedAxis.ClosestParameter(segment.Start).Clamp(0, 1);
+                double toParam = ProjectedAxis.ClosestParameter(segment.End).Clamp(0, 1);
                 // check if the params are already on the list
                 bool isNew = true; // check the START
                 for (int i = 0; i < splitParams.Count; i++)
@@ -406,8 +408,8 @@ namespace SAM.Geometry.Solver
                 return false;
             }
 
-            double snappedStartParam = SnapSolver.SAM_ClosestParameter(this.ProjectedAxis, other.ProjectedAxis.Start);
-            double snappedEndParam = SnapSolver.SAM_ClosestParameter(this.ProjectedAxis, other.ProjectedAxis.End);
+            double snappedStartParam = this.ProjectedAxis.ClosestParameter(other.ProjectedAxis.Start);
+            double snappedEndParam = this.ProjectedAxis.ClosestParameter(other.ProjectedAxis.End);
             Core.Range<double> otherRange = new Core.Range<double>(snappedStartParam, snappedEndParam);
             otherRange = MakeRangeIncreasing(otherRange);
 
@@ -482,7 +484,7 @@ namespace SAM.Geometry.Solver
             {
                 if (!allowMovingEnds)
                 {
-                    double closestParam = SnapSolver.SAM_ClosestParameter(ProjectedAxis, segmentEndPoints[i]);
+                    double closestParam = ProjectedAxis.ClosestParameter(segmentEndPoints[i]);
                     if (Core.Query.AlmostEqual(closestParam, 0, SnapSolver.ModelTolerance) || Core.Query.AlmostEqual(closestParam, 1, SnapSolver.ModelTolerance))
                     {
                         continue;
@@ -510,8 +512,8 @@ namespace SAM.Geometry.Solver
             splitParams.Add(1.0);
             foreach (Segment2D segment in SourceSegments)
             {
-                double fromParam = SAM_Clamp(SnapSolver.SAM_ClosestParameter(ProjectedAxis, segment.Start), 0, 1);
-                double toParam = SAM_Clamp(SnapSolver.SAM_ClosestParameter(ProjectedAxis, segment.End), 0, 1);
+                double fromParam = ProjectedAxis.ClosestParameter(segment.Start).Clamp(0, 1);
+                double toParam = ProjectedAxis.ClosestParameter(segment.End).Clamp(0, 1);
 
                 // check if the params are already on the list
                 bool isNew = true; // check the START
@@ -555,7 +557,7 @@ namespace SAM.Geometry.Solver
                 { // already covered by adjusting the segments
                     continue;
                 }
-                double newSplit = SAM_Clamp(SnapSolver.SAM_ClosestParameter(ProjectedAxis, additionalSplitLocations[i]), 0, 1);
+                double newSplit = ProjectedAxis.ClosestParameter(additionalSplitLocations[i]).Clamp(0, 1);
                 bool isNew = true; // same for the END param
                 for (int j = 0; j < splitParams.Count; j++)
                 {
@@ -650,10 +652,10 @@ namespace SAM.Geometry.Solver
                 }
 
                 // clamp to finite segment
-                double startParam = SnapSolver.SAM_ClosestParameter(ProjectedAxis, snappedStart);
-                startParam = SAM_Clamp(startParam, 0, 1);
-                double endParam = SnapSolver.SAM_ClosestParameter(ProjectedAxis, snappedEnd);
-                endParam = SAM_Clamp(endParam, 0, 1);
+                double startParam = ProjectedAxis.ClosestParameter(snappedStart);
+                startParam = startParam.Clamp(0, 1);
+                double endParam = ProjectedAxis.ClosestParameter(snappedEnd);
+                endParam = endParam.Clamp(0, 1);
 
                 snappedStart = ProjectedAxis.GetPoint(startParam);
                 snappedEnd = ProjectedAxis.GetPoint(endParam);
@@ -813,8 +815,8 @@ namespace SAM.Geometry.Solver
             fully = false;
             Segment2D dominantLine = this.ProjectedAxis;
             Segment2D otherLine = other.ProjectedAxis;
-            double paramFrom = SnapSolver.SAM_ClosestParameter(dominantLine, otherLine.Start);
-            double paramTo = SnapSolver.SAM_ClosestParameter(dominantLine, otherLine.End);
+            double paramFrom = dominantLine.ClosestParameter(otherLine.Start);
+            double paramTo = dominantLine.ClosestParameter(otherLine.End);
 
             double paramBucketMargin = this.MaxExtension / this.Length;
             Core.Range<double> dominantRange = new Core.Range<double>(-paramBucketMargin, 1 + paramBucketMargin);
@@ -838,20 +840,6 @@ namespace SAM.Geometry.Solver
                 return true;
             }
             return false;
-        }
-
-        /// <summary>
-        /// explanation - clamp goes to SAM.Core
-        /// </summary>
-        /// <param name="parameter"></param>
-        /// <param name="bottom"></param>
-        /// <param name="top"></param>
-        /// <returns></returns>
-        private double SAM_Clamp(double parameter, double bottom, double top)
-        {
-            if (parameter < bottom) return bottom;
-            if (parameter > top) return top;
-            return parameter;
         }
     }
 }

@@ -1,14 +1,17 @@
 ﻿using SAM.Geometry.Spatial;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SAM.Geometry.Solver
 {
     public static partial class Query
     {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="face"></param>
+        /// <param name="plane"></param>
+        /// <param name="resultingSegments3D"></param>
+        /// <returns></returns>
         public static bool Intersecting(this Face3D face, Plane plane, out List<Segment3D> resultingSegments3D)
         {
             var intersectionResult = plane.PlanarIntersectionResult(face);

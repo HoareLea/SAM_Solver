@@ -76,7 +76,8 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            var panelsBrep = new List<GH_ObjectWrapper>();
+            //var panelsBrep = new List<GH_ObjectWrapper>();
+            var panelsBrep = new List<Brep>();
             var bucketSizes = new List<double>();
             var weights = new List<double>();
             var maxExtensions = new List<double>();
@@ -102,36 +103,36 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
             if (!DA.GetData(9, ref toleranceAngleRad)) return;
             if (!DA.GetData(10, ref arcToleranceAngleRad)) return;
 
-            List<Face3D> face3Ds = new List<Face3D>();
+            var SnapSolver = new SnapSolver_GH(panelsBrep, bucketSizes, weights, maxExtensions, levels, 
+                levelSectionOffset, nakedNodeSnapDistance, minWallSegmentLength, toleranceDistance, toleranceAngleRad, arcToleranceAngleRad);
 
-            foreach(GH_ObjectWrapper objectWrapper in panelsBrep)
-            {
-                if(objectWrapper.TryGetSAMGeometries(out List<Face3D> face3Ds_Temp) && face3Ds_Temp != null)
-                {
-                    face3Ds.AddRange(face3Ds_Temp);
-                }
-            }
+            SnapSolver.Execute();
 
+            //List<Face3D> face3Ds = new List<Face3D>();
 
-
-            Geometry.Solver.Query.Snap_v2(face3Ds, out List<Face3D> result);
-
-            List<Brep> breps = result?.ConvertAll(x => x.ToRhino_Brep());
-
-            //List<GH_ObjectWrapper> objectWrappers = new List<GH_ObjectWrapper>(br,
-            //    out );
+            //foreach(GH_ObjectWrapper objectWrapper in panelsBrep)
+            //{
+            //    if(objectWrapper.TryGetSAMGeometries(out List<Face3D> face3Ds_Temp) && face3Ds_Temp != null)
+            //    {
+            //        face3Ds.AddRange(face3Ds_Temp);
+            //    }
+            //}
 
 
 
-            //Geometry.Grasshopper.Query.TryGetSAMGeometries()
+            //Geometry.Solver.Query.Snap_v2(face3Ds, out List<Face3D> result);
 
-            //var snappedWallsSurfaces = surfaces;
-            //var snappedWallSources = null;//SnapSolver.SnappedSources;
-            //var nakedEnds = null//SnapSolver.NakedEnds;
+            //List<Brep> breps = result?.ConvertAll(x => x.ToRhino_Brep());
+            ////Geometry.Grasshopper.Query.TryGetSAMGeometries()
 
-            //DA.SetDataTree(0, snappedWallsSurfaces);
-            //DA.SetDataTree(1, snappedWallSources);
-            //DA.SetDataTree(2, nakedEnds);
+             
+            var snappedWallsSurfaces = SnapSolver.SnappedWalls;
+            var snappedWallSources = SnapSolver.SnappedSources;
+            var nakedEnds = SnapSolver.NakedEnds;
+
+            DA.SetDataTree(0, snappedWallsSurfaces);
+            DA.SetDataTree(1, snappedWallSources);
+            DA.SetDataTree(2, nakedEnds);
         }
     }
 }

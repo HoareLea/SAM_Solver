@@ -79,7 +79,7 @@ namespace SAM.Geometry.Solver
         /// <summary>
         /// output
         /// </summary>
-        public List<List<Point2D>> NakedEnds { get; private set; } = new List<List<Point2D>>();
+        public List<List<Point3D>> NakedEnds { get; private set; } = new List<List<Point3D>>();
         /// <summary>
         /// output
         /// </summary>
@@ -139,7 +139,7 @@ namespace SAM.Geometry.Solver
             //GH_Path levelPath = new GH_Path(0);
             for (int i = 0; i < snappedWallsPerFloor.Keys.Count; i++)
             {
-                NakedEnds.Add(new List<Point2D>());
+                NakedEnds.Add(new List<Point3D>());
                 List<SnappedWall> currentFloor = snappedWallsPerFloor[snappedWallsPerFloor.Keys[i]];
                 for (int j = 0; j < currentFloor.Count; j++)
                 {
@@ -149,9 +149,9 @@ namespace SAM.Geometry.Solver
                     SnappedSources.AddRange(source);
 
                     if (currentFloor[j].NakedStart)
-                        NakedEnds[i].Add(currentFloor[j].ProjectedAxis.Start);
+                        NakedEnds[i].Add(ProjectionPlane.Convert(currentFloor[j].ProjectedAxis.Start));
                     if (currentFloor[j].NakedEnd)
-                        NakedEnds[i].Add(currentFloor[j].ProjectedAxis.End);
+                        NakedEnds[i].Add(ProjectionPlane.Convert(currentFloor[j].ProjectedAxis.End));
                 }
             }
         }
@@ -301,7 +301,7 @@ namespace SAM.Geometry.Solver
 
                     double elevation = floor.Key;
 
-                    List<double> parameters = anchors.Select(a => SAM_ClosestParameter(masterAxis,a)).ToList();
+                    List<double> parameters = anchors.Select(a => masterAxis.ClosestParameter(a)).ToList();
                     double minParam = parameters.Min();
                     double maxParam = parameters.Max();
 
@@ -553,11 +553,6 @@ namespace SAM.Geometry.Solver
             }
 
             return newValues;
-        }
-        public static double SAM_ClosestParameter(Segment2D segment, Point2D point)
-        {
-            var pointClosestToSegment = segment.Closest(point);
-            return segment.GetParameter(pointClosestToSegment);
         }
     }
 }

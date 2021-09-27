@@ -65,10 +65,16 @@
     <Compile Include="Classes\SnapSolver.cs" />
     <Compile Include="Create\Grid2D.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Query\ClosestParameter.cs" />
     <Compile Include="Query\Intersecting.cs" />
     <Compile Include="Query\Snap_v2.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\SAM.Core.Solver\SAM.Core.Solver.csproj">
+      <Project>{DFA00AD8-8169-4E3C-943A-05F6F2196E3A}</Project>
+      <Name>SAM.Core.Solver</Name>
+    </ProjectReference>
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json">
       <Version>13.0.1</Version>

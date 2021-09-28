@@ -350,8 +350,8 @@ namespace SAM.Geometry.Solver
                     double theirParam = 0;
                     Segment2D currentExtended = walls[i].ProjectedAxis;
                     Segment2D otherExtended = walls[j].ProjectedAxis;
-                    currentExtended.Extend(SnapSolver.ModelTolerance, true, true);
-                    otherExtended.Extend(SnapSolver.ModelTolerance, true, true);
+                    currentExtended = currentExtended.Extend(SnapSolver.ModelTolerance, true, true);
+                    otherExtended = otherExtended.Extend(SnapSolver.ModelTolerance, true, true);
                     //if (Rhino.Geometry.Intersect.Intersection.LineLine(currentExtended, otherExtended, 
                     //    out myParam, out theirParam, SAM_SnapSolver.SAMTolerance, finiteSegments: true))
                     if(currentExtended.Intersect(otherExtended, SnapSolver.SAMTolerance))
@@ -494,8 +494,7 @@ namespace SAM.Geometry.Solver
             {
                 double sectionHeight = levels[j].Min + levelOffset;
                 Core.Range<double> currentHeight = levels[j];
-                Plane currentPlane = Plane.WorldXY;
-                currentPlane.GetMoved(new Vector3D(0, 0, sectionHeight));
+                Plane currentPlane = new Plane(Plane.WorldXY, new Point3D(0,0, sectionHeight));
 
                 for (int i = 0; i < panelsBrep.Count; i++)
                 {

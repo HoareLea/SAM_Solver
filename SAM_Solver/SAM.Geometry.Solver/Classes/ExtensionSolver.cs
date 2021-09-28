@@ -164,12 +164,17 @@ namespace SAM.Geometry.Solver
                 double extensionAsParameter = parent.MaxExtension / parent.BaseLine.GetLength();
                 double startT0 = extensionAsParameter <= 0.5 ? extensionAsParameter : 0.5;
                 double startT1 = -1 * extensionAsParameter;
-                startHalf.ExtensionSegment = new Segment2D(parent.BaseLine.Point2D(startT0), parent.BaseLine.Point2D(startT1));
-                startHalf.FullSegment = new Segment2D(parent.BaseLine.Point2D(0.5), parent.BaseLine.Point2D(startT1));
+                Point2D extSegSt = parent.BaseLine.PointFromBeyondRange(startT0);
+                Point2D extSegEnd = parent.BaseLine.PointFromBeyondRange(startT1);
+                startHalf.ExtensionSegment = new Segment2D(extSegSt, extSegEnd);
+                startHalf.FullSegment = new Segment2D(parent.BaseLine.GetPoint(0.5), 
+                    parent.BaseLine.PointFromBeyondRange(startT1));
                 double endT0 = (1 - extensionAsParameter) >= 0.5 ? (1 - extensionAsParameter) : 0.5;
                 double endT1 = 1 + extensionAsParameter;
-                endHalf.ExtensionSegment = new Segment2D(parent.BaseLine.Point2D(endT0), parent.BaseLine.Point2D(endT1));
-                endHalf.FullSegment = new Segment2D(parent.BaseLine.Point2D(0.5), parent.BaseLine.Point2D(endT1));
+                endHalf.ExtensionSegment = new Segment2D(parent.BaseLine.PointFromBeyondRange(endT0), 
+                    parent.BaseLine.PointFromBeyondRange(endT1));
+                endHalf.FullSegment = new Segment2D(parent.BaseLine.Point2D(0.5), 
+                    parent.BaseLine.PointFromBeyondRange(endT1));
                 startHalf.OriginalEndOnExtensionParam = startHalf.ExtensionSegment.GetParameter(startHalf.OriginalEnd);
                 endHalf.OriginalEndOnExtensionParam = endHalf.ExtensionSegment.GetParameter(endHalf.OriginalEnd);
             }
@@ -320,13 +325,13 @@ namespace SAM.Geometry.Solver
                 Point2D newStart = StartHalf.GetFarthestActiveIntersection();
                 Point2D newEnd = EndHalf.GetFarthestActiveIntersection();
 
-                if (newStart == Point2D.Invalid)
+                if (newStart.IsNaN())
                 {
-                    newStart = BaseLine.GetStart();
+                    newStart = BaseLine.Start;
                 }
-                if (newEnd == Point2D.Invalid)
+                if (newEnd.IsNaN())
                 {
-                    newEnd = BaseLine.GetEnd();
+                    newEnd = BaseLine.End;
                 }
 
                 return new Segment2D(newStart, newEnd);

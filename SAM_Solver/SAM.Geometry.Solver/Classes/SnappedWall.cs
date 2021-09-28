@@ -9,7 +9,7 @@ namespace SAM.Geometry.Solver
 {
     public class SnappedWall
     {
-        private Segment2D _projectedAxis = default(Segment2D);
+        private Segment2D _projectedAxis = new Segment2D(Point2D.Invalid, Point2D.Invalid);
         public Segment2D ProjectedAxis
         {
             get
@@ -216,7 +216,7 @@ namespace SAM.Geometry.Solver
                 Segment2D piece = new Segment2D(ProjectedAxis.GetPoint(splitParams[i]), ProjectedAxis.GetPoint(splitParams[i + 1]));
                 // shorten the current piece to avoid taking neighbors indices
                 Segment2D testPiece = piece;
-                testPiece.Extend(-1.5 * SnapSolver.ModelTolerance, true, true);
+                testPiece = testPiece.Extend(-1.5 * SnapSolver.ModelTolerance, true, true);
                 List<int> indices = new List<int>();
                 for (int j = 0; j < SourceSegments.Count; j++)
                 {
@@ -583,8 +583,8 @@ namespace SAM.Geometry.Solver
             {
                 Segment2D piece = new Segment2D(ProjectedAxis.GetPoint(splitParams[i]), ProjectedAxis.GetPoint(splitParams[i + 1]));
                 // shorten the current piece to avoid taking neighbours' indices
-                Segment2D testPiece = piece;
-                testPiece.Extend(-1.5 * SnapSolver.ModelTolerance, true, true);
+                Segment2D testPiece = piece.Clone<Segment2D>();
+                testPiece = testPiece.Extend(-1.5 * SnapSolver.ModelTolerance, true, true);
                 List<int> indices = new List<int>();
                 for (int j = 0; j < SourceSegments.Count; j++)
                 {

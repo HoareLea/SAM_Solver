@@ -146,13 +146,19 @@ namespace SAM.Geometry.Solver
             for (int i = 0; i < snappedWallsPerFloor.Keys.Count; i++)
             {
                 NakedEnds.Add(new List<Point3D>());
+                SnappedWalls.Add(new List<Face3D>());
+                //SnappedSources.Add(new List<int>());
                 List<SnappedWall> currentFloor = snappedWallsPerFloor[snappedWallsPerFloor.Keys[i]];
                 for (int j = 0; j < currentFloor.Count; j++)
                 {
                     List<List<int>> source = new List<List<int>>();
                     List<Face3D> wallSegments = currentFloor[j].GetFaces3D(out source);
-                    SnappedWalls.Add(wallSegments);
+                    SnappedWalls[i].AddRange(wallSegments);
                     SnappedSources.AddRange(source);
+                    //foreach (var sour in source)
+                    //{
+                    //    SnappedSources[i].AddRange(sour);
+                    //}
 
                     if (currentFloor[j].NakedStart)
                         NakedEnds[i].Add(ProjectionPlane.Convert(currentFloor[j].ProjectedAxis.Start));

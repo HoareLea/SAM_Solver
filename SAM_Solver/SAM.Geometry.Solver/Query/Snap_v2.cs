@@ -14,7 +14,8 @@ namespace SAM.Geometry.Solver
             double toleranceDistance, double toleranceAngleRad, double arcToleranceAngleRad,
             out List<List<Face3D>> snappedWallsFace3Ds,
             out List<List<int>> snappedWallSources,
-            out List<List<Point3D>> nakedEnds)
+            out List<List<Point3D>> nakedEnds,
+            out List<string> debug)
         {
             var SnapSolver = new SnapSolver(face3Ds.ToList(), bucketSizes.ToList(), weights.ToList(), maxExtensions.ToList(), levels,
                 levelSectionOffset, nakedNodeSnapDistance, minWallSegmentLength, 
@@ -25,6 +26,7 @@ namespace SAM.Geometry.Solver
             snappedWallsFace3Ds = SnapSolver.SnappedWalls;
             snappedWallSources = SnapSolver.SnappedSources;
             nakedEnds = SnapSolver.NakedEnds;
+            debug = SnapSolver.Debug;
         }
     }
 }

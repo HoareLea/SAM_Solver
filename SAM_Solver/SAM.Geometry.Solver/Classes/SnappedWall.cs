@@ -52,8 +52,17 @@ namespace SAM.Geometry.Solver
         }
         private Segment2D Segment3DPlanarProjection(Segment3D inputSegment, Plane destinationPlane)
         {
-            var projectedSegment3D = destinationPlane.Project(inputSegment);
-            return destinationPlane.Convert(projectedSegment3D);
+            //var projectedSegment3D = destinationPlane.Project(inputSegment);
+            //var segment2d = destinationPlane.Convert(projectedSegment3D);
+            //return segment2d;
+            var z = destinationPlane.Origin.Z;
+            var inputStart = inputSegment.GetStart();
+            var inputEnd = inputSegment.GetEnd();
+            var segment2D = new Segment2D(
+                new Point2D(inputStart.X, inputStart.Y),
+                new Point2D(inputEnd.X, inputEnd.Y));
+
+            return segment2D;
         }
 
         public void ResetNakedStatus()
@@ -304,11 +313,16 @@ namespace SAM.Geometry.Solver
             if (startIsNaked && startSnapCandidates.Count > 0) // find the best anchor
             {
                 Vector2D startExtensionDirection = ProjectedAxis.Direction.Unit * -1;
+
                 Point2D closestCandidate = Point2D.Invalid;
                 double shortestDistance = double.PositiveInfinity;
                 foreach (Point2D candidate in startSnapCandidates)
                 {
-                    Vector2D snapDirection = (candidate - start).Unit;
+                    Vector2D snapDirection = new Vector2D(
+                        candidate.X - start.X, candidate.Y - start.Y);
+                    if(snapDirection.Length > 0)
+                        snapDirection = snapDirection.Unit;
+    
                     double dot = startExtensionDirection * snapDirection;
                     if (dot <= minDot) // snap only forward
                     {
@@ -334,7 +348,10 @@ namespace SAM.Geometry.Solver
                 double shortestDistance = double.PositiveInfinity;
                 foreach (Point2D candidate in endSnapCandidates)
                 {
-                    Vector2D snapDirection = (candidate - end).Unit;
+                    Vector2D snapDirection = new Vector2D(
+                        candidate.X - start.X, candidate.Y - start.Y);
+                    if (snapDirection.Length > 0)
+                        snapDirection = snapDirection.Unit;
                     double dot = endExtensionDirection * snapDirection;
                     if (dot <= minDot) // snap only forward
                     {
@@ -353,22 +370,22 @@ namespace SAM.Geometry.Solver
                 }
             }
 
-            if ((newStart == Point2D.Invalid) && (newEnd == Point2D.Invalid))
+            if ((newStart.IsNaN()) && (newEnd.IsNaN()))
             {
                 report = "Not snapped because no anchors are within range";
                 return false;
             }
 
-            if (newStart != Point2D.Invalid)
+            if (!newStart.IsNaN())
             {
                 this.NakedStart = false;
             }
-            if (newEnd != Point2D.Invalid)
+            if (!newEnd.IsNaN())
             {
                 this.NakedEnd = false;
             }
-            newStart = (newStart == Point2D.Invalid) ? ProjectedAxis.Start : newStart;
-            newEnd = (newEnd == Point2D.Invalid) ? ProjectedAxis.End : newEnd;
+            newStart = (newStart.IsNaN()) ? ProjectedAxis.Start : newStart;
+            newEnd = (newEnd.IsNaN()) ? ProjectedAxis.End : newEnd;
             UpdateEndPoints(newStart, newEnd, stretch: true);
             //ProjectedAxis = new Line(newStart, newEnd);
             report = "Snapped.";
@@ -408,6 +425,7 @@ namespace SAM.Geometry.Solver
                 return false;
             }
 
+            //var tempProjectionAxis = this.ProjectedAxis.Extend(1000, true, true);
             double snappedStartParam = this.ProjectedAxis.ClosestParameter(other.ProjectedAxis.Start);
             double snappedEndParam = this.ProjectedAxis.ClosestParameter(other.ProjectedAxis.End);
             Core.Range<double> otherRange = new Core.Range<double>(snappedStartParam, snappedEndParam);
@@ -557,7 +575,8 @@ namespace SAM.Geometry.Solver
                 { // already covered by adjusting the segments
                     continue;
                 }
-                double newSplit = ProjectedAxis.ClosestParameter(additionalSplitLocations[i]).Clamp(0, 1);
+                double newSplit = ProjectedAxis.ClosestParameter(additionalSplitLocations[i]);           
+                newSplit = newSplit.Clamp(0, 1);
                 bool isNew = true; // same for the END param
                 for (int j = 0; j < splitParams.Count; j++)
                 {
@@ -606,8 +625,12 @@ namespace SAM.Geometry.Solver
                     continue;
                 }
                 Segment2D newAxis = splitSegments[i];
-                var newAxis3D = SnapSolver.ProjectionPlane.Convert(newAxis);
-                newAxis3D.GetMoved(new Vector3D(0, 0, Elevation));
+                var newAxis3D = new Segment3D(
+                    new Point3D(newAxis.Start.X, newAxis.Start.Y, Elevation),
+                    new Point3D(newAxis.End.X, newAxis.End.Y, Elevation));
+                //var newAxis3D = SnapSolver.ProjectionPlane.Convert(newAxis);
+
+                //newAxis3D.GetMoved(new Vector3D(0, 0, Elevation));
                 SnappedWall wallSegment = new SnappedWall(sourceIndices[i][0], newAxis3D, Weight, BucketSize, MaxExtension, OriginalHeight);
                 // add the rest of the source indices
                 for (int j = 1; j < sourceIndices[i].Count; j++)
@@ -652,6 +675,8 @@ namespace SAM.Geometry.Solver
                 }
 
                 // clamp to finite segment
+                //if (snappedStart.IsNaN() || snappedStart == null) snappedStart = ProjectedAxis.Closest(currentSegment.Start, true);
+                //if(snappedEnd.IsNaN() || snappedEnd == null) snappedEnd = ProjectedAxis.Closest(currentSegment.End, true);
                 double startParam = ProjectedAxis.ClosestParameter(snappedStart);
                 startParam = startParam.Clamp(0, 1);
                 double endParam = ProjectedAxis.ClosestParameter(snappedEnd);
@@ -659,6 +684,14 @@ namespace SAM.Geometry.Solver
 
                 snappedStart = ProjectedAxis.GetPoint(startParam);
                 snappedEnd = ProjectedAxis.GetPoint(endParam);
+
+                //null problem in some cases
+                if (snappedStart == null || snappedStart.IsNaN() || snappedEnd == null || snappedEnd.IsNaN())
+                {
+                    snappedStart = ProjectedAxis.Start;
+                    snappedEnd = ProjectedAxis.End;
+                }
+
 
                 if (snappedStart.Distance(ProjectedAxis.Start) <= snappingTolerance)
                 {

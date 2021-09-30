@@ -67,6 +67,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
             pManager.AddIntegerParameter("snappedWallsSources", "SWSrc", "the indexes of SnappedWallsSurfaces parent surfaces from _panelsBrep",
                 GH_ParamAccess.tree);
             pManager.AddPointParameter("nakedEnds", "NE", "naked verticies of linear representation left after snapping", GH_ParamAccess.tree);
+            pManager.AddTextParameter("Debug","Debug", "Debug", GH_ParamAccess.list);
         }
 
         private bool CheckTolerance()
@@ -111,10 +112,12 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
             var snappedWallsSurfaces = SnapSolver.SnappedWalls;
             var snappedWallSources = SnapSolver.SnappedSources;
             var nakedEnds = SnapSolver.NakedEnds;
+            var debug = SnapSolver.Debug;
 
             DA.SetDataTree(0, snappedWallsSurfaces);
             DA.SetDataTree(1, snappedWallSources);
             DA.SetDataTree(2, nakedEnds);
+            DA.SetDataList(3, debug);
         }
     }
 }

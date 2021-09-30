@@ -86,6 +86,8 @@ namespace SAM.Analytical.Grasshopper.Solver.Classes
         /// </summary>
         public DataTree<int> SnappedSources { get; private set; } = new DataTree<int>();
 
+
+        public List<string> Debug { get; set; } = new List<string>();
         /// <summary>
         /// 
         /// </summary>
@@ -134,6 +136,12 @@ namespace SAM.Analytical.Grasshopper.Solver.Classes
             SnapOpenNodes(snapped, NakedNodeSnapDistance);
             snapped = CreateGraph(snapped, MinWallSegmentLength); // graph processing
             snapped = MergeColinearWalls(snapped);
+
+            foreach (var snap in snapped)
+            {
+                Debug.Add(snap.Length.ToString()) ;
+            }
+            
             MarkNakedNodes(snapped);
 
             SortedList<double, List<SnappedWall>> snappedWallsPerFloor = SortWallsByElevation(snapped);

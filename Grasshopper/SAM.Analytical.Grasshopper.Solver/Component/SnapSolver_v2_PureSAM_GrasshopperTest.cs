@@ -67,6 +67,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
             pManager.AddIntegerParameter("snappedWallsSources", "SWSrc", "the indexes of SnappedWallsSurfaces parent surfaces from _panelsBrep",
                 GH_ParamAccess.tree);
             pManager.AddPointParameter("nakedEnds", "NE", "naked verticies of linear representation left after snapping", GH_ParamAccess.tree);
+            pManager.AddTextParameter("Debug", "Debug", "Debug", GH_ParamAccess.list);
         }
 
         private bool CheckTolerance()
@@ -122,7 +123,8 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
                 toleranceDistance, toleranceAngleRad, arcToleranceAngleRad,
                 out List<List<Face3D>> SnappedWalls,
                 out List<List<int>> SnappedSources,
-                out List<List<Point3D>> NakedEnds);
+                out List<List<Point3D>> NakedEnds,
+                out List<string> Debug);
 
 
             var snappedWallsBrep = new List<List<Brep>>();
@@ -146,6 +148,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
             DA.SetDataTree(0, snappedWallsSurfaces);
             DA.SetDataTree(1, snappedWallSources);
             DA.SetDataTree(2, nakedEnds);
+            DA.SetDataList(3, Debug);
 
             //Geometry.Solver.Query.Snap_v2(face3Ds, out List<Face3D> result);
             //List<Brep> breps = result?.ConvertAll(x => x.ToRhino_Brep());

@@ -443,7 +443,8 @@ namespace SAM.Analytical.Grasshopper.Solver.Classes
                 if (!allowMovingEnds)
                 {
                     double closestParam = ProjectedAxis.ClosestParameter(segmentEndPoints[i]);
-                    if (RhinoMath.EpsilonEquals(closestParam, 0, SnapSolver_GH.ModelTolerance) || RhinoMath.EpsilonEquals(closestParam, 1, SnapSolver_GH.ModelTolerance))
+                    if (RhinoMath.EpsilonEquals(closestParam, 0, SnapSolver_GH.ModelTolerance) || 
+                        RhinoMath.EpsilonEquals(closestParam, 1, SnapSolver_GH.ModelTolerance))
                     {
                         continue;
                     }

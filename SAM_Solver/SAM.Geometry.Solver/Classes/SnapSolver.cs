@@ -84,7 +84,7 @@ namespace SAM.Geometry.Solver
         /// output
         /// </summary>
         public List<List<int>> SnappedSources { get; private set; } = new List<List<int>>();
-
+        public List<string> Debug { get; set; } = new List<string>();
         /// <summary>
         /// 
         /// </summary>
@@ -133,6 +133,12 @@ namespace SAM.Geometry.Solver
             SnapOpenNodes(snapped, NakedNodeSnapDistance);
             snapped = CreateGraph(snapped, MinWallSegmentLength); // graph processing
             snapped = MergeColinearWalls(snapped);
+
+            foreach (var snap in snapped)
+            {
+                Debug.Add(snap.Length.ToString());
+            }
+
             MarkNakedNodes(snapped);
 
             SortedList<double, List<SnappedWall>> snappedWallsPerFloor = SortWallsByElevation(snapped);
@@ -209,8 +215,12 @@ namespace SAM.Geometry.Solver
                         floor.Value[k].UpdateWithTrim(currentAxis);
                     }
                     double elevation = floor.Key;
-                    Segment3D axis = ProjectionPlane.Convert(currentAxis);
-                    axis.GetMoved(new Vector3D(0, 0, elevation));
+                    Segment3D axis = new Segment3D(
+                        new Point3D(currentAxis.Start.X, currentAxis.Start.Y, elevation),
+                        new Point3D(currentAxis.End.X, currentAxis.End.Y, elevation)
+                        );
+                    //Segment3D axis = ProjectionPlane.Convert(currentAxis);
+                    //axis = axis.GetMoved(new Vector3D(0, 0, elevation));
                     // TODO: why those values are assigned to all new walls?
                     List<int> sources = floor.Value.SelectMany(wall => wall.SourceIndices).ToList();
                     double weight = floor.Value.Select(wall => wall.Weight).Max();
@@ -270,7 +280,7 @@ namespace SAM.Geometry.Solver
                         }
                         if (masterWall.IsRoughlyColinearWith(thisLevelWalls[j], angleRadTol))
                         {
-                            if (thisLevelWalls[j].SourceIndices.All(id => masterSources.Contains(id)))
+                           if (thisLevelWalls[j].SourceIndices.All(id => masterSources.Contains(id)))
                                 colinearIndices.Add(j);
                         }
                     }
@@ -306,8 +316,11 @@ namespace SAM.Geometry.Solver
                     double maxParam = parameters.Max();
 
                     masterAxis = new Segment2D(anchors[parameters.IndexOf(minParam)], anchors[parameters.IndexOf(maxParam)]);
-                    var masterAxis3D = ProjectionPlane.Convert(masterAxis);
-                    masterAxis3D.GetMoved(new Vector3D(0, 0, elevation));                    
+                    var masterAxis3D = new Segment3D(
+                        new Point3D(masterAxis.Start.X, masterAxis.Start.Y, elevation),
+                        new Point3D(masterAxis.End.X, masterAxis.End.Y, elevation));
+                    //var masterAxis3D = ProjectionPlane.Convert(masterAxis);
+                    //masterAxis3D.GetMoved(new Vector3D(0, 0, elevation));                    
 
                     SnappedWall mergedWall = new SnappedWall(masterWall.SourceIndices[0], masterAxis3D, 
                         masterWall.Weight, masterWall.BucketSize, masterWall.MaxExtension, masterWall.OriginalHeight);
@@ -397,7 +410,6 @@ namespace SAM.Geometry.Solver
                 //Print("Current wall [{0}] anchor count: {1}, its first source: {2}", i, anchorCandidates.Count, currentWall.SourceIndices[0]);
                 string report = "";
                 bool snapped = currentWall.TrySnapIfNaked(anchorCandidates, snappingDistance, out report);
-                //Print("Wall [{0}] / first source {1}: {2}", i, currentWall.SourceIndices[0], report);
             }
         }
         private static List<SnappedWall> SnapAndAdjustWalls(List<SnappedWall> walls)

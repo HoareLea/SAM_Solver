@@ -54,25 +54,25 @@ namespace SAM.Geometry.Solver
 
         private void AddEdge(Segment2D edge, double weight)
         {           
-            Node nodeFrom = Nodes.FirstOrDefault(nd => nd.IsCoincident(edge.GetStart(), Tolerance));
+            Node nodeFrom = Nodes.FirstOrDefault(nd => nd.IsCoincident(edge.Start, Tolerance));
             if (nodeFrom == null)
             {
-                nodeFrom = new Node(edge.GetStart(), weight);
+                nodeFrom = new Node(edge.Start, weight);
                 Nodes.Add(nodeFrom);
             }
             else
             {
-                nodeFrom.MergeIn(edge.GetStart(), weight);
+                nodeFrom.MergeIn(edge.Start, weight);
             }
-            Node nodeTo = Nodes.FirstOrDefault(nd => nd.IsCoincident(edge.GetEnd(), Tolerance));
+            Node nodeTo = Nodes.FirstOrDefault(nd => nd.IsCoincident(edge.End, Tolerance));
             if (nodeTo == null)
             {
-                nodeTo = new Node(edge.GetEnd(), weight);
+                nodeTo = new Node(edge.End, weight);
                 Nodes.Add(nodeTo);
             }
             else
             {
-                nodeTo.MergeIn(edge.GetStart(), weight);
+                nodeTo.MergeIn(edge.End, weight);
             }
             Edges.Add(new Edge(Edges.Count, nodeFrom, nodeTo));
         }

@@ -157,8 +157,8 @@ namespace SAM.Geometry.Solver
             {
                 startHalf = new HalfEdge();
                 endHalf = new HalfEdge();
-                startHalf.OriginalEnd = parent.BaseLine.GetStart();
-                endHalf.OriginalEnd = parent.BaseLine.GetEnd();
+                startHalf.OriginalEnd = parent.BaseLine.Start;
+                endHalf.OriginalEnd = parent.BaseLine.End;
                 startHalf.Parent = parent;
                 endHalf.Parent = parent;
                 double extensionAsParameter = parent.MaxExtension / parent.BaseLine.GetLength();

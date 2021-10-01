@@ -135,14 +135,13 @@ namespace SAM.Analytical.Grasshopper.Solver.Classes
             snapped = ExplodeWallsAtIntersections(snapped);
             SnapOpenNodes(snapped, NakedNodeSnapDistance);
             snapped = CreateGraph(snapped, MinWallSegmentLength); // graph processing
-            snapped = MergeColinearWalls(snapped);
+            snapped = MergeColinearWalls(snapped);            
+            MarkNakedNodes(snapped);
 
             foreach (var snap in snapped)
             {
                 Debug.Add(snap.Length.ToString()) ;
             }
-            
-            MarkNakedNodes(snapped);
 
             SortedList<double, List<SnappedWall>> snappedWallsPerFloor = SortWallsByElevation(snapped);
             GH_Path levelPath = new GH_Path(0);

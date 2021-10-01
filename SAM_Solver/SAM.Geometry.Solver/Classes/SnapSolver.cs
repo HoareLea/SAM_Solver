@@ -131,16 +131,20 @@ namespace SAM.Geometry.Solver
             TrimAndExtendWalls(snapped);
             snapped = ExplodeWallsAtIntersections(snapped);
             SnapOpenNodes(snapped, NakedNodeSnapDistance);
+
+            //snapped = new List<SnappedWall> { snapped[0] };
+
             snapped = CreateGraph(snapped, MinWallSegmentLength); // graph processing
             snapped = MergeColinearWalls(snapped);
+            MarkNakedNodes(snapped);
 
+
+            //snapped.RemoveAll(w => w.ProjectedAxis.Direction.IsValid);
+            //walls.RemoveAll(w => w.ProjectedAxis.Direction.IsValid);
             foreach (var snap in snapped)
             {
                 Debug.Add(snap.Length.ToString());
             }
-
-            MarkNakedNodes(snapped);
-
             SortedList<double, List<SnappedWall>> snappedWallsPerFloor = SortWallsByElevation(snapped);
             //GH_Path levelPath = new GH_Path(0);
             for (int i = 0; i < snappedWallsPerFloor.Keys.Count; i++)
@@ -417,6 +421,7 @@ namespace SAM.Geometry.Solver
                 string report = "";
                 bool snapped = currentWall.TrySnapIfNaked(anchorCandidates, snappingDistance, out report);
             }
+             walls.RemoveAll(w => w.ProjectedAxis.GetLength() < SAM.Core.Tolerance.Distance);
         }
         private static List<SnappedWall> SnapAndAdjustWalls(List<SnappedWall> walls)
         {

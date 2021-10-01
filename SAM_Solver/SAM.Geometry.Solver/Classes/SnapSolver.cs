@@ -6,7 +6,12 @@ using System.Linq;
 namespace SAM.Geometry.Solver
 {
     //eliminate dataTrees, eleiminate gh references
-
+    #region SnapSolver Description
+    /// <summary>
+    /// streszczenie całości - ogólne baaaardzo
+    /// </summary>
+    /// 
+#endregion
     public class SnapSolver
     {
         public static Plane ProjectionPlane { get; } = Plane.WorldXY;
@@ -84,7 +89,6 @@ namespace SAM.Geometry.Solver
         /// output
         /// </summary>
         public List<List<int>> SnappedSources { get; private set; } = new List<List<int>>();
-        public List<string> Debug { get; set; } = new List<string>();
         /// <summary>
         /// 
         /// </summary>
@@ -125,26 +129,15 @@ namespace SAM.Geometry.Solver
             BucketSizes = AdjustListLength(BucketSizes, PanelsFaces3D.Count, defaultValue: 0.3);
             Weights = AdjustListLength(Weights, PanelsFaces3D.Count, defaultValue: 1.0);
             MaxExtensions = AdjustListLength(MaxExtensions, PanelsFaces3D.Count, defaultValue: 0.5);
-
+            
             List<SnappedWall> walls = RegisterWalls(PanelsFaces3D, BucketSizes, Weights, MaxExtensions, Levels, LevelSectionOffset, _extensionLimiter);
             List<SnappedWall> snapped = SnapAndAdjustWalls(walls);
             TrimAndExtendWalls(snapped);
-            snapped = ExplodeWallsAtIntersections(snapped);
+            snapped = ExplodeWallsAtIntersections(snapped);            
             SnapOpenNodes(snapped, NakedNodeSnapDistance);
-
-            //snapped = new List<SnappedWall> { snapped[0] };
-
             snapped = CreateGraph(snapped, MinWallSegmentLength); // graph processing
             snapped = MergeColinearWalls(snapped);
             MarkNakedNodes(snapped);
-
-
-            //snapped.RemoveAll(w => w.ProjectedAxis.Direction.IsValid);
-            //walls.RemoveAll(w => w.ProjectedAxis.Direction.IsValid);
-            foreach (var snap in snapped)
-            {
-                Debug.Add(snap.Length.ToString());
-            }
             SortedList<double, List<SnappedWall>> snappedWallsPerFloor = SortWallsByElevation(snapped);
             //GH_Path levelPath = new GH_Path(0);
             for (int i = 0; i < snappedWallsPerFloor.Keys.Count; i++)
@@ -541,7 +534,13 @@ namespace SAM.Geometry.Solver
             return walls;
         }
 
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="values"></param>
+        /// <param name="targetCount"></param>
+        /// <param name="defaultValue"></param>
+        /// <returns></returns>
         private static List<double> AdjustListLength(List<double> values, int targetCount, double defaultValue)
         {
             List<double> newValues = new List<double>();

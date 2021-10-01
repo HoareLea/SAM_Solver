@@ -67,7 +67,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Query\ClosestParameter.cs" />
     <Compile Include="Query\Intersecting.cs" />
-    <Compile Include="Query\MinimumDistance.cs" />
+    <Compile Include="Query\MinimumDistanceTo.cs" />
     <Compile Include="Query\PointFromBeyondRange.cs" />
     <Compile Include="Query\Snap_v2.cs" />
   </ItemGroup>

@@ -7,7 +7,12 @@ namespace SAM.Geometry.Solver
     public static partial class Query
     {
         /// <summary>
-        /// 
+        /// Returns a point on an infinite line based on the given Segment2D evaluated at
+        /// an input parameter.
+        /// Where paramter 0 is Segment2D.Start and parameter 1 is Segment2D.End
+        /// Similar to Rhino.Geometry.Line.PointAt(double)
+        /// In this case it's best to change 
+        /// Segment2D.GetPoint(double, inverted, add bool finite)
         /// </summary>
         /// <param name="face"></param>
         /// <param name="plane"></param>

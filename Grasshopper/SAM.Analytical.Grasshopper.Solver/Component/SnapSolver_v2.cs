@@ -15,8 +15,9 @@ using SAM.Geometry.Grasshopper;
 using Grasshopper.Kernel.Types;
 using SAM.Core;
 
-namespace SAM.Analytical.Grasshopper.Solver.Component
+namespace SAM.Analytical.Grasshopper.Solver.Component.Obsolete
 {
+    [Obsolete("Obsolete since 2021.10.04")]
     public class SnapSolver_v2 : GH_SAMComponent
     {
         public override Guid ComponentGuid => new Guid("{83C6F5D9-F7CC-491B-94BA-AD0F87E1993D}");
@@ -36,7 +37,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
         protected override System.Drawing.Bitmap Icon => Resources.SAM_Solver;
 
         public SnapSolver_v2()
-            : base("SnapSolver_v142", "SnapSolver_v142", "Snap Solver Version 1.4.2", "SAM", "Solver")
+            : base("SnapSolver", "SnapSolver", "Snap Solver Version", "SAM", "Solver")
         {
         }
 

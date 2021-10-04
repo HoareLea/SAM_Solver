@@ -17,7 +17,7 @@ using SAM.Core;
 
 namespace SAM.Analytical.Grasshopper.Solver.Component
 {
-    public class SnapSolver_v2_PureSAM_GrasshopperTest : GH_SAMComponent
+    public class SnapSolver_PureSAM : GH_SAMComponent
     {
         public override Guid ComponentGuid => new Guid("{83C6F5D9-F7CC-491B-94BA-AD0F87E1993F}");
 
@@ -35,8 +35,8 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
         /// </summary>
         protected override System.Drawing.Bitmap Icon => Resources.SAM_Solver;
 
-        public SnapSolver_v2_PureSAM_GrasshopperTest()
-            : base("SnapSolver_v142_TestPureSAM", "SnapSolver_v142_TestPureSAM", "Snap Solver Version 1.4.2_TestPureSAM", "SAM_TestPureSAM", "Solver_TestPureSAM")
+        public SnapSolver_PureSAM()
+            : base("SnapSolver", "SnapSolver", "Snap Solver Version 1.4.2_PureSAM", "SAM", "Solver")
         {
         }
 
@@ -52,16 +52,19 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
             pManager.AddNumberParameter("_weights", "W", "A list of weighs or the panels", GH_ParamAccess.list);
             pManager.AddNumberParameter("_maxExtensions", "ME", "Maximum extensions in a snapping process", GH_ParamAccess.list);
             pManager.AddIntervalParameter("_levels", "L", "Information on each floor's elevation", GH_ParamAccess.list);
-            pManager.AddNumberParameter("_levelSectionOffset", "LO", "Floor height", GH_ParamAccess.item);
-            pManager.AddNumberParameter("_nakedNodeSnapDistance", "NNSD", "Snap distance for a naked node", GH_ParamAccess.item);
-            pManager.AddNumberParameter("_minWallSegmentLength", "MWSL",
-                "The smallest wall segment that won't be merged into an other wall", GH_ParamAccess.item);
+            pManager.AddNumberParameter("_levelSectionOffset_", "LO", "Floor height", 
+                GH_ParamAccess.item, SAM.Geometry.Solver.SnapSolver.DEFAULT_LevelSectionOffset);
+            pManager.AddNumberParameter("_nakedNodeSnapDistance_", "NNSD", "Snap distance for a naked node", 
+                GH_ParamAccess.item, SAM.Geometry.Solver.SnapSolver.DEFAULT_NakedNodeSnapDistance);
+            pManager.AddNumberParameter("_minWallSegmentLength_", "MWSL",
+                "The smallest wall segment that won't be merged into an other wall", 
+                GH_ParamAccess.item, SAM.Geometry.Solver.SnapSolver.DEFAULT_MinWallSegmentLength    );
             pManager.AddNumberParameter("_toleranceDistance_", "±Dist", "Distance tolerance", 
                 GH_ParamAccess.item, SAM.Core.Tolerance.Distance);
             pManager.AddNumberParameter("_toleranceAngleRad_", "±AngleRad", "Angle tolerance in radians", 
                 GH_ParamAccess.item, SAM.Core.Tolerance.Angle);
-            pManager.AddNumberParameter("_arcToleranceAngleRad", "±ArcAngleRad", "Arc angle tolerance in radians", 
-                GH_ParamAccess.item);
+            pManager.AddNumberParameter("_arcToleranceAngleRad_", "±ArcAngleRad", "Arc angle tolerance in radians", 
+                GH_ParamAccess.item, SAM.Geometry.Solver.SnapSolver.DEFAULT_ArcToleranceAngleRad);
         }
 
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -105,10 +108,6 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
             if (!DA.GetData(8, ref toleranceDistance)) return;
             if (!DA.GetData(9, ref toleranceAngleRad)) return;
             if (!DA.GetData(10, ref arcToleranceAngleRad)) return;
-
-            //List<GH_ObjectWrapper> panelsBrepForSAM = panelsBrep
-            //    ?.Select(pb => new GH_ObjectWrapper(pb))
-            //    .ToList();
 
             List<Face3D> panelFace3Ds = new List<Face3D>();
             foreach (GH_ObjectWrapper objectWrapper in panelsBrep)

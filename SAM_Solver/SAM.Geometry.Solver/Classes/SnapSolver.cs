@@ -15,39 +15,56 @@ namespace SAM.Geometry.Solver
     public class SnapSolver
     {
         public static Plane ProjectionPlane { get; } = Plane.WorldXY;
-        //TODO: USE SAM tolerances where is meaningfull SAM.Core.Tolerance....
         private double _minTolerance = System.Math.Pow(10, -9);
         private double _extensionLimiter = 0.49;
-        private static double _modelTolerance = System.Math.Pow(10, -3);
-        /// <summary>
-        /// for Rhino operations
-        /// </summary>
-        public static double ModelTolerance { get => _modelTolerance; private set { _modelTolerance = value; }}
-        private static double _sAMTolerance = System.Math.Pow(10, -6);
-        /// <summary>
-        /// necessary for SAM output
-        /// </summary>
-        public static double SAMTolerance { get => _sAMTolerance; private set { _sAMTolerance = value; } }
-        private static double _toleranceAngleRad = 5 * (System.Math.PI / 180);
-        /// <summary>
-        /// 5 degrees
-        /// </summary>
-        public static double ToleranceAngleRad { get => _toleranceAngleRad; private set { _toleranceAngleRad = value; } }
-        private static double _arcToleranceAngleRad = 0.3 * (System.Math.PI / 180);
-        /// <summary>
-        /// 0.3 degrees
-        /// </summary>
-        public static double ArcToleranceAngleRad { get => _arcToleranceAngleRad; private set { _arcToleranceAngleRad = value; } }
-        private static double _minWallSegmentLength = 0.1;
-        /// <summary>
-        /// 10 centimeters
-        /// </summary>
-        public static double MinWallSegmentLength { get => _minWallSegmentLength; private set { _minWallSegmentLength = value; } }
-        private static int _elevationToleranceDigits = 3;
         /// <summary>
         /// elevations will be rounded to 3 decimal places
         /// </summary>
         public static int ElevationToleranceDigits { get => _elevationToleranceDigits; private set { _elevationToleranceDigits = value; } }
+        private static int _elevationToleranceDigits = 3;
+        /// <summary>
+        /// 
+        /// </summary>
+        public static double LevelSectionOffset { get => _levelSectionOffset; private set { _levelSectionOffset = value; } }
+        private static double _levelSectionOffset = double.NaN;
+        public static double DEFAULT_LevelSectionOffset { get => LEVEL_SECTION_OFFSET; }
+        private const double LEVEL_SECTION_OFFSET = 0.25;
+        /// <summary>
+        /// 
+        /// </summary>
+        public static double NakedNodeSnapDistance { get => _nakedNodeSnapDistance; private set { _nakedNodeSnapDistance = value; } }
+        private static double _nakedNodeSnapDistance = double.NaN;
+        public static double DEFAULT_NakedNodeSnapDistance { get => NAKED_NODE_SNAP_DISTANCE; }
+        private const double NAKED_NODE_SNAP_DISTANCE = 0.5;
+        /// <summary>
+        /// 10 centimeters
+        /// </summary>
+        public static double MinWallSegmentLength { get => _minWallSegmentLength; private set { _minWallSegmentLength = value; } }
+        private static double _minWallSegmentLength = double.NaN;
+        public static double DEFAULT_MinWallSegmentLength { get => MIN_WALL_SEGMENT_LENGTH; }
+        private const double MIN_WALL_SEGMENT_LENGTH = 0.1;
+        /// <summary>
+        /// for Rhino operations
+        /// </summary>
+        public static double ModelTolerance { get => _modelTolerance; private set { _modelTolerance = value; }}
+        private static double _modelTolerance = System.Math.Pow(10, -3);
+        /// <summary>
+        /// necessary for SAM output
+        /// </summary>
+        public static double SAMTolerance { get => _sAMTolerance; private set { _sAMTolerance = value; } }
+        private static double _sAMTolerance = System.Math.Pow(10, -6);
+        /// <summary>
+        /// 5 degrees
+        /// </summary>
+        public static double ToleranceAngleRad { get => _toleranceAngleRad; private set { _toleranceAngleRad = value; } }
+        private static double _toleranceAngleRad = 5 * (System.Math.PI / 180);
+        /// <summary>
+        /// 0.3 degrees
+        /// </summary>
+        public static double ArcToleranceAngleRad { get => _arcToleranceAngleRad; private set { _arcToleranceAngleRad = value; } }
+        private static double _arcToleranceAngleRad = double.NaN;
+        public static double DEFAULT_ArcToleranceAngleRad { get => ARC_TOLERANCE_ANGLE_RAD; }
+        private const double ARC_TOLERANCE_ANGLE_RAD = 0.3 * (System.Math.PI / 180);
         /// <summary>
         /// 
         /// </summary>
@@ -68,14 +85,6 @@ namespace SAM.Geometry.Solver
         /// 
         /// </summary>
         public List<Core.Range<double>> Levels { get; private set; } = new List<Core.Range<double>>();
-        /// <summary>
-        /// 
-        /// </summary>
-        public double LevelSectionOffset { get; private set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        public double NakedNodeSnapDistance { get; private set; }
 
         /// <summary>
         /// output
@@ -104,8 +113,13 @@ namespace SAM.Geometry.Solver
         /// <param name="ToleranceAngleRadInput"></param>
         /// <param name="ArcToleranceAngleRadInput"></param>
         public SnapSolver(List<Face3D> PanelsBrepInput, List<double> BucketSizesInput, List<double> WeightsInput, List<double> MaxExtensionsInput,
-            List<Core.Range<double>> LevelsInput, double LevelSectionOffsetInput, double NakedNodeSnapDistanceInput, double MinWallSegmentLengthInput,
-            double ToleranceDistanceInput, double ToleranceAngleRadInput, double ArcToleranceAngleRadInput)
+            List<Core.Range<double>> LevelsInput, 
+            double LevelSectionOffsetInput = LEVEL_SECTION_OFFSET, 
+            double NakedNodeSnapDistanceInput = NAKED_NODE_SNAP_DISTANCE, 
+            double MinWallSegmentLengthInput = MIN_WALL_SEGMENT_LENGTH,
+            double ToleranceDistanceInput = SAM.Core.Tolerance.Distance, 
+            double ToleranceAngleRadInput = SAM.Core.Tolerance.Angle, 
+            double ArcToleranceAngleRadInput = ARC_TOLERANCE_ANGLE_RAD)
         {
             ModelTolerance = 0.001;
             SAMTolerance = ToleranceDistanceInput >= _minTolerance ? ToleranceDistanceInput : _minTolerance;

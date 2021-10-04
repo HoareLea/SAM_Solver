@@ -8,8 +8,9 @@ using SAM.Analytical.Grasshopper.Solver.Properties;
 using System;
 using System.Collections.Generic;
 
-namespace SAM.Analytical.Solver.Grasshopper
+namespace SAM.Analytical.Solver.Grasshopper.Obsolete
 {
+    [Obsolete("Obsolete since 2021.10.04")]
     public class SnapSolver : GH_SAMComponent
     {
         public override Guid ComponentGuid => new Guid("{83C6F5D9-F7CC-491B-94BA-AD0F87E1993E}");

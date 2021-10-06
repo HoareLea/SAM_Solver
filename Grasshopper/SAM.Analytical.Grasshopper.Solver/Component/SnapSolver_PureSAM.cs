@@ -58,7 +58,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
                 GH_ParamAccess.item, SAM.Geometry.Solver.SnapSolver.DEFAULT_NakedNodeSnapDistance);
             pManager.AddNumberParameter("_minWallSegmentLength_", "MWSL",
                 "The smallest wall segment that won't be merged into an other wall", 
-                GH_ParamAccess.item, SAM.Geometry.Solver.SnapSolver.DEFAULT_MinWallSegmentLength    );
+                GH_ParamAccess.item, SAM.Geometry.Solver.SnapSolver.DEFAULT_MinWallSegmentLength);
             pManager.AddNumberParameter("_toleranceDistance_", "±Dist", "Distance tolerance", 
                 GH_ParamAccess.item, SAM.Core.Tolerance.Distance);
             pManager.AddNumberParameter("_toleranceAngleRad_", "±AngleRad", "Angle tolerance in radians", 

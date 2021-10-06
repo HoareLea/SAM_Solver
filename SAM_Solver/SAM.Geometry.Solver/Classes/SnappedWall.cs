@@ -78,8 +78,8 @@ namespace SAM.Geometry.Solver
                 { // different levels, doesn't matter
                 return;
             }
-            Point2D start = ProjectedAxis.Start;
-            Point2D end = ProjectedAxis.End;
+            Point2D start = this.ProjectedAxis.Start;
+            Point2D end = this.ProjectedAxis.End;
             //if (NakedStart && other.ProjectedAxis.MinimumDistanceTo(start) <= SAM_SnapSolver.SAMTolerance)
             if (NakedStart && other.ProjectedAxis.MinimumDistanceTo(start) <= SnapSolver.SAMTolerance)
             {

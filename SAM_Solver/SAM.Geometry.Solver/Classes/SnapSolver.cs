@@ -46,7 +46,7 @@ namespace SAM.Geometry.Solver
         /// <summary>
         /// for Rhino operations
         /// </summary>
-        public static double ModelTolerance { get => _modelTolerance; private set { _modelTolerance = value; }}
+        public static double ModelTolerance { get => _modelTolerance; private set { _modelTolerance = value; } }
         private static double _modelTolerance = System.Math.Pow(10, -3);
         /// <summary>
         /// necessary for SAM output
@@ -98,6 +98,8 @@ namespace SAM.Geometry.Solver
         /// output
         /// </summary>
         public List<List<int>> SnappedSources { get; private set; } = new List<List<int>>();
+
+        private const double BUCKET_SIZE = 0.35;
         /// <summary>
         /// 
         /// </summary>
@@ -123,17 +125,18 @@ namespace SAM.Geometry.Solver
         {
             ModelTolerance = 0.001;
             SAMTolerance = ToleranceDistanceInput >= _minTolerance ? ToleranceDistanceInput : _minTolerance;
+
+            LevelSectionOffset = LevelSectionOffsetInput;
+            NakedNodeSnapDistance = NakedNodeSnapDistanceInput;
+            MinWallSegmentLength = MinWallSegmentLengthInput;
             ToleranceAngleRad = ToleranceAngleRadInput;
             ArcToleranceAngleRad = ArcToleranceAngleRadInput;
-            MinWallSegmentLength = MinWallSegmentLengthInput;
 
             PanelsFaces3D = PanelsBrepInput;
             BucketSizes = BucketSizesInput;
             Weights = WeightsInput;
             MaxExtensions = MaxExtensionsInput;
             Levels = LevelsInput;
-            LevelSectionOffset = LevelSectionOffsetInput;
-            NakedNodeSnapDistance = NakedNodeSnapDistanceInput;
         }
         /// <summary>
         /// 
@@ -152,6 +155,7 @@ namespace SAM.Geometry.Solver
             snapped = CreateGraph(snapped, MinWallSegmentLength); // graph processing
             snapped = MergeColinearWalls(snapped);
             MarkNakedNodes(snapped);
+
             SortedList<double, List<SnappedWall>> snappedWallsPerFloor = SortWallsByElevation(snapped);
             //GH_Path levelPath = new GH_Path(0);
             for (int i = 0; i < snappedWallsPerFloor.Keys.Count; i++)
@@ -259,8 +263,8 @@ namespace SAM.Geometry.Solver
         }
         private static List<SnappedWall> MergeColinearWalls(List<SnappedWall> walls)
         {
-            double angleRadTol = 0.01;
-            double distTol = 0.001;
+            double angleRadTol = _toleranceAngleRad;
+            double distTol = ModelTolerance;
 
             SortedList<double, List<SnappedWall>> sortedByElevation = SortWallsByElevation(walls);
 

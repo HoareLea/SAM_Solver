@@ -40,7 +40,7 @@ namespace SAM.Geometry.Solver
         /// 10 centimeters
         /// </summary>
         public static double MinWallSegmentLength { get => _minWallSegmentLength; private set { _minWallSegmentLength = value; } }
-        private static double _minWallSegmentLength = double.NaN;
+        private static double _minWallSegmentLength = 0.1;
         public static double DEFAULT_MinWallSegmentLength { get => MIN_WALL_SEGMENT_LENGTH; }
         private const double MIN_WALL_SEGMENT_LENGTH = 0.1;
         /// <summary>
@@ -51,6 +51,8 @@ namespace SAM.Geometry.Solver
         /// <summary>
         /// necessary for SAM output
         /// </summary>
+        /// 
+        public static double SAMToleranceLarge { get; } = System.Math.Pow(10, -2);
         public static double SAMTolerance { get => _sAMTolerance; private set { _sAMTolerance = value; } }
         private static double _sAMTolerance = System.Math.Pow(10, -6);
         /// <summary>
@@ -213,7 +215,8 @@ namespace SAM.Geometry.Solver
         }
         private static List<SnappedWall> CreateGraph(List<SnappedWall> walls, double snappingDistance)
         {
-            GraphSolver solver = new GraphSolver(walls.Select(w => w.ProjectedAxis).ToList(), walls.Select(w => w.Weight).ToList(), snappingDistance);
+            GraphSolver solver = new GraphSolver(walls.Select(w => w.ProjectedAxis).ToList(), 
+                walls.Select(w => w.Weight).ToList(), snappingDistance);
             List<List<int>> sourceIndices = new List<List<int>>();
             List<Segment2D> newAxes = solver.Solve(out sourceIndices);
 
@@ -263,8 +266,8 @@ namespace SAM.Geometry.Solver
         }
         private static List<SnappedWall> MergeColinearWalls(List<SnappedWall> walls)
         {
-            double angleRadTol = _toleranceAngleRad;
-            double distTol = ModelTolerance;
+            double angleRadTol = /*_toleranceAngleRad*/0.01;
+            double distTol = /*ModelTolerance*/0.001;
 
             SortedList<double, List<SnappedWall>> sortedByElevation = SortWallsByElevation(walls);
 
@@ -432,7 +435,7 @@ namespace SAM.Geometry.Solver
                 string report = "";
                 bool snapped = currentWall.TrySnapIfNaked(anchorCandidates, snappingDistance, out report);
             }
-             walls.RemoveAll(w => w.ProjectedAxis.GetLength() < SAM.Core.Tolerance.Distance);
+             //walls.RemoveAll(w => w.ProjectedAxis.GetLength() < SAM.Core.Tolerance.Distance);
         }
         private static List<SnappedWall> SnapAndAdjustWalls(List<SnappedWall> walls)
         {
@@ -509,7 +512,7 @@ namespace SAM.Geometry.Solver
             {
                 var axes = floor.Value.Select(wall => wall.ProjectedAxis).ToList();
                 var extensions = floor.Value.Select(wall => wall.MaxExtension).ToList();
-                ExtensionSolver solver = new ExtensionSolver(axes, extensions, SnapSolver.SAMTolerance);
+                ExtensionSolver solver = new ExtensionSolver(axes, extensions, SnapSolver.SAMToleranceLarge);
                 var newAxes = solver.Solve();
                 for (int i = 0; i < floor.Value.Count; i++)
                 {

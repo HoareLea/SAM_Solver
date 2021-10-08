@@ -320,7 +320,7 @@ namespace SAM.Geometry.Solver
                 {
                     Vector2D snapDirection = new Vector2D(
                         candidate.X - start.X, candidate.Y - start.Y);
-                    if(snapDirection.Length > 0)
+                    //if(snapDirection.Length > 0)
                         snapDirection = snapDirection.Unit;
     
                     double dot = startExtensionDirection * snapDirection;
@@ -370,7 +370,8 @@ namespace SAM.Geometry.Solver
                 }
             }
 
-            if ((newStart.IsNaN()) && (newEnd.IsNaN()))
+            if ((newStart.IsNaN() || newStart == Point2D.Invalid) && 
+                (newEnd.IsNaN() || newEnd == Point2D.Invalid))
             {
                 report = "Not snapped because no anchors are within range";
                 return false;
@@ -675,8 +676,6 @@ namespace SAM.Geometry.Solver
                 }
 
                 // clamp to finite segment
-                //if (snappedStart.IsNaN() || snappedStart == null) snappedStart = ProjectedAxis.Closest(currentSegment.Start, true);
-                //if(snappedEnd.IsNaN() || snappedEnd == null) snappedEnd = ProjectedAxis.Closest(currentSegment.End, true);
                 double startParam = ProjectedAxis.ClosestParameter(snappedStart);
                 startParam = startParam.Clamp(0, 1);
                 double endParam = ProjectedAxis.ClosestParameter(snappedEnd);
@@ -855,8 +854,12 @@ namespace SAM.Geometry.Solver
             Core.Range<double> dominantRange = new Core.Range<double>(-paramBucketMargin, 1 + paramBucketMargin);
             //Interval dominantRange = new Interval(-0.05, 1.05);
 
-            bool containsStart = dominantRange.In(paramFrom);
-            bool containsEnd = dominantRange.In(paramTo);
+            bool containsStart = dominantRange.In(paramFrom) || 
+                paramFrom.AlmostEqual(dominantRange.Min) || 
+                paramFrom.AlmostEqual(dominantRange.Max);
+            bool containsEnd = dominantRange.In(paramTo) ||
+                paramFrom.AlmostEqual(dominantRange.Min) ||
+                paramFrom.AlmostEqual(dominantRange.Max);
             fully = containsStart && containsEnd;
 
             if (containsStart || containsEnd)
@@ -866,7 +869,8 @@ namespace SAM.Geometry.Solver
             }
 
             Core.Range<double> otherRange = new Core.Range<double>(paramFrom, paramTo);
-            if (otherRange.In(dominantRange.Min) && otherRange.In(dominantRange.Max))
+            if (otherRange.In(dominantRange.Min) && otherRange.In(dominantRange.Max) ||
+                otherRange.Min.AlmostEqual(dominantRange.Min) && otherRange.Max.AlmostEqual(dominantRange.Max))
             {
                 fully = true;
                 //Debug.Print("By other - this{0}, other{1}, fully:{2}", this.SourceIndices[0], other.SourceIndices[0], fully);

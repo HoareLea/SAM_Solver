@@ -201,7 +201,8 @@ namespace SAM.Analytical.Grasshopper.Solver.Classes
         }
         private static List<SnappedWall> CreateGraph(List<SnappedWall> walls, double snappingDistance)
         {
-            GraphSolver solver = new GraphSolver(walls.Select(w => w.ProjectedAxis).ToList(), walls.Select(w => w.Weight).ToList(), snappingDistance);
+            GraphSolver solver = new GraphSolver(walls.Select(w => w.ProjectedAxis).ToList(), 
+                walls.Select(w => w.Weight).ToList(), snappingDistance);
             List<List<int>> sourceIndices = new List<List<int>>();
             List<Line> newAxes = solver.Solve(out sourceIndices);
 

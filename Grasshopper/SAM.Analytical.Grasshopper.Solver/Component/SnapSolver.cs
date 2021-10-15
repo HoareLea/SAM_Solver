@@ -22,7 +22,7 @@ namespace SAM.Analytical.Solver.Grasshopper.Obsolete
         public override string LatestComponentVersion => "1.0.0";
 
 
-        public override GH_Exposure Exposure => GH_Exposure.tertiary | GH_Exposure.obscure;
+        public override GH_Exposure Exposure => GH_Exposure.tertiary | GH_Exposure.hidden;
 
         /// <summary>
         /// Provides an Icon for the component.

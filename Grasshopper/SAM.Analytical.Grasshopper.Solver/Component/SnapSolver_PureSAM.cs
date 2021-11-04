@@ -25,7 +25,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
         /// <summary>
         /// The latest version of this component
         /// </summary>
-        public override string LatestComponentVersion => "1.4.2";
+        public override string LatestComponentVersion => "1.4.5";
 
 
         public override GH_Exposure Exposure => GH_Exposure.tertiary | GH_Exposure.obscure;
@@ -36,7 +36,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
         protected override System.Drawing.Bitmap Icon => Resources.SAM_Solver;
 
         public SnapSolver_PureSAM()
-            : base("SnapSolver", "SnapSolver", "Snap Solver Version 1.4.2_PureSAM", "SAM", "Solver")
+            : base("SnapSolver", "SnapSolver", "Snap Solver Version 1.4.5_PureSAM", "SAM", "Solver")
         {
         }
 

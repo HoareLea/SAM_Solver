@@ -22,6 +22,8 @@ namespace SAM.Geometry.Solver
                 Length = _projectedAxis.GetLength();
             }
         }
+        public static readonly double ExtensionLimitLengthRatio = 0.49;
+        public static readonly double OpenNodeSnapAngleRangeRad = 2 * System.Math.PI / 3; // allow for 120 degrees in both directions
         public List<int> SourceIndices { get; private set; }
         public List<Segment2D> SourceSegments { get; private set; }
         public Core.Range<double> OriginalHeight { get; private set; }
@@ -74,13 +76,15 @@ namespace SAM.Geometry.Solver
         public void UpdateNakedStatus(SnappedWall other)
         {
             //if (!RhinoMath.EpsilonEquals(this.Elevation, other.Elevation, SAM_SnapSolver_GH.ModelTolerance))
-            if (Core.Query.AlmostEqual(this.Elevation, other.Elevation, SnapSolver.ModelTolerance))
+            if (!Core.Query.AlmostEqual(this.Elevation, other.Elevation, SnapSolver.ModelTolerance))
                 { // different levels, doesn't matter
                 return;
             }
             Point2D start = this.ProjectedAxis.Start;
             Point2D end = this.ProjectedAxis.End;
             //if (NakedStart && other.ProjectedAxis.MinimumDistanceTo(start) <= SAM_SnapSolver.SAMTolerance)
+            double startDist = other.ProjectedAxis.MinimumDistanceTo(start);
+            double endDist = other.ProjectedAxis.MinimumDistanceTo(end);
             if (NakedStart && other.ProjectedAxis.MinimumDistanceTo(start) <= SnapSolver.SAMTolerance)
             {
                 NakedStart = false;
@@ -147,33 +151,6 @@ namespace SAM.Geometry.Solver
         {
             List<Face3D> surfaces = new List<Face3D>();
             sourceIndices = new List<List<int>>();
-
-            //HashSet<double> splitParams = new HashSet<double>();
-            //splitParams.Add(0);
-            //splitParams.Add(1);
-            //foreach (Line segment in SourceSegments) {
-            //    double fromParam = RhinoMath.Clamp(Math.Round(ProjectedAxis.ClosestParameter(segment.From), 6), 0, 1);
-            //    double toParam = RhinoMath.Clamp(Math.Round(ProjectedAxis.ClosestParameter(segment.To), 6), 0, 1);
-            //    splitParams.Add(fromParam);
-            //    splitParams.Add(toParam);
-            //}
-            //List<double> t = splitParams.ToList();
-            //t.Sort();
-            //List<Line> splitSegments = new List<Line>();
-            //for (int i = 0; i < t.Count - 1; i++) {
-            //    Line piece = new Line(ProjectedAxis.PointAt(t[i]), ProjectedAxis.PointAt(t[i + 1]));
-            //    // shorten the current piece to avoid taking neighbors indices
-            //    Line testPiece = piece;
-            //    testPiece.Extend(-1.5 * _ModelTolerance, -1.5 * _ModelTolerance);
-            //    List<int> indices = new List<int>();
-            //    for (int j = 0; j < SourceSegments.Count; j++) {
-            //        if (testPiece.MinimumDistanceTo(SourceSegments[j]) < _ModelTolerance) {
-            //            indices.Add(SourceIndices[j]);
-            //        }
-            //    }
-            //    splitSegments.Add(piece);
-            //    sourceIndices.Add(indices);
-            //}
 
             // split the segments wherever the split hasn't been made yet
             List<double> splitParams = new List<double>();
@@ -307,8 +284,7 @@ namespace SAM.Geometry.Solver
             }
             Point2D newStart = Point2D.Invalid;
             Point2D newEnd = Point2D.Invalid;
-            double minDot = System.Math.Cos(2 * System.Math.PI / 3); // allow for 120 degrees
-                                                       //double minDot = -1; // allow for 120 degrees
+            double minDot = System.Math.Cos(OpenNodeSnapAngleRangeRad);
 
             if (startIsNaked && startSnapCandidates.Count > 0) // find the best anchor
             {
@@ -349,8 +325,8 @@ namespace SAM.Geometry.Solver
                 foreach (Point2D candidate in endSnapCandidates)
                 {
                     Vector2D snapDirection = new Vector2D(
-                        candidate.X - start.X, candidate.Y - start.Y);
-                    if (snapDirection.Length > 0)
+                        candidate.X - end.X, candidate.Y - end.Y);
+                    //if (snapDirection.Length > 0)
                         snapDirection = snapDirection.Unit;
                     double dot = endExtensionDirection * snapDirection;
                     if (dot <= minDot) // snap only forward
@@ -684,7 +660,7 @@ namespace SAM.Geometry.Solver
                 snappedStart = ProjectedAxis.GetPoint(startParam);
                 snappedEnd = ProjectedAxis.GetPoint(endParam);
 
-                //null problem in some cases
+                //null problem in some cases - TODO definitely fix that
                 if (snappedStart == null || snappedStart.IsNaN() || snappedEnd == null || snappedEnd.IsNaN())
                 {
                     snappedStart = ProjectedAxis.Start;
@@ -850,9 +826,9 @@ namespace SAM.Geometry.Solver
             double paramFrom = dominantLine.ClosestParameter(otherLine.Start);
             double paramTo = dominantLine.ClosestParameter(otherLine.End);
 
-            double paramBucketMargin = this.MaxExtension / this.Length;
+            double paramBucketMargin = System.Math.Min(this.MaxExtension, this.Length * SnappedWall.ExtensionLimitLengthRatio) / this.Length;
+            //double paramBucketMargin = this.MaxExtension / this.Length;
             Core.Range<double> dominantRange = new Core.Range<double>(-paramBucketMargin, 1 + paramBucketMargin);
-            //Interval dominantRange = new Interval(-0.05, 1.05);
 
             bool containsStart = dominantRange.In(paramFrom) || 
                 paramFrom.AlmostEqual(dominantRange.Min) || 
@@ -864,7 +840,6 @@ namespace SAM.Geometry.Solver
 
             if (containsStart || containsEnd)
             {
-                //Debug.Print("this{0}, other{1}, fully:{2}", this.SourceIndices[0], other.SourceIndices[0], fully);
                 return true;
             }
 
@@ -873,7 +848,6 @@ namespace SAM.Geometry.Solver
                 otherRange.Min.AlmostEqual(dominantRange.Min) && otherRange.Max.AlmostEqual(dominantRange.Max))
             {
                 fully = true;
-                //Debug.Print("By other - this{0}, other{1}, fully:{2}", this.SourceIndices[0], other.SourceIndices[0], fully);
                 return true;
             }
             return false;

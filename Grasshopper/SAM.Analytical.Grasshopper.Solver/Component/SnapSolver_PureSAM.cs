@@ -130,10 +130,10 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
             var snappedWallsBrep = new List<List<Brep>>();
             foreach (var walls in SnappedWalls)
             {
-                var brepWalls = walls?.ConvertAll(f => f.ToRhino_Brep()).ToList();
+                var brepWalls = walls?.ConvertAll(f => Geometry.Rhino.Convert.ToRhino_Brep(f)).ToList();
                 snappedWallsBrep.Add(brepWalls);
             }
-            var snappedWallsSurfaces = ListOfListsToTree<Brep>(snappedWallsBrep);
+            var snappedWallsSurfaces = ListOfListsToTree(snappedWallsBrep);
             snappedWallsSurfaces.Graft();
             snappedWallsSurfaces.SimplifyPaths();
 

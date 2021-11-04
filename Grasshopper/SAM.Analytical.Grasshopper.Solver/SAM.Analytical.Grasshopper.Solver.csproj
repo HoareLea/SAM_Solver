@@ -51,6 +51,9 @@
     <Reference Include="SAM.Analytical.Grasshopper">
       <HintPath>..\..\..\SAM\build\SAM.Analytical.Grasshopper.dll</HintPath>
     </Reference>
+    <Reference Include="SAM.Analytical.Rhino">
+      <HintPath>..\..\..\SAM\build\SAM.Analytical.Rhino.dll</HintPath>
+    </Reference>
     <Reference Include="SAM.Architectural.Grasshopper">
       <HintPath>..\..\..\SAM\build\SAM.Architectural.Grasshopper.dll</HintPath>
     </Reference>
@@ -67,6 +70,9 @@
     </Reference>
     <Reference Include="SAM.Geometry.Grasshopper">
       <HintPath>..\..\..\SAM\build\SAM.Geometry.Grasshopper.dll</HintPath>
+    </Reference>
+    <Reference Include="SAM.Geometry.Rhino">
+      <HintPath>..\..\..\SAM\build\SAM.Geometry.Rhino.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

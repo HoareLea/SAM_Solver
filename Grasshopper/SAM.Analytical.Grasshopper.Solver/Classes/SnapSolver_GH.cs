@@ -365,7 +365,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Classes
                     Line otherExtended = walls[j].ProjectedAxis;
                     currentExtended.Extend(SnapSolver_GH.ModelTolerance, SnapSolver_GH.ModelTolerance);
                     otherExtended.Extend(SnapSolver_GH.ModelTolerance, SnapSolver_GH.ModelTolerance);
-                    if (Rhino.Geometry.Intersect.Intersection.LineLine(currentExtended, otherExtended, out myParam, out theirParam, SnapSolver_GH.SAMTolerance, finiteSegments: true))
+                    if (global::Rhino.Geometry.Intersect.Intersection.LineLine(currentExtended, otherExtended, out myParam, out theirParam, SnapSolver_GH.SAMTolerance, finiteSegments: true))
                     {
                         //StartExtensionParam = Math.Max(StartExtensionParam, myParam);
                         intersections.Add(currentExtended.PointAt(myParam));
@@ -521,7 +521,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Classes
                     Curve[] intc = null;
                     Point3d[] intp = null;
 
-                    if (Rhino.Geometry.Intersect.Intersection.BrepPlane(thiswall, currentPlane, SnapSolver_GH.ModelTolerance, out intc, out intp))
+                    if (global::Rhino.Geometry.Intersect.Intersection.BrepPlane(thiswall, currentPlane, SnapSolver_GH.ModelTolerance, out intc, out intp))
                     {
                         foreach (Curve curve in intc)
                         {

@@ -213,7 +213,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Classes
                 double thisParam = 0;
                 double otherParam = 0;
                 x = null;
-                intersected = Rhino.Geometry.Intersect.Intersection.LineLine(this.FullSegment, other.FullSegment, out thisParam, out otherParam, tolerance, true);
+                intersected = global::Rhino.Geometry.Intersect.Intersection.LineLine(this.FullSegment, other.FullSegment, out thisParam, out otherParam, tolerance, true);
                 if (intersected)
                 {
                     //Point3d intersectionPoint = (this.ExtensionSegment.PointAt(thisParam) + other.FullSegment.PointAt(otherParam)) / 2; // average for precision?

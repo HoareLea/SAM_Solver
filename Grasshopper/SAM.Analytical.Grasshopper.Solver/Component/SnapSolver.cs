@@ -100,13 +100,13 @@ namespace SAM.Analytical.Solver.Grasshopper
             List<Brep> panelBreps = new List<Brep>();
 
             foreach (GooPanel item in Panels)
-                panelBreps.Add(item.Value.ToRhino());
+                panelBreps.Add(Rhino.Convert.ToRhino(item.Value));
 
             if (FixedPanels.Count > 0)
             {
                 foreach (GooPanel item in FixedPanels)
                 {
-                    fixedBreps.Add(item.Value.ToRhino());
+                    fixedBreps.Add(Rhino.Convert.ToRhino(item.Value));
                 }
             }
 
@@ -117,7 +117,7 @@ namespace SAM.Analytical.Solver.Grasshopper
                 foreach (Brep brep in fixedBreps)
                 {
                     Plane plane1 = new Plane(new Point3d(0, 0, (interval.T0 + interval.T1) / 2), Vector3d.ZAxis);
-                    Rhino.Geometry.Intersect.Intersection.BrepPlane(brep, plane1, Rhino.RhinoDoc.ActiveDoc.ModelAbsoluteTolerance, out Curve[] curves1, out Point3d[] points1);
+                    global::Rhino.Geometry.Intersect.Intersection.BrepPlane(brep, plane1, global::Rhino.RhinoDoc.ActiveDoc.ModelAbsoluteTolerance, out Curve[] curves1, out Point3d[] points1);
 
                     List<Curve> allcurves = new List<Curve>(curves1);
                     foreach (Curve item in allcurves)

@@ -158,7 +158,7 @@ namespace SAM.Geometry.Solver
             snapped = ExplodeWallsAtIntersections(snapped);
             SnapOpenNodes(snapped, NakedNodeSnapDistance);
             snapped = CreateGraph(snapped, MinWallSegmentLength); // graph processing
-            //snapped = MergeColinearWalls(snapped, sameSourcePanelsOnly: true);
+            snapped = MergeColinearWalls(snapped, sameSourcePanelsOnly: true);
             MarkNakedNodes(snapped);
 
             SortedList<double, List<SnappedWall>> snappedWallsPerFloor = SortWallsByElevation(snapped);

@@ -113,9 +113,9 @@ namespace SAM.Geometry.Solver
             {
                 double tolerance2 = tolerance * tolerance;
                 //return CoincidentPoints.Any(pt => pt.DistanceToSquared(point) <= tolerance2);
-                return CoincidentPoints.Any(pt => pt.AlmostEquals(point, tolerance));
-                //return CoincidentPoints.Any(pt => (pt.X - point.X) * (pt.X - point.X) +
-                //    (pt.Y - point.Y) * (pt.Y - point.Y) <= tolerance2);
+                //return CoincidentPoints.Any(pt => pt.AlmostEquals(point, tolerance)); // this doesn't work like distance to squared...
+                return CoincidentPoints.Any(pt => (pt.X - point.X) * (pt.X - point.X) +
+                    (pt.Y - point.Y) * (pt.Y - point.Y) <= tolerance2);
             }
 
             public void MergeIn(Point2D point, double weight)

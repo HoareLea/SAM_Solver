@@ -17,7 +17,7 @@ namespace SAM.Geometry.Solver
             _edges = new List<Edge>();
             for (int i = 0; i < sourceLines.Count; i++)
             {
-                AddEdge(i, sourceLines[i], maxExtensions[i]);
+                AddEdge(i, sourceLines[i], System.Math.Min(maxExtensions[i], sourceLines[i].GetLength() * SnappedWall.ExtensionLimitLengthRatio));
             }
         }
         public List<Segment2D> Solve()
@@ -29,8 +29,14 @@ namespace SAM.Geometry.Solver
                 _intersections[i].IsActive = false;
             }
             for (int i = 0; i < _edges.Count; i++)
-            { // mark all demanded intersections as inactive
+            { // check open nodes status
                 _edges[i].ResetStatus();
+                for (int j = 0; j < _edges.Count; j++) {
+                    if (i == j) {
+                        continue;
+                    }
+                    _edges[i].UpdateNakedStatus(_edges[j]);
+                }
             }
             int safetyCounter = 0;
             List<Intersection> unresolvedIntersections = _intersections.Where(x => x.NakedParticipantsCount() > 0).ToList();
@@ -133,7 +139,7 @@ namespace SAM.Geometry.Solver
                         }
                     }
                 }
-                cost /= Participants.Length;
+                cost /= NakedParticipantsCount();
                 return cost;
             }
 
@@ -146,6 +152,7 @@ namespace SAM.Geometry.Solver
         private class HalfEdge
         {
             public Edge Parent { get; private set; }
+            public bool OriginallyNaked { get; set; }
             public bool IsNaked { get; set; }
             public Point2D OriginalEnd { get; private set; }
             public double OriginalEndOnExtensionParam { get; private set; }
@@ -155,6 +162,7 @@ namespace SAM.Geometry.Solver
 
             public static void CreateHalves(Edge parent, out HalfEdge startHalf, out HalfEdge endHalf)
             {
+                const double almostHalf = 0.499;
                 startHalf = new HalfEdge();
                 endHalf = new HalfEdge();
                 startHalf.OriginalEnd = parent.BaseLine.Start;
@@ -162,18 +170,18 @@ namespace SAM.Geometry.Solver
                 startHalf.Parent = parent;
                 endHalf.Parent = parent;
                 double extensionAsParameter = parent.MaxExtension / parent.BaseLine.GetLength();
-                double startT0 = extensionAsParameter <= 0.5 ? extensionAsParameter : 0.5;
+                double startT0 = extensionAsParameter < 0.5 ? extensionAsParameter : almostHalf;
                 double startT1 = -1 * extensionAsParameter;
                 Point2D extSegSt = parent.BaseLine.PointFromBeyondRange(startT0);
                 Point2D extSegEnd = parent.BaseLine.PointFromBeyondRange(startT1);
                 startHalf.ExtensionSegment = new Segment2D(extSegSt, extSegEnd);
-                startHalf.FullSegment = new Segment2D(parent.BaseLine.GetPoint(0.5), 
+                startHalf.FullSegment = new Segment2D(parent.BaseLine.GetPoint(almostHalf), 
                     parent.BaseLine.PointFromBeyondRange(startT1));
-                double endT0 = (1 - extensionAsParameter) >= 0.5 ? (1 - extensionAsParameter) : 0.5;
+                double endT0 = (1 - extensionAsParameter) > 0.5 ? (1 - extensionAsParameter) : 1 - almostHalf;
                 double endT1 = 1 + extensionAsParameter;
                 endHalf.ExtensionSegment = new Segment2D(parent.BaseLine.PointFromBeyondRange(endT0), 
                     parent.BaseLine.PointFromBeyondRange(endT1));
-                endHalf.FullSegment = new Segment2D(parent.BaseLine.Point2D(0.5), 
+                endHalf.FullSegment = new Segment2D(parent.BaseLine.Point2D(1 - almostHalf), 
                     parent.BaseLine.PointFromBeyondRange(endT1));
                 startHalf.OriginalEndOnExtensionParam = startHalf.ExtensionSegment.GetParameter(startHalf.OriginalEnd);
                 endHalf.OriginalEndOnExtensionParam = endHalf.ExtensionSegment.GetParameter(endHalf.OriginalEnd);
@@ -183,8 +191,7 @@ namespace SAM.Geometry.Solver
             {
                 Parent = null;
                 IsNaked = true;
-                //FullSegment = Line.Unset;
-                //ExtensionSegment = Line.Unset;
+                OriginallyNaked = true;
                 FullSegment = new Segment2D(Point2D.Invalid, Point2D.Invalid);
                 ExtensionSegment = new Segment2D(Point2D.Invalid, Point2D.Invalid);
                 Intersections = new List<Intersection>();
@@ -194,6 +201,10 @@ namespace SAM.Geometry.Solver
             {
                 Point2D farthestPoint = Point2D.Invalid;
                 double farthestParam = -1;
+                if (!OriginallyNaked) {
+                    farthestPoint = OriginalEnd;
+                    farthestParam = this.ExtensionSegment.ClosestParameter(OriginalEnd);
+                }
                 for (int i = 0; i < Intersections.Count; i++)
                 {
                     if (!Intersections[i].IsActive)
@@ -214,22 +225,21 @@ namespace SAM.Geometry.Solver
             public bool TryRegisterIntersections(HalfEdge other, double tolerance, out Intersection x)
             {
                 bool intersected = false;
-                //double thisParam = 0;
-                //double otherParam = 0;
-                //BoundingBox2D bboxThis = this.FullSegment.GetBoundingBox();
-                //BoundingBox2D bboxOther = other.FullSegment.GetBoundingBox();
                 x = null;
 
                 intersected = this.FullSegment.Intersect(other.FullSegment, tolerance);
-                //intersected = bboxThis.InRange(bboxOther, tolerance);
-                //intersected = Rhino.Geometry.Intersect.Intersection.LineLine(this.FullSegment, other.FullSegment, 
-                //    out thisParam, out otherParam, tolerance, true);
 
                 if (intersected)
                 {
-                    //Point3d intersectionPoint = (this.ExtensionSegment.PointAt(thisParam) + other.FullSegment.PointAt(otherParam)) / 2; // average for precision?
-                    Point2D intersectionPoint = this.FullSegment.Intersection(other.FullSegment, true, tolerance);
-                    //Point3d intersectionPoint = this.FullSegment.PointAt(thisParam);
+                    // check if are parallel
+                    double minAbsDot = System.Math.Cos(SnapSolver.ArcToleranceAngleRad);
+                    double absDotProduct = System.Math.Abs(this.FullSegment.Direction.Unit * other.FullSegment.Direction.Unit);
+                    if (absDotProduct >= minAbsDot) // parallel
+                    {
+                        return false;
+                    }
+
+                    Point2D intersectionPoint = this.FullSegment.Intersection(other.FullSegment, true, tolerance);                    
                     // check if any is a true participant of the intersection
                     List<HalfEdge> trueParticipants = new List<HalfEdge>();
                     bool thisParticipates = false;
@@ -277,7 +287,6 @@ namespace SAM.Geometry.Solver
                 BaseLine = line;
                 Segment2D extended = line;
                 extended.Extend(maxExtension, true, true);
-                //extended.Extend(maxExtension, maxExtension);
                 ExtendedLine = extended;
                 MaxExtension = maxExtension;
                 HalfEdge start = null;
@@ -317,7 +326,23 @@ namespace SAM.Geometry.Solver
             public void ResetStatus()
             {
                 StartHalf.IsNaked = true;
+                StartHalf.OriginallyNaked = true;
                 EndHalf.IsNaked = true;
+                EndHalf.OriginallyNaked = true;
+            }
+
+            public void UpdateNakedStatus(Edge other)
+            {
+                Point2D start = this.BaseLine.Start;
+                Point2D end = this.BaseLine.End;
+                if (StartHalf.IsNaked && other.BaseLine.MinimumDistanceTo(start) <= SnapSolver.SAMTolerance) {
+                    StartHalf.IsNaked = false;
+                    StartHalf.OriginallyNaked = false;
+                }
+                if (EndHalf.IsNaked && other.BaseLine.MinimumDistanceTo(end) <= SnapSolver.SAMTolerance) {
+                    EndHalf.IsNaked = false;
+                    EndHalf.OriginallyNaked = false;
+                }
             }
 
             public Segment2D GetResult()

@@ -38,7 +38,6 @@ namespace SAM.Geometry.Solver
         public SnappedWall(int sourceIndex, Segment3D axis, double weight, double bucketSize, double maxExtension, Core.Range<double> originalHeight)
         {
             Elevation = (axis.GetStart().Z + axis.GetEnd().Z) / 2;
-            //axis.Transform(Transform.PlanarProjection(Plane.WorldXY));
             SourceIndices = new List<int>();
             SourceIndices.Add(sourceIndex);
             SourceSegments = new List<Segment2D>();
@@ -54,9 +53,6 @@ namespace SAM.Geometry.Solver
         }
         private Segment2D Segment3DPlanarProjection(Segment3D inputSegment, Plane destinationPlane)
         {
-            //var projectedSegment3D = destinationPlane.Project(inputSegment);
-            //var segment2d = destinationPlane.Convert(projectedSegment3D);
-            //return segment2d;
             var z = destinationPlane.Origin.Z;
             var inputStart = inputSegment.GetStart();
             var inputEnd = inputSegment.GetEnd();
@@ -82,9 +78,6 @@ namespace SAM.Geometry.Solver
             }
             Point2D start = this.ProjectedAxis.Start;
             Point2D end = this.ProjectedAxis.End;
-            //if (NakedStart && other.ProjectedAxis.MinimumDistanceTo(start) <= SAM_SnapSolver.SAMTolerance)
-            double startDist = other.ProjectedAxis.MinimumDistanceTo(start);
-            double endDist = other.ProjectedAxis.MinimumDistanceTo(end);
             if (NakedStart && other.ProjectedAxis.MinimumDistanceTo(start) <= SnapSolver.SAMTolerance)
             {
                 NakedStart = false;
@@ -112,13 +105,6 @@ namespace SAM.Geometry.Solver
             var faceContour = new Polygon3D(facePoints);
 
             return new Face3D(faceContour);
-            //LineCurve bottomLine = new LineCurve(ProjectedAxis);
-            //bottomLine.Transform(Transform.Translation(new Vector3d(0, 0, OriginalHeight.Min)));
-            //LineCurve topLine = new LineCurve(ProjectedAxis);
-            //topLine.Transform(Transform.Translation(new Vector3d(0, 0, OriginalHeight.Max)));
-
-            //var surface = NurbsSurface.CreateRuledSurface(bottomLine, topLine);
-            //return surface.ToBrep();
         }
 
         private Face3D GetBrep(Segment2D segment)
@@ -137,14 +123,6 @@ namespace SAM.Geometry.Solver
             var faceContour = new Polygon3D(facePoints);
 
             return new Face3D(faceContour);
-
-            //LineCurve bottomLine = new LineCurve(segment);
-            //bottomLine.Transform(Transform.Translation(new Vector3d(0, 0, OriginalHeight.Min)));
-            //LineCurve topLine = new LineCurve(segment);
-            //topLine.Transform(Transform.Translation(new Vector3d(0, 0, OriginalHeight.Max)));
-
-            //var surface = NurbsSurface.CreateRuledSurface(bottomLine, topLine);
-            //return surface.ToBrep();
         }
 
         public List<Face3D> GetFaces3D(out List<List<int>> sourceIndices)
@@ -195,6 +173,7 @@ namespace SAM.Geometry.Solver
                 }
             }
             splitParams.Sort();
+            splitParams = splitParams.Where(t => !double.IsNaN(t)).ToList();
 
             List<Segment2D> splitSegments = new List<Segment2D>();
             for (int i = 0; i < splitParams.Count - 1; i++)
@@ -202,7 +181,7 @@ namespace SAM.Geometry.Solver
                 Segment2D piece = new Segment2D(ProjectedAxis.GetPoint(splitParams[i]), ProjectedAxis.GetPoint(splitParams[i + 1]));
                 // shorten the current piece to avoid taking neighbors indices
                 Segment2D testPiece = piece;
-                testPiece = testPiece.Extend(-1.5 * SnapSolver.ModelTolerance, true, true);
+                testPiece = testPiece.Extend(-0.49 * SnapSolver.MinWallSegmentLength, true, true);
                 List<int> indices = new List<int>();
                 for (int j = 0; j < SourceSegments.Count; j++)
                 {
@@ -219,9 +198,6 @@ namespace SAM.Geometry.Solver
             {
                 surfaces.Add(GetBrep(s));
             }
-            //foreach (Line s in SourceSegments) {
-            //    surfaces.Add(GetBrep(s));
-            //}
 
             return surfaces;
         }
@@ -250,10 +226,6 @@ namespace SAM.Geometry.Solver
                 if (startIsNaked)
                 {
                     double orthoDistStart = OrthoDistance2d(start, anchorCandidate);
-                    //if (RhinoMath.EpsilonEquals(orthoDistStart, 0, _SAMTolerance)) {
-                    //    startIsNaked = false;
-                    //    this.NakedStart = false;
-                    //}
                     if (orthoDistStart <= maxOrtho2dDistance)
                     {
                         startSnapCandidates.Add(anchorCandidate);
@@ -262,10 +234,6 @@ namespace SAM.Geometry.Solver
                 if (endIsNaked)
                 {
                     double orthoDistEnd = OrthoDistance2d(end, anchorCandidate);
-                    //if (RhinoMath.EpsilonEquals(orthoDistEnd, 0, _SAMTolerance)) {
-                    //    endIsNaked = false;
-                    //    this.NakedEnd = false;
-                    //}
                     if (orthoDistEnd <= maxOrtho2dDistance)
                     {
                         endSnapCandidates.Add(anchorCandidate);
@@ -414,9 +382,37 @@ namespace SAM.Geometry.Solver
                 Core.Range<double> thisNewRange = new Core.Range<double>(System.Math.Min(otherRange.Min, 0), System.Math.Max(otherRange.Max, 1));
                 Point2D newStart = this.ProjectedAxis.GetPoint(thisNewRange.Min);
                 Point2D newEnd = this.ProjectedAxis.GetPoint(thisNewRange.Max);
+
+                //check if there's a gap between the walls and eventually stretch them to the middle
+                if ((snappedStartParam < 0 && snappedEndParam < 0) || (snappedStartParam > 1 && snappedEndParam > 1)) { // there's a gap                   
+                    bool directionsAligned = this.ProjectedAxis.Direction.Unit * other.ProjectedAxis.Direction.Unit > 0;
+                    if (snappedStartParam < 0) {
+                        double midParam = (otherRange.Max + 0) / 2;
+                        Point2D snapPoint = ProjectedAxis.GetPoint(midParam);
+                        UpdateEndPoints(snapPoint, ProjectedAxis.End, stretch: true);
+                        if (directionsAligned) {
+                            other.UpdateEndPoints(other.ProjectedAxis.Start, snapPoint, stretch: true);
+                        }
+                        else {
+                            other.UpdateEndPoints(snapPoint, other.ProjectedAxis.End, stretch: true);
+                        }
+                    }
+                    else {
+                        double midParam = (otherRange.Min + 1) / 2;
+                        Point2D snapPoint = ProjectedAxis.GetPoint(midParam);
+                        UpdateEndPoints(ProjectedAxis.Start, snapPoint, stretch: true);
+                        if (directionsAligned) {
+                            other.UpdateEndPoints(snapPoint, other.ProjectedAxis.End, stretch: true);
+                        }
+                        else {
+                            other.UpdateEndPoints(other.ProjectedAxis.Start, snapPoint, stretch: true);
+                        }
+                    }
+                }
+
                 SourceIndices.AddRange(other.SourceIndices);
                 SourceSegments.AddRange(other.SourceSegments);
-                // todo: compare weights and decide whether to average or snap
+                // todo: maybe compare weights and decide whether to average or snap?
                 double weightTolerance = this.Weight * 0.01;
                 if (Core.Query.AlmostEqual(this.Weight, other.Weight, weightTolerance)) // both have the same weight
                 {
@@ -572,6 +568,7 @@ namespace SAM.Geometry.Solver
                 }
             }
             splitParams.Sort();
+            splitParams = splitParams.Where(t => !double.IsNaN(t)).ToList();
 
             List<Segment2D> splitSegments = new List<Segment2D>();
             List<List<int>> sourceIndices = new List<List<int>>();
@@ -580,7 +577,7 @@ namespace SAM.Geometry.Solver
                 Segment2D piece = new Segment2D(ProjectedAxis.GetPoint(splitParams[i]), ProjectedAxis.GetPoint(splitParams[i + 1]));
                 // shorten the current piece to avoid taking neighbours' indices
                 Segment2D testPiece = piece.Clone<Segment2D>();
-                testPiece = testPiece.Extend(-1.5 * SnapSolver.ModelTolerance, true, true);
+                testPiece = testPiece.Extend(-0.49 * SnapSolver.MinWallSegmentLength, true, true);
                 List<int> indices = new List<int>();
                 for (int j = 0; j < SourceSegments.Count; j++)
                 {

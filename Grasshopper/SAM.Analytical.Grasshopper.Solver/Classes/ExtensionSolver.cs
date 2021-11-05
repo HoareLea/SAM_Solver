@@ -149,6 +149,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Classes
         private class HalfEdge
         {
             public Edge Parent { get; private set; }
+            public bool OriginallyNaked { get; set; }
             public bool IsNaked { get; set; }
             public Point3d OriginalEnd { get; private set; }
             public double OriginalEndOnExtensionParam { get; private set; }

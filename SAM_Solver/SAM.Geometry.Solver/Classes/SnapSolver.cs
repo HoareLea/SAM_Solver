@@ -64,6 +64,10 @@ namespace SAM.Geometry.Solver
         /// </summary>
         public static double ArcToleranceAngleRad { get => _arcToleranceAngleRad; private set { _arcToleranceAngleRad = value; } }
         private static double _arcToleranceAngleRad = double.NaN;
+        /// <summary>
+        /// 0.001 degrees
+        /// </summary>
+        public static double ParallelToleranceAngleRad => 0.001 * (System.Math.PI / 180);
         public static double DEFAULT_ArcToleranceAngleRad { get => ARC_TOLERANCE_ANGLE_RAD; }
         private const double ARC_TOLERANCE_ANGLE_RAD = 0.3 * (System.Math.PI / 180);
         /// <summary>
@@ -149,13 +153,12 @@ namespace SAM.Geometry.Solver
             MaxExtensions = AdjustListLength(MaxExtensions, PanelsFaces3D.Count, defaultValue: 0.5);
             
             List<SnappedWall> walls = RegisterWalls(PanelsFaces3D, BucketSizes, Weights, MaxExtensions, Levels, LevelSectionOffset);
-            List<SnappedWall> snapped = SnapAndAdjustWalls(walls);
-            snapped = ExplodeWallsAtIntersections(snapped);
+            List<SnappedWall> snapped = SnapAndAdjustWalls(walls);           
             TrimAndExtendWalls(snapped);
             snapped = ExplodeWallsAtIntersections(snapped);
             SnapOpenNodes(snapped, NakedNodeSnapDistance);
             snapped = CreateGraph(snapped, MinWallSegmentLength); // graph processing
-            snapped = MergeColinearWalls(snapped);
+            //snapped = MergeColinearWalls(snapped, sameSourcePanelsOnly: true);
             MarkNakedNodes(snapped);
 
             SortedList<double, List<SnappedWall>> snappedWallsPerFloor = SortWallsByElevation(snapped);
@@ -264,10 +267,10 @@ namespace SAM.Geometry.Solver
 
             return graph;
         }
-        private static List<SnappedWall> MergeColinearWalls(List<SnappedWall> walls)
+        private static List<SnappedWall> MergeColinearWalls(List<SnappedWall> walls, bool sameSourcePanelsOnly = true)
         {
-            double angleRadTol = /*_toleranceAngleRad*/0.01;
-            double distTol = /*ModelTolerance*/0.001;
+            double angleRadTol = ParallelToleranceAngleRad;
+            double distTol = ModelTolerance;
 
             SortedList<double, List<SnappedWall>> sortedByElevation = SortWallsByElevation(walls);
 
@@ -304,8 +307,15 @@ namespace SAM.Geometry.Solver
                         }
                         if (masterWall.IsRoughlyColinearWith(thisLevelWalls[j], angleRadTol))
                         {
-                           if (thisLevelWalls[j].SourceIndices.All(id => masterSources.Contains(id)))
+                            HashSet<int> candidateSources = new HashSet<int>(thisLevelWalls[j].SourceIndices);
+                            if (sameSourcePanelsOnly) { // additional check required
+                                if (candidateSources.All(id => masterSources.Contains(id)) && candidateSources.Count == masterSources.Count) {
+                                    colinearIndices.Add(j);
+                                }
+                            }
+                            else {
                                 colinearIndices.Add(j);
+                            }
                         }
                     }
 
@@ -313,6 +323,7 @@ namespace SAM.Geometry.Solver
                     List<Point2D> anchors = new List<Point2D>();
                     anchors.Add(masterAxis.Start);
                     anchors.Add(masterAxis.End);
+                    List<int> mergedColinearIndices = new List<int>();
                     do
                     {
                         foreach (int colinearId in colinearIndices)
@@ -328,10 +339,11 @@ namespace SAM.Geometry.Solver
                                 anyMatch = true;
                                 anchors.Add(thisLevelWalls[colinearId].ProjectedAxis.Start);
                                 anchors.Add(thisLevelWalls[colinearId].ProjectedAxis.End);
+                                mergedColinearIndices.Add(colinearId);
                             }
                         }
                         safetyCounter++;
-                    } while (anyMatch && safetyCounter < 100);
+                    } while (anyMatch && safetyCounter < 1000);
 
                     double elevation = floor.Key;
 
@@ -342,16 +354,35 @@ namespace SAM.Geometry.Solver
                     masterAxis = new Segment2D(anchors[parameters.IndexOf(minParam)], anchors[parameters.IndexOf(maxParam)]);
                     var masterAxis3D = new Segment3D(
                         new Point3D(masterAxis.Start.X, masterAxis.Start.Y, elevation),
-                        new Point3D(masterAxis.End.X, masterAxis.End.Y, elevation));
-                    //var masterAxis3D = ProjectionPlane.Convert(masterAxis);
-                    //masterAxis3D.GetMoved(new Vector3D(0, 0, elevation));                    
+                        new Point3D(masterAxis.End.X, masterAxis.End.Y, elevation));       
 
                     SnappedWall mergedWall = new SnappedWall(masterWall.SourceIndices[0], masterAxis3D, 
                         masterWall.Weight, masterWall.BucketSize, masterWall.MaxExtension, masterWall.OriginalHeight);
-                    for (int m = 1; m < masterWall.SourceIndices.Count; m++)
-                    {
-                        mergedWall.SourceIndices.Add(masterWall.SourceIndices[m]);
-                        mergedWall.SourceSegments.Add(masterAxis); // again... source segments have to be projected to the proper level
+                    if (sameSourcePanelsOnly) {
+                        var projectedMasterAxis = new Segment2D(
+                            new Point2D(masterAxis.Start.X, masterAxis.Start.Y),
+                            new Point2D(masterAxis.End.X, masterAxis.End.Y));
+
+                        for (int m = 1; m < masterWall.SourceIndices.Count; m++) {
+                            mergedWall.SourceIndices.Add(masterWall.SourceIndices[m]);
+                            mergedWall.SourceSegments.Add(projectedMasterAxis); // source segments have to be projected to XY plane (this should be handled by a proper "AddSegment" method in SnappedWall class)
+                        }
+                    }
+                    else {
+                        mergedWall.SourceIndices[0] = masterWall.SourceIndices[0]; // replace the master axis
+                        mergedWall.SourceSegments[0] = masterWall.SourceSegments[0];
+                        for (int m = 1; m < masterWall.SourceIndices.Count; m++) {
+                            mergedWall.SourceIndices.Add(masterWall.SourceIndices[m]);
+                            mergedWall.SourceSegments.Add(masterWall.SourceSegments[m]);
+                        }
+                        // add all other segments
+                        foreach (int mergedId in mergedColinearIndices) {
+                            var currentMerged = thisLevelWalls[mergedId];
+                            for (int m = 0; m < currentMerged.SourceIndices.Count; m++) {
+                                mergedWall.SourceIndices.Add(currentMerged.SourceIndices[m]);
+                                mergedWall.SourceSegments.Add(currentMerged.SourceSegments[m]);
+                            }
+                        }
                     }
                     merged.Add(mergedWall);
                 }
@@ -380,7 +411,7 @@ namespace SAM.Geometry.Solver
                         continue;
                     }
                     if (!Core.Query.AlmostEqual(walls[i].Elevation, walls[j].Elevation, SnapSolver.ModelTolerance))
-                    {// are not on the same level, don't intersect
+                    {// in this version of the algorithm the split is created even if the walls are on different levels. Uncomment "continue" to split only on the same level
                      //continue;
                     }
                     double myParam = 0;
@@ -389,19 +420,12 @@ namespace SAM.Geometry.Solver
                     Segment2D otherExtended = walls[j].ProjectedAxis;
                     currentExtended = currentExtended.Extend(SnapSolver.ModelTolerance, true, true);
                     otherExtended = otherExtended.Extend(SnapSolver.ModelTolerance, true, true);
-                    //if (Rhino.Geometry.Intersect.Intersection.LineLine(currentExtended, otherExtended, 
-                    //    out myParam, out theirParam, SAM_SnapSolver.SAMTolerance, finiteSegments: true))
                     if(currentExtended.Intersect(otherExtended, SnapSolver.SAMTolerance))
                     {
-                        //StartExtensionParam = System.Math.Max(StartExtensionParam, myParam);
                         intersections.Add(currentExtended.Intersection(otherExtended, true, SnapSolver.SAMTolerance));
                     }
                 }
-                //Print("Intersections:{0}", walls[i].Elevation);
-                //foreach (Point3d point3D in intersections) {
-                //    Print(point3D.EndString());
-                //}
-                //var currentSplit = walls[i].SnapSegmentsSplitAndExplode(intersections, walls[i].MaxExtension, false);
+
                 var currentSplit = walls[i].SnapSegmentsSplitAndExplode(intersections, MinWallSegmentLength, false);
                 for (int j = 0; j < currentSplit.Count; j++)
                 {
@@ -517,7 +541,6 @@ namespace SAM.Geometry.Solver
             {
                 var axes = floor.Value.Select(wall => wall.ProjectedAxis).ToList();
                 var extensions = floor.Value.Select(wall => wall.MaxExtension).ToList();
-                //ExtensionSolver solver = new ExtensionSolver(axes, extensions, SnapSolver.SAMToleranceLarge);
                 ExtensionSolver solver = new ExtensionSolver(axes, extensions, SnapSolver.SAMTolerance);
                 var newAxes = solver.Solve();
                 for (int i = 0; i < floor.Value.Count; i++)
@@ -556,7 +579,6 @@ namespace SAM.Geometry.Solver
                     }
                 }
             }
-
             return walls;
         }
 

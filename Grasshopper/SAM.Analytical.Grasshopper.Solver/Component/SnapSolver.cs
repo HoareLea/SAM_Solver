@@ -10,16 +10,13 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
 {
     public class SnapSolver : GH_SAMComponent
     {
-        public override Guid ComponentGuid => new Guid("{91F869F6-C75F-4F67-A459-F56AEA6DBC2F}");
+        public override Guid ComponentGuid => new Guid("eb0fdcec-243f-4895-b036-25d6cca28eb7");
 
 
         /// <summary>
         /// The latest version of this component
         /// </summary>
         public override string LatestComponentVersion => "1.0.0";
-
-
-        public override GH_Exposure Exposure => GH_Exposure.tertiary | GH_Exposure.obscure;
 
         /// <summary>
         /// Provides an Icon for the component.

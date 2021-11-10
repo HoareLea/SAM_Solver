@@ -38,7 +38,7 @@ namespace SAM.Geometry.Solver
             double toleranceAngleRad, 
             double arcToleranceAngleRad,
             out List<List<Face3D>> snappedFace3Ds,
-            out List<List<int>> snappedFace3DsSources,
+            out List<List<List<int>>> snappedFace3DsSources,
             out List<List<Point3D>> nakedEnds)
         {
             var SnapSolver = new SnapSolver(face3Ds.ToList(), bucketSizes.ToList(), weights.ToList(), maxExtensions.ToList(), levels,
@@ -114,16 +114,21 @@ namespace SAM.Geometry.Solver
             snappedFace3Ds = snapSolver.SnappedWalls;
             nakedEnds = snapSolver.NakedEnds;
 
-            List<List<int>> snappedSources = snapSolver.SnappedSources;
+            List<List<List<int>>> snappedSources = snapSolver.SnappedSources;
             if(snappedSources != null)
             {
                 sourceFace3DObjects = new List<List<T>>();
-                foreach (List<int> sources in snappedSources)
+                foreach (List<List<int>> sources in snappedSources)
                 {
                     List<T> face3DObjects_Sources = new List<T>();
-                    foreach(int source in sources)
+                    foreach(List<int> source in sources)
                     {
-                        face3DObjects_Sources.Add(tuples[source].Item2);
+                        if(source == null || source.Count == 0)
+                        {
+                            continue;
+                        }
+                        
+                        face3DObjects_Sources.Add(tuples[source[0]].Item2);
                     }
 
                     sourceFace3DObjects.Add(face3DObjects_Sources);

@@ -40,9 +40,9 @@ namespace SAM.Analytical.Rhino.Solver.Plugin
         {
             panels = panels?.ConvertAll(x => Create.Panel(x));
 
-            Modify.SetWeights(panels);
-            Modify.SetBucketSizes(panels);
-            Modify.SetMaxExtends(panels);
+            Analytical.Solver.Modify.SetWeights(panels);
+            Analytical.Solver.Modify.SetBucketSizes(panels);
+            Analytical.Solver.Modify.SetMaxExtends(panels);
 
             DialogResult = DialogResult.OK;
             Close();

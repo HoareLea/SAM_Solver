@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using SAM.Geometry.Spatial;
 
-namespace SAM.Analytical.Rhino.Solver.Plugin
+namespace SAM.Analytical.Solver
 {
     public static partial class Modify
     {
-        public static void SetMaxExtends(this List<Panel> panels, double offset = 0.1, double tolerance_Angle = Core.Tolerance.Angle, double tolerance_Distance = Core.Tolerance.Distance)
+        public static void SetMaxExtends(this List<Panel> panels, bool @override = true, double offset = 0.1, double tolerance_Angle = Core.Tolerance.Angle, double tolerance_Distance = Core.Tolerance.Distance)
         {
             if (panels == null)
             {
@@ -20,7 +20,13 @@ namespace SAM.Analytical.Rhino.Solver.Plugin
                 {
                     continue;
                 }
-                
+
+                double maxExtend = double.NaN;
+                if (!@override && panel.TryGetValue(PanelParameter.MaxExtend, out maxExtend))
+                {
+                    continue;
+                }
+
                 double thickness = double.NaN;
 
                 Construction construction = panel.Construction;
@@ -36,7 +42,6 @@ namespace SAM.Analytical.Rhino.Solver.Plugin
                     }
                 }
 
-                double maxExtend = double.NaN;
                 if(double.IsNaN(thickness))
                 {
                     maxExtend = 0.33;
@@ -107,7 +112,7 @@ namespace SAM.Analytical.Rhino.Solver.Plugin
 
                 maxExtend = System.Math.Min(length, maxExtend);
 
-                panels[i].SetValue(Analytical.Solver.PanelParameter.MaxExtend, maxExtend);
+                panels[i].SetValue(PanelParameter.MaxExtend, maxExtend);
             }
         }
     }

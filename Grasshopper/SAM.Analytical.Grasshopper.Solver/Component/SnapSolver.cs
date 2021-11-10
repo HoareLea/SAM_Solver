@@ -8,7 +8,7 @@ using SAM.Core;
 
 namespace SAM.Analytical.Grasshopper.Solver.Component
 {
-    public class SnapSolver : GH_SAMComponent
+    public class SnapSolver : GH_SAMVariableOutputParameterComponent
     {
         public override Guid ComponentGuid => new Guid("eb0fdcec-243f-4895-b036-25d6cca28eb7");
 
@@ -16,7 +16,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
         /// <summary>
         /// The latest version of this component
         /// </summary>
-        public override string LatestComponentVersion => "1.0.0";
+        public override string LatestComponentVersion => "1.0.1";
 
         /// <summary>
         /// Provides an Icon for the component.
@@ -28,28 +28,61 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
         {
         }
 
-        protected override void RegisterInputParams(GH_InputParamManager manager)
+        /// <summary>
+        /// Registers all the input parameters for this component.
+        /// </summary>
+        protected override GH_SAMParam[] Inputs
         {
-            //TODO: write better descriptions and verify information, full Sentencies with "."
-            //defaults: _name_
-            //no default value : _name
-            //optional - no default, no obligation for the input : name_
-            manager.AddParameter(new GooPanelParam(), "_panels", "PB", "Panels represented as a list of surface brep geometry.", GH_ParamAccess.list);
-            manager.AddNumberParameter("_bucketSizes", "BS", "Bucket size per panel.", GH_ParamAccess.list);
-            manager.AddNumberParameter("_weights", "W", "A list of weighs or the panels", GH_ParamAccess.list);
-            manager.AddNumberParameter("_maxExtensions", "ME", "Maximum extensions in a snapping process", GH_ParamAccess.list);
-            manager.AddIntervalParameter("_levels", "L", "Information on each floor's elevation", GH_ParamAccess.list);
-            manager.AddNumberParameter("_levelSectionOffset_", "LO", "Floor height", GH_ParamAccess.item, Geometry.Solver.SnapSolver.DEFAULT_LevelSectionOffset);
-            manager.AddNumberParameter("_nakedNodeSnapDistance_", "NNSD", "Snap distance for a naked node", GH_ParamAccess.item, Geometry.Solver.SnapSolver.DEFAULT_NakedNodeSnapDistance);
-            manager.AddNumberParameter("_minWallSegmentLength_", "MWSL", "The smallest wall segment that won't be merged into an other wall", GH_ParamAccess.item, Geometry.Solver.SnapSolver.DEFAULT_MinWallSegmentLength);
-            manager.AddNumberParameter("_toleranceDistance_", "±Dist", "Distance tolerance", GH_ParamAccess.item, Tolerance.Distance);
-            manager.AddNumberParameter("_toleranceAngleRad_", "±AngleRad", "Angle tolerance in radians", GH_ParamAccess.item, Tolerance.Angle);
-            manager.AddNumberParameter("_arcToleranceAngleRad_", "±ArcAngleRad", "Arc angle tolerance in radians", GH_ParamAccess.item, Geometry.Solver.SnapSolver.DEFAULT_ArcToleranceAngleRad);
+            get
+            {
+                List<GH_SAMParam> result = new List<GH_SAMParam>();
+                result.Add(new GH_SAMParam(new GooPanelParam() { Name = "_panels", NickName = "_panels", Description = "Panels represented as a list of surface brep geometry.", Access = GH_ParamAccess.list }, ParamVisibility.Binding));
+                result.Add(new GH_SAMParam(new global::Grasshopper.Kernel.Parameters.Param_Number() { Name = "bucketSizes_", NickName = "bucketSizes_", Description = "Bucket size per panel.", Access = GH_ParamAccess.list, Optional = true }, ParamVisibility.Voluntary));
+                result.Add(new GH_SAMParam(new global::Grasshopper.Kernel.Parameters.Param_Number() { Name = "weights_", NickName = "weights_", Description = "A list of weighs or the panels", Access = GH_ParamAccess.list, Optional = true }, ParamVisibility.Voluntary));
+                result.Add(new GH_SAMParam(new global::Grasshopper.Kernel.Parameters.Param_Number() { Name = "maxExtensions_", NickName = "maxExtensions_", Description = "Maximum extensions in a snapping process", Access = GH_ParamAccess.list, Optional = true }, ParamVisibility.Voluntary));
+                result.Add(new GH_SAMParam(new global::Grasshopper.Kernel.Parameters.Param_Interval() { Name = "levels_", NickName = "levels_", Description = "Information on each floor's elevation", Access = GH_ParamAccess.list, Optional = true }, ParamVisibility.Voluntary));
+
+                global::Grasshopper.Kernel.Parameters.Param_Number paramNumber;
+
+                paramNumber = new global::Grasshopper.Kernel.Parameters.Param_Number() { Name = "_levelOffset_", NickName = "_levelOffset_", Description = "Level Section Offset", Access = GH_ParamAccess.item };
+                paramNumber.SetPersistentData(Geometry.Solver.SnapSolver.DEFAULT_LevelSectionOffset);
+                result.Add(new GH_SAMParam(paramNumber, ParamVisibility.Voluntary));
+
+                paramNumber = new global::Grasshopper.Kernel.Parameters.Param_Number() { Name = "_nakedNodeSnapDistance_", NickName = "_nakedNodeSnapDistance_", Description = "Snap distance for a naked node", Access = GH_ParamAccess.item };
+                paramNumber.SetPersistentData(Geometry.Solver.SnapSolver.DEFAULT_NakedNodeSnapDistance);
+                result.Add(new GH_SAMParam(paramNumber, ParamVisibility.Voluntary));
+
+                paramNumber = new global::Grasshopper.Kernel.Parameters.Param_Number() { Name = "_minWallSegmentLength_", NickName = "_minWallSegmentLength_", Description = "The smallest wall segment that won't be merged into an other wall", Access = GH_ParamAccess.item };
+                paramNumber.SetPersistentData(Geometry.Solver.SnapSolver.DEFAULT_MinWallSegmentLength);
+                result.Add(new GH_SAMParam(paramNumber, ParamVisibility.Voluntary));
+
+                paramNumber = new global::Grasshopper.Kernel.Parameters.Param_Number() { Name = "_toleranceDistance_", NickName = "_toleranceDistance_", Description = "Distance tolerance", Access = GH_ParamAccess.item };
+                paramNumber.SetPersistentData(Tolerance.Distance);
+                result.Add(new GH_SAMParam(paramNumber, ParamVisibility.Voluntary));
+
+                paramNumber = new global::Grasshopper.Kernel.Parameters.Param_Number() { Name = "_toleranceAngle_", NickName = "_toleranceAngle_", Description = "Distance angle", Access = GH_ParamAccess.item };
+                paramNumber.SetPersistentData(Tolerance.Angle);
+                result.Add(new GH_SAMParam(paramNumber, ParamVisibility.Voluntary));
+
+                paramNumber = new global::Grasshopper.Kernel.Parameters.Param_Number() { Name = "_toleranceArc_", NickName = "_toleranceArc_", Description = "Arc angle tolerance in radians", Access = GH_ParamAccess.item };
+                paramNumber.SetPersistentData(Geometry.Solver.SnapSolver.DEFAULT_ArcToleranceAngleRad);
+                result.Add(new GH_SAMParam(paramNumber, ParamVisibility.Voluntary));
+
+                return result.ToArray();
+            }
         }
 
-        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
+        /// <summary>
+        /// Registers all the output parameters for this component.
+        /// </summary>
+        protected override GH_SAMParam[] Outputs
         {
-            pManager.AddParameter(new GooPanelParam(), "panels", "panels", "Snapped SAM Analytical Panels", GH_ParamAccess.list);
+            get
+            {
+                List<GH_SAMParam> result = new List<GH_SAMParam>();
+                result.Add(new GH_SAMParam(new GooPanelParam() { Name = "panels", NickName = "panels", Description = "SAM Analytical Panels", Access = GH_ParamAccess.list }, ParamVisibility.Binding));
+                return result.ToArray();
+            }
         }
 
         private bool CheckTolerance()
@@ -60,37 +93,112 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            var panels = new List<Panel>();
-            var bucketSizes = new List<double>();
-            var weights = new List<double>();
-            var maxExtensions = new List<double>();
-            var levels = new List<Interval>();
+            List<Panel> panels = new List<Panel>();
+            List<double> bucketSizes = new List<double>();
+            List<double> weights = new List<double>();
+            List<double> maxExtensions = new List<double>();
+            List<Interval> levels = new List<Interval>();
 
-            var levelSectionOffset = new double();
-            var nakedNodeSnapDistance = new double();
-            var minWallSegmentLength = new double();
-            var toleranceDistance = new double();
-            var toleranceAngleRad = new double();
-            var arcToleranceAngleRad = new double();
+            double levelSectionOffset = Geometry.Solver.SnapSolver.DEFAULT_LevelSectionOffset;
+            double nakedNodeSnapDistance = Geometry.Solver.SnapSolver.DEFAULT_NakedNodeSnapDistance;
+            double minWallSegmentLength = Geometry.Solver.SnapSolver.DEFAULT_MinWallSegmentLength;
+            double toleranceDistance = Tolerance.Distance;
+            double toleranceAngleRad = Tolerance.Angle;
+            double arcToleranceAngleRad = Geometry.Solver.SnapSolver.DEFAULT_ArcToleranceAngleRad;
 
-            if (!DA.GetDataList(0, panels)) return;
-            if (!DA.GetDataList(1, bucketSizes)) return;
-            if (!DA.GetDataList(2, weights)) return;
-            if (!DA.GetDataList(3, maxExtensions)) return;
-            if (!DA.GetDataList(4, levels)) return;
+            int index = -1;
 
-            if (!DA.GetData(5, ref levelSectionOffset)) return;
-            if (!DA.GetData(6, ref nakedNodeSnapDistance)) return;
-            if (!DA.GetData(7, ref minWallSegmentLength)) return;
-            if (!DA.GetData(8, ref toleranceDistance)) return;
-            if (!DA.GetData(9, ref toleranceAngleRad)) return;
-            if (!DA.GetData(10, ref arcToleranceAngleRad)) return;
+            index = Params.IndexOfInputParam("_panels");
+            if (index == -1 || !DA.GetDataList(index, panels))
+            {
+                return;
+            }
+
+            index = Params.IndexOfInputParam("bucketSizes_");
+            if(index != -1)
+            {
+                DA.GetDataList(index, bucketSizes);
+            }
+
+            index = Params.IndexOfInputParam("weights_");
+            if (index != -1)
+            {
+                DA.GetDataList(index, weights);
+            }
+
+            index = Params.IndexOfInputParam("maxExtensions_");
+            if (index != -1)
+            {
+                DA.GetDataList(index, maxExtensions);
+            }
+
+            index = Params.IndexOfInputParam("levels_");
+            if (index != -1)
+            {
+                DA.GetDataList(index, levels);
+            }
+
+            index = Params.IndexOfInputParam("_levelOffset_");
+            if (index != -1)
+            {
+                DA.GetData(index, ref levelSectionOffset);
+            }
+
+            index = Params.IndexOfInputParam("_nakedNodeSnapDistance_");
+            if (index != -1)
+            {
+                DA.GetData(index, ref nakedNodeSnapDistance);
+            }
+
+            index = Params.IndexOfInputParam("_minWallSegmentLength_");
+            if (index != -1)
+            {
+                DA.GetData(index, ref minWallSegmentLength);
+            }
+
+            index = Params.IndexOfInputParam("_toleranceDistance_");
+            if (index != -1)
+            {
+                DA.GetData(index, ref toleranceDistance);
+            }
+
+            index = Params.IndexOfInputParam("_toleranceAngle_");
+            if (index != -1)
+            {
+                DA.GetData(index, ref toleranceAngleRad);
+            }
+
+            index = Params.IndexOfInputParam("_toleranceArc_");
+            if (index != -1)
+            {
+                DA.GetData(index, ref arcToleranceAngleRad);
+            }
 
             List<Range<double>> levelsForSAM = new List<Range<double>>();
             foreach (Interval level in levels)
                 levelsForSAM.Add(new Range<double>(level.Min, level.Max));
 
             panels = panels?.ConvertAll(x => Create.Panel(x));
+
+            if(bucketSizes == null || bucketSizes.Count == 0)
+            {
+                bucketSizes = null;
+            }
+
+            if (weights == null || weights.Count == 0)
+            {
+                weights = null;
+            }
+
+            if (maxExtensions == null || maxExtensions.Count == 0)
+            {
+                maxExtensions = null;
+            }
+
+            if (levels == null || levels.Count == 0)
+            {
+                levels = null;
+            }
 
             Analytical.Solver.Modify.Snap(
                 panels, bucketSizes, weights, maxExtensions, levelsForSAM,

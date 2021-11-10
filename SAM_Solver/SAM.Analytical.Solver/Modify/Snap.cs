@@ -26,6 +26,83 @@ namespace SAM.Analytical.Solver
                 return;
             }
 
+            if(bucketSizes == null)
+            {
+                SetBucketSizes(panels, false);
+                
+                List<double> bucketSizes_Temp = new List<double>();
+                foreach(Panel panel in panels)
+                {
+                    if(!panel.TryGetValue(PanelParameter.BucketSize, out double bucketSize) || double.IsNaN(bucketSize))
+                    {
+                        bucketSizes_Temp.Add(0);
+                    }
+                    else
+                    {
+                        bucketSizes_Temp.Add(bucketSize);
+                    }
+                }
+                bucketSizes = bucketSizes_Temp;
+            }
+
+            if (weights == null)
+            {
+                SetWeights(panels, false);
+
+                List<double> weights_Temp = new List<double>();
+                foreach (Panel panel in panels)
+                {
+                    if (!panel.TryGetValue(PanelParameter.Weight, out double weight) || double.IsNaN(weight))
+                    {
+                        weights_Temp.Add(0);
+                    }
+                    else
+                    {
+                        weights_Temp.Add(weight);
+                    }
+                }
+
+                weights = weights_Temp;
+            }
+
+            if (maxExtensions == null)
+            {
+                SetMaxExtends(panels, false);
+                
+                List<double> maxExtensions_Temp = new List<double>();
+                foreach (Panel panel in panels)
+                {
+                    if (!panel.TryGetValue(PanelParameter.MaxExtend, out double maxExtend) || double.IsNaN(maxExtend))
+                    {
+                        maxExtensions_Temp.Add(0);
+                    }
+                    else
+                    {
+                        maxExtensions_Temp.Add(maxExtend);
+                    }
+                }
+
+                maxExtensions = maxExtensions_Temp;
+            }
+
+            if(levels == null)
+            {
+                List<double> levels_Temp = new List<double>();
+                Dictionary<double, List<Panel>> elevationDictionary = Geometry.Spatial.Query.ElevationDictionary(panels, out double maxElevation, toleranceDistance);
+                foreach(KeyValuePair<double, List<Panel>> keyValuePair in elevationDictionary)
+                {
+                    levels_Temp.Add(keyValuePair.Key);
+                }
+
+                levels_Temp.Add(maxElevation);
+
+                levels = new List<Range<double>>();
+                for(int i = 1; i < levels_Temp.Count; i++)
+                {
+                    levels.Add(new Range<double>(levels_Temp[i - 1], levels_Temp[i]));
+                }
+            }
+
             Geometry.Solver.Query.Snap(
                 panels,
                 bucketSizes,

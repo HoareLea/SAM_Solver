@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using SAM.Geometry.Spatial;
 
-namespace SAM.Analytical.Rhino.Solver.Plugin
+namespace SAM.Analytical.Solver
 {
     public static partial class Modify
     {
-        public static void SetBucketSizes(this List<Panel> panels, double factor = 0.6, double minBucketSize = 0.2)
+        public static void SetBucketSizes(this List<Panel> panels, bool @override = true, double factor = 0.6, double minBucketSize = 0.2)
         {
             if (panels == null)
             {
@@ -23,7 +23,10 @@ namespace SAM.Analytical.Rhino.Solver.Plugin
                     continue;
                 }
 
-                panels[i].SetValue(Analytical.Solver.PanelParameter.BucketSize, minBucketSize * factor);
+                if(@override || !panels[i].TryGetValue(PanelParameter.BucketSize, out double bucketSize))
+                {
+                    panels[i].SetValue(PanelParameter.BucketSize, minBucketSize * factor);
+                }
 
                 double thickness = double.NaN;
 
@@ -55,9 +58,12 @@ namespace SAM.Analytical.Rhino.Solver.Plugin
             {
                 foreach (Tuple<int, double> tuple in tuples)
                 {
-                    double backetSize = Math.Query.Remap(tuple.Item2, min, max, minBucketSize, max);
+                    if (@override || !panels[tuple.Item1].TryGetValue(PanelParameter.BucketSize, out double bucketSize))
+                    {
+                        double backetSize = Math.Query.Remap(tuple.Item2, min, max, minBucketSize, max);
 
-                    panels[tuple.Item1].SetValue(Analytical.Solver.PanelParameter.BucketSize, backetSize * factor);
+                        panels[tuple.Item1].SetValue(PanelParameter.BucketSize, backetSize * factor);
+                    }
                 }
             }
         }

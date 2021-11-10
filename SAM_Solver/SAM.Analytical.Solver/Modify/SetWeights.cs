@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using SAM.Geometry.Spatial;
 
-namespace SAM.Analytical.Rhino.Solver.Plugin
+namespace SAM.Analytical.Solver
 {
     public static partial class Modify
     {
-        public static void SetWeights(this List<Panel> panels, double offset = 0.1, double tolerance_Angle = Core.Tolerance.Angle, double tolerance_Distance = Core.Tolerance.Distance)
+        public static void SetWeights(this List<Panel> panels, bool @override = true, double offset = 0.1, double tolerance_Angle = Core.Tolerance.Angle, double tolerance_Distance = Core.Tolerance.Distance)
         {
             if (panels == null)
             {
@@ -21,7 +21,10 @@ namespace SAM.Analytical.Rhino.Solver.Plugin
                 
                 if (panel.PanelType == PanelType.Air)
                 {
-                    panels[i].SetValue(Analytical.Solver.PanelParameter.Weight, 0);
+                    if(@override || !panels[i].TryGetValue(PanelParameter.Weight, out double weight))
+                    {
+                        panels[i].SetValue(PanelParameter.Weight, 0);
+                    }
                 }
 
                 Face3D face3D = panel.GetFace3D();
@@ -81,8 +84,11 @@ namespace SAM.Analytical.Rhino.Solver.Plugin
 
             foreach(Tuple<int, double> tuple in tuples)
             {
-                double weight = Math.Query.Remap(tuple.Item2, min, max, 0.2, 1);
-                panels[tuple.Item1].SetValue(Analytical.Solver.PanelParameter.Weight, weight);
+                if (@override || !panels[tuple.Item1].TryGetValue(PanelParameter.Weight, out double weight))
+                {
+                    weight = Math.Query.Remap(tuple.Item2, min, max, 0.2, 1);
+                    panels[tuple.Item1].SetValue(PanelParameter.Weight, weight);
+                }
             }
         }
     }

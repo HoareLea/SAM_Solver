@@ -174,10 +174,6 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
                 DA.GetData(index, ref arcToleranceAngleRad);
             }
 
-            List<Range<double>> levelsForSAM = new List<Range<double>>();
-            foreach (Interval level in levels)
-                levelsForSAM.Add(new Range<double>(level.Min, level.Max));
-
             panels = panels?.ConvertAll(x => Create.Panel(x));
 
             if(bucketSizes == null || bucketSizes.Count == 0)
@@ -195,13 +191,21 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
                 maxExtensions = null;
             }
 
-            if (levels == null || levels.Count == 0)
+            List<Range<double>> ranges = new List<Range<double>>();
+
+            if (levels != null)
             {
-                levels = null;
+                foreach (Interval level in levels)
+                    ranges.Add(new Range<double>(level.Min, level.Max));
+            }
+
+            if (ranges == null || ranges.Count == 0)
+            {
+                ranges = null;
             }
 
             Analytical.Solver.Modify.Snap(
-                panels, bucketSizes, weights, maxExtensions, levelsForSAM,
+                panels, bucketSizes, weights, maxExtensions, ranges,
                 levelSectionOffset, nakedNodeSnapDistance, minWallSegmentLength,
                 toleranceDistance, toleranceAngleRad, arcToleranceAngleRad);
 

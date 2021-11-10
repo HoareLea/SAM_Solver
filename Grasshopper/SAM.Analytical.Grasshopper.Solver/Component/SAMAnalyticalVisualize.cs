@@ -35,7 +35,7 @@ namespace SAM.Analytical.Grasshopper.Solver
         public SAMAnalyticalVisualize()
           : base("SAMAnalytical.Visualize", "SAMAnalytical.Visualize",
               "Panels Visualize",
-              "SAM", "Analytical")
+              "SAM", "Solver")
         {
         }
 

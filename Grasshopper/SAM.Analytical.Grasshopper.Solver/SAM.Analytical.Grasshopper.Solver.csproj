@@ -84,14 +84,10 @@
     <Reference Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Classes\ExtensionSolver.cs" />
-    <Compile Include="Classes\GraphSolver.cs" />
-    <Compile Include="Classes\SnapSolver_GH.cs" />
-    <Compile Include="Classes\SnappedWall.cs" />
-    <Compile Include="Component\PanelFromSnapSolver.cs" />
+    <Compile Include="Component\Obselete\PanelFromSnapSolver.cs" />
+    <Compile Include="Component\Obselete\SnapSolver.cs" />
+    <Compile Include="Component\SAMAnalyticalVisualize.cs" />
     <Compile Include="Component\SnapSolver.cs" />
-    <Compile Include="Component\SnapSolver_v2.cs" />
-    <Compile Include="Component\SnapSolver_PureSAM.cs" />
     <Compile Include="Kernel\AssemblyInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
@@ -114,6 +110,7 @@
     <None Include="Resources\HL_Logo24.png" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Classes\" />
     <Folder Include="Convert\ToGrasshopper\" />
     <Folder Include="Convert\ToRhino\" />
     <Folder Include="Modify\" />
@@ -135,6 +132,14 @@
     <None Include="Resources\SAM_Solver.png" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Rhino\SAM.Analytical.Rhino.Solver\SAM.Analytical.Rhino.Solver.csproj">
+      <Project>{08d24128-7d9b-4f86-b104-6b18971828df}</Project>
+      <Name>SAM.Analytical.Rhino.Solver</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\SAM_Solver\SAM.Analytical.Solver\SAM.Analytical.Solver.csproj">
+      <Project>{888539d6-cfe2-413d-bcee-f2daa1aa8726}</Project>
+      <Name>SAM.Analytical.Solver</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\SAM_Solver\SAM.Geometry.Solver\SAM.Geometry.Solver.csproj">
       <Project>{5c870a26-7017-472b-9e68-fdd828367df4}</Project>
       <Name>SAM.Geometry.Solver</Name>
@@ -142,6 +147,10 @@
     <ProjectReference Include="..\SAM.Core.Grasshopper.Solver\SAM.Core.Grasshopper.Solver.csproj">
       <Project>{cbeb4724-6ef0-48d3-b634-384fe2300d6c}</Project>
       <Name>SAM.Core.Grasshopper.Solver</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SAM.Geometry.Grasshopper.Solver\SAM.Geometry.Grasshopper.Solver.csproj">
+      <Project>{5a281f11-6356-4da7-928c-0ea8e524b99a}</Project>
+      <Name>SAM.Geometry.Grasshopper.Solver</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

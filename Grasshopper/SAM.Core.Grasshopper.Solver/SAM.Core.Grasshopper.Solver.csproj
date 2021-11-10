@@ -27,11 +27,11 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\build\</OutputPath>
+    <OutputPath>..\..\build\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DocumentationFile>..\build\SAM.Core.Grasshopper.Solver.xml</DocumentationFile>
+    <DocumentationFile>..\..\build\SAM.Core.Grasshopper.Solver.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -60,24 +60,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Component\SnapSolver_Obsolete.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="Query\AverageDirection.cs" />
-    <Compile Include="Query\BucketBox.cs" />
-    <Compile Include="Query\FindBuckets.cs" />
-    <Compile Include="Modify\RecursiveAdd.cs" />
-    <Compile Include="Query\TipToLine.cs" />
-    <Compile Include="Query\Similarity.cs" />
-    <Compile Include="Query\SplitBucket.cs" />
-    <Compile Include="Query\FixSlab.cs" />
-    <Compile Include="Query\Merge.cs" />
-    <Compile Include="Query\Snap.cs" />
-    <Compile Include="Query\TrimAndExtend.cs" />
-    <Compile Include="Query\TrySnapToFixed.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -112,7 +99,11 @@
       <Name>SAM.Core.Solver</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Component\" />
+    <Folder Include="Modify\" />
+    <Folder Include="Query\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>copy "$(TargetPath)" "$(TargetDir)\$(ProjectName).gha"

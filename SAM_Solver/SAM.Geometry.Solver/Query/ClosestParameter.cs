@@ -16,7 +16,7 @@ namespace SAM.Geometry.Solver
         {          
             var pointClosestToSegment = segment.Closest(point, false);
 
-            if (segment.Distance(pointClosestToSegment) > SAM.Core.Tolerance.Distance)
+            if (segment.Distance(pointClosestToSegment) > Core.Tolerance.Distance)
             {
                 var param = segment.Start.Distance(pointClosestToSegment) / segment.GetLength();
                 if (segment.Start.Distance(pointClosestToSegment) <

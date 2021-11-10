@@ -124,8 +124,8 @@ namespace SAM.Geometry.Solver
             double LevelSectionOffsetInput = LEVEL_SECTION_OFFSET, 
             double NakedNodeSnapDistanceInput = NAKED_NODE_SNAP_DISTANCE, 
             double MinWallSegmentLengthInput = MIN_WALL_SEGMENT_LENGTH,
-            double ToleranceDistanceInput = SAM.Core.Tolerance.Distance, 
-            double ToleranceAngleRadInput = SAM.Core.Tolerance.Angle, 
+            double ToleranceDistanceInput = Core.Tolerance.Distance, 
+            double ToleranceAngleRadInput = Core.Tolerance.Angle, 
             double ArcToleranceAngleRadInput = ARC_TOLERANCE_ANGLE_RAD)
         {
             ModelTolerance = 0.001;
@@ -153,7 +153,7 @@ namespace SAM.Geometry.Solver
             MaxExtensions = AdjustListLength(MaxExtensions, PanelsFaces3D.Count, defaultValue: 0.5);
             
             List<SnappedWall> walls = RegisterWalls(PanelsFaces3D, BucketSizes, Weights, MaxExtensions, Levels, LevelSectionOffset);
-            List<SnappedWall> snapped = SnapAndAdjustWalls(walls);           
+            List<SnappedWall> snapped = SnapAndAdjustWalls(walls);
             TrimAndExtendWalls(snapped);
             snapped = ExplodeWallsAtIntersections(snapped);
             SnapOpenNodes(snapped, NakedNodeSnapDistance);
@@ -192,7 +192,7 @@ namespace SAM.Geometry.Solver
             SortedList<double, List<SnappedWall>> snappedWallsPerFloor = new SortedList<double, List<SnappedWall>>();
             for (int i = 0; i < walls.Count; i++)
             {
-                double currentLevel = System.Math.Round(walls[i].Elevation, SnapSolver.ElevationToleranceDigits);
+                double currentLevel = System.Math.Round(walls[i].Elevation, ElevationToleranceDigits);
                 if (!snappedWallsPerFloor.ContainsKey(currentLevel))
                 {
                     snappedWallsPerFloor[currentLevel] = new List<SnappedWall>();
@@ -410,7 +410,7 @@ namespace SAM.Geometry.Solver
                     {
                         continue;
                     }
-                    if (!Core.Query.AlmostEqual(walls[i].Elevation, walls[j].Elevation, SnapSolver.ModelTolerance))
+                    if (!Core.Query.AlmostEqual(walls[i].Elevation, walls[j].Elevation, ModelTolerance))
                     {// in this version of the algorithm the split is created even if the walls are on different levels. Uncomment "continue" to split only on the same level
                      //continue;
                     }
@@ -418,11 +418,11 @@ namespace SAM.Geometry.Solver
                     double theirParam = 0;
                     Segment2D currentExtended = walls[i].ProjectedAxis;
                     Segment2D otherExtended = walls[j].ProjectedAxis;
-                    currentExtended = currentExtended.Extend(SnapSolver.ModelTolerance, true, true);
-                    otherExtended = otherExtended.Extend(SnapSolver.ModelTolerance, true, true);
-                    if(currentExtended.Intersect(otherExtended, SnapSolver.SAMTolerance))
+                    currentExtended = currentExtended.Extend(ModelTolerance, true, true);
+                    otherExtended = otherExtended.Extend(ModelTolerance, true, true);
+                    if(currentExtended.Intersect(otherExtended, SAMTolerance))
                     {
-                        intersections.Add(currentExtended.Intersection(otherExtended, true, SnapSolver.SAMTolerance));
+                        intersections.Add(currentExtended.Intersection(otherExtended, true, SAMTolerance));
                     }
                 }
 
@@ -446,7 +446,7 @@ namespace SAM.Geometry.Solver
                 List<Point2D> anchorCandidates = new List<Point2D>();
                 for (int j = 0; j < wallsByLength.Count; j++)
                 {
-                    if (!Core.Query.AlmostEqual(currentWall.Elevation, wallsByLength[j].Elevation, SnapSolver.ModelTolerance)) // same level only
+                    if (!Core.Query.AlmostEqual(currentWall.Elevation, wallsByLength[j].Elevation, ModelTolerance)) // same level only
                     {
                         continue;
                     }
@@ -541,7 +541,7 @@ namespace SAM.Geometry.Solver
             {
                 var axes = floor.Value.Select(wall => wall.ProjectedAxis).ToList();
                 var extensions = floor.Value.Select(wall => wall.MaxExtension).ToList();
-                ExtensionSolver solver = new ExtensionSolver(axes, extensions, SnapSolver.SAMTolerance);
+                ExtensionSolver solver = new ExtensionSolver(axes, extensions, SAMTolerance);
                 var newAxes = solver.Solve();
                 for (int i = 0; i < floor.Value.Count; i++)
                 {
@@ -551,8 +551,7 @@ namespace SAM.Geometry.Solver
 
             MarkNakedNodes(walls);
         }
-        private static List<SnappedWall> RegisterWalls(List<Face3D> panelsBrep, List<double> bucketSizes, 
-            List<double> weights, List<double> maxExtensions, List<Core.Range<double>> levels, double levelOffset)
+        private static List<SnappedWall> RegisterWalls(List<Face3D> panelsBrep, List<double> bucketSizes, List<double> weights, List<double> maxExtensions, List<Core.Range<double>> levels, double levelOffset)
         {
             var walls = new List<SnappedWall>();
 
@@ -571,7 +570,7 @@ namespace SAM.Geometry.Solver
                     if(thiswall.Intersecting(currentPlane, out intc))
                     {
                         foreach (Segment3D segment in intc)
-                        {                            
+                        {
                             Segment3D section3D = new Segment3D(segment.GetStart(), segment.GetEnd());
                             SnappedWall wall = new SnappedWall(i, section3D, weights[i], bucketSizes[i], maxExtensions[i], currentHeight);
                             walls.Add(wall);

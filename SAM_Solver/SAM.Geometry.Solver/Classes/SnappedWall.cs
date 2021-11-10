@@ -3,7 +3,6 @@ using SAM.Geometry.Spatial;
 using SAM.Core;
 using System.Collections.Generic;
 using System.Linq;
-using SAM.Core.Solver;
 
 namespace SAM.Geometry.Solver
 {
@@ -823,7 +822,7 @@ namespace SAM.Geometry.Solver
             double paramFrom = dominantLine.ClosestParameter(otherLine.Start);
             double paramTo = dominantLine.ClosestParameter(otherLine.End);
 
-            double paramBucketMargin = System.Math.Min(this.MaxExtension, this.Length * SnappedWall.ExtensionLimitLengthRatio) / this.Length;
+            double paramBucketMargin = System.Math.Min(this.MaxExtension, this.Length * ExtensionLimitLengthRatio) / this.Length;
             //double paramBucketMargin = this.MaxExtension / this.Length;
             Core.Range<double> dominantRange = new Core.Range<double>(-paramBucketMargin, 1 + paramBucketMargin);
 

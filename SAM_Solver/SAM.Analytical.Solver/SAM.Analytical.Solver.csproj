@@ -68,8 +68,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Enums\Parameter\PanelParameter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Query\Snap.cs" />
+    <Compile Include="Modify\Snap.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SAM.Geometry.Solver\SAM.Geometry.Solver.csproj">
@@ -82,6 +83,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Classes\" />
+    <Folder Include="Query\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

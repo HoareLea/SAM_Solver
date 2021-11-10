@@ -15,7 +15,7 @@ namespace SAM.Geometry.Solver
         public static double MinimumDistanceTo(this Segment2D segment, Point2D point)
         {
             var pointClosestToSegment = segment.Closest(point, true);
-            var minDistance = pointClosestToSegment.Distance(point);            
+            var minDistance = pointClosestToSegment.Distance(point);
 
             return minDistance;
         }

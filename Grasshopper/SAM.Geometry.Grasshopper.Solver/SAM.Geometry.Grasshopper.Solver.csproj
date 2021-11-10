@@ -36,25 +36,29 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\build\</OutputPath>
+    <OutputPath>..\..\build\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>..\..\build\SAM.Geometry.Grasshopper.Solver.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="SAM.Core">
+    <Reference Include="SAM.Core, Version=1.0.7984.14206, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\SAM\build\SAM.Core.dll</HintPath>
     </Reference>
     <Reference Include="SAM.Core.Grasshopper">
       <HintPath>..\..\..\SAM\build\SAM.Core.Grasshopper.dll</HintPath>
     </Reference>
-    <Reference Include="SAM.Geometry">
+    <Reference Include="SAM.Geometry, Version=1.0.7984.14207, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\SAM\build\SAM.Geometry.dll</HintPath>
     </Reference>
     <Reference Include="SAM.Geometry.Grasshopper">
       <HintPath>..\..\..\SAM\build\SAM.Geometry.Grasshopper.dll</HintPath>
     </Reference>
-    <Reference Include="SAM.Geometry.Rhino">
+    <Reference Include="SAM.Geometry.Rhino, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\SAM\build\SAM.Geometry.Rhino.dll</HintPath>
     </Reference>
     <Reference Include="System" />
@@ -122,16 +126,11 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\SAM_Solver\SAM.Core.Solver\SAM.Core.Solver.csproj">
-      <Project>{dfa00ad8-8169-4e3c-943a-05f6f2196e3a}</Project>
-      <Name>SAM.Core.Solver</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\SAM_Solver\SAM.Geometry.Solver\SAM.Geometry.Solver.csproj">
       <Project>{5c870a26-7017-472b-9e68-fdd828367df4}</Project>
       <Name>SAM.Geometry.Solver</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>copy "$(TargetPath)" "$(TargetDir)\$(ProjectName).gha"

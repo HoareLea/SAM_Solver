@@ -8,7 +8,6 @@ using SAM.Geometry.Spatial;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using SAM.Geometry.Grasshopper;
 using Grasshopper.Kernel.Types;
 using SAM.Core;
 

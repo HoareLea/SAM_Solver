@@ -3,8 +3,8 @@ using SAM.Core.Attributes;
 
 namespace SAM.Analytical.Solver
 {
-    [AssociatedTypes(typeof(Panel)), Description("Panel Parameter")]
-    public enum PanelParameter
+    [AssociatedTypes(typeof(Geometry.Spatial.IFace3DObject)), Description("Solver Parameter")]
+    public enum SolverParameter
     {
         [ParameterProperties("Bucket Size", "Bucket Size [m]"), DoubleParameterValue(0)] BucketSize,
         [ParameterProperties("Max Extend", "Max Extend [m]"), DoubleParameterValue(0)] MaxExtend,

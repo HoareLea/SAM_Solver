@@ -26,7 +26,7 @@ namespace SAM.Analytical.Rhino.Solver
                     continue;
                 }
 
-                if (!panel.TryGetValue(Analytical.Solver.PanelParameter.BucketSize, out double bucketSize))
+                if (!panel.TryGetValue(Analytical.Solver.SolverParameter.BucketSize, out double bucketSize))
                 {
                     continue;
                 }
@@ -52,7 +52,7 @@ namespace SAM.Analytical.Rhino.Solver
             values = new List<double>();
             foreach(Panel panel in panels)
             {
-                if(panel == null || !panel.TryGetValue(Analytical.Solver.PanelParameter.BucketSize, out double bucketSize))
+                if(panel == null || !panel.TryGetValue(Analytical.Solver.SolverParameter.BucketSize, out double bucketSize))
                 {
                     result.Add(null);
                     continue;

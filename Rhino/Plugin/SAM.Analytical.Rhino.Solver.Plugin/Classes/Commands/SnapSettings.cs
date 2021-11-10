@@ -8,9 +8,9 @@ using System.Collections.Generic;
 
 namespace SAM.Analytical.Rhino.Solver.Plugin
 {
-    public class PanelSettings : Command
+    public class SnapSettings : Command
     {
-        public PanelSettings()
+        public SnapSettings()
         {
             // Rhino only creates one instance of each command class defined in a
             // plug-in, so it is safe to store a refence in a static property.
@@ -18,10 +18,10 @@ namespace SAM.Analytical.Rhino.Solver.Plugin
         }
 
         ///<summary>The only instance of this command.</summary>
-        public static PanelSettings Instance { get; private set; }
+        public static SnapSettings Instance { get; private set; }
 
         ///<returns>The command name as it appears on the Rhino command line.</returns>
-        public override string EnglishName => "SAM_PanelSettings";
+        public override string EnglishName => "SAM_SnapSettings";
 
         protected override Result RunCommand(RhinoDoc doc, RunMode mode)
         {
@@ -65,14 +65,14 @@ namespace SAM.Analytical.Rhino.Solver.Plugin
             }
 
             List<Panel> panels = new List<Panel>();
-            using (PanelForm panelForm = new PanelForm(tuples.ConvertAll(x => x.Item1)))
+            using (SnapSettingsForm<Panel> snapSettingsForm = new SnapSettingsForm<Panel>(tuples.ConvertAll(x => x.Item1)))
             {
-                if (panelForm.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+                if (snapSettingsForm.ShowDialog() != System.Windows.Forms.DialogResult.OK)
                 {
                     return Result.Cancel;
                 }
 
-                panels = panelForm.Panels;
+                panels = snapSettingsForm.Panels;
             }
 
             for (int i = 0; i < panels.Count; i++)

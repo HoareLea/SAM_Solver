@@ -27,7 +27,7 @@ namespace SAM.Analytical.Rhino.Solver
                     continue;
                 }
 
-                if(!panel.TryGetValue(Analytical.Solver.PanelParameter.MaxExtend, out double maxExtend))
+                if(!panel.TryGetValue(Analytical.Solver.SolverParameter.MaxExtend, out double maxExtend))
                 {
                     result.Add(null);
                     continue;

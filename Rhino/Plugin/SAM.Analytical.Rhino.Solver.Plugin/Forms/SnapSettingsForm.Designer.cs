@@ -1,7 +1,7 @@
 ﻿
 namespace SAM.Analytical.Rhino.Solver.Plugin
 {
-    partial class PanelForm
+    partial class SnapSettingsForm<T> 
     {
         /// <summary>
         /// Required designer variable.
@@ -181,7 +181,7 @@ namespace SAM.Analytical.Rhino.Solver.Plugin
             this.Label_BucketSizeFactor.TabIndex = 9;
             this.Label_BucketSizeFactor.Text = "Bucket Size Factor";
             // 
-            // PanelForm
+            // SnapSettingsForm
             // 
             this.AcceptButton = this.Button_OK;
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
@@ -205,8 +205,8 @@ namespace SAM.Analytical.Rhino.Solver.Plugin
             this.Controls.Add(this.Label_BucketSize);
             this.Controls.Add(this.Button_OK);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
-            this.Name = "PanelForm";
-            this.Text = "Panel Settings";
+            this.Name = "SnapSettingsForm";
+            this.Text = "Snap Settings";
             this.Load += new System.EventHandler(this.PanelForm_Load);
             this.ResumeLayout(false);
             this.PerformLayout();

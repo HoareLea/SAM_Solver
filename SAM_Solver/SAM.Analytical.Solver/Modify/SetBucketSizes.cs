@@ -7,42 +7,28 @@ namespace SAM.Analytical.Solver
 {
     public static partial class Modify
     {
-        public static void SetBucketSizes(this List<Panel> panels, bool @override = true, double factor = 0.6, double minBucketSize = 0.2)
+        public static void SetBucketSizes<T>(this List<T> face3DObjects, bool @override = true, double factor = 0.6, double minBucketSize = 0.2) where T : Core.SAMObject, IFace3DObject
         {
-            if (panels == null)
+            if (face3DObjects == null)
             {
                 return;
             }
 
             List<Tuple<int, double>> tuples = new List<Tuple<int, double>>();
-            for (int i = 0; i < panels.Count; i++)
+            for (int i = 0; i < face3DObjects.Count; i++)
             {
-                Panel panel = panels[i];
-                if(panel == null)
+                T face3DObject = face3DObjects[i];
+                if(face3DObject == null)
                 {
                     continue;
                 }
 
-                if(@override || !panels[i].TryGetValue(PanelParameter.BucketSize, out double bucketSize))
+                if(@override || !face3DObject.HasValue(SolverParameter.BucketSize))
                 {
-                    panels[i].SetValue(PanelParameter.BucketSize, minBucketSize * factor);
+                    face3DObject.SetValue(SolverParameter.BucketSize, minBucketSize * factor);
                 }
 
-                double thickness = double.NaN;
-
-                Construction construction = panel.Construction;
-                if (construction != null)
-                {
-                    thickness = construction.GetThickness();
-                }
-                else
-                {
-                    if (!construction.TryGetValue(ConstructionParameter.DefaultThickness, out thickness))
-                    {
-                        thickness = double.NaN;
-                    }
-                }
-
+                double thickness = face3DObject.Thickness();
                 if(double.IsNaN(thickness))
                 {
                     thickness = 0;
@@ -58,11 +44,11 @@ namespace SAM.Analytical.Solver
             {
                 foreach (Tuple<int, double> tuple in tuples)
                 {
-                    if (@override || !panels[tuple.Item1].TryGetValue(PanelParameter.BucketSize, out double bucketSize))
+                    if (@override || !face3DObjects[tuple.Item1].HasValue(SolverParameter.BucketSize))
                     {
-                        double backetSize = Math.Query.Remap(tuple.Item2, min, max, minBucketSize, max);
+                        double bucketSize = Math.Query.Remap(tuple.Item2, min, max, minBucketSize, max);
 
-                        panels[tuple.Item1].SetValue(PanelParameter.BucketSize, backetSize * factor);
+                        face3DObjects[tuple.Item1].SetValue(SolverParameter.BucketSize, bucketSize * factor);
                     }
                 }
             }

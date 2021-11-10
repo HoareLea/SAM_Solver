@@ -7,27 +7,31 @@ namespace SAM.Analytical.Solver
 {
     public static partial class Modify
     {
-        public static void SetWeights(this List<Panel> panels, bool @override = true, double offset = 0.1, double tolerance_Angle = Core.Tolerance.Angle, double tolerance_Distance = Core.Tolerance.Distance)
+        public static void SetWeights<T>(this List<T> face3DObjects, bool @override = true, double offset = 0.1, double tolerance_Angle = Core.Tolerance.Angle, double tolerance_Distance = Core.Tolerance.Distance) where T : Core.SAMObject, IFace3DObject 
         {
-            if (panels == null)
+            if (face3DObjects == null)
             {
                 return;
             }
 
             List<Tuple<int, double>> tuples = new List<Tuple<int, double>>();
-            for(int i =0; i < panels.Count; i++)
+            for(int i =0; i < face3DObjects.Count; i++)
             {
-                Panel panel = panels[i];
-                
-                if (panel.PanelType == PanelType.Air)
+                T face3DObject = face3DObjects[i];
+                if(face3DObject == null)
                 {
-                    if(@override || !panels[i].TryGetValue(PanelParameter.Weight, out double weight))
+                    continue;
+                }
+
+                if (face3DObject.Air())
+                {
+                    if(@override || !face3DObject.HasValue(SolverParameter.Weight))
                     {
-                        panels[i].SetValue(PanelParameter.Weight, 0);
+                        face3DObject.SetValue(SolverParameter.Weight, 0);
                     }
                 }
 
-                Face3D face3D = panel.GetFace3D();
+                Face3D face3D = face3DObject.Face3D;
 
                 BoundingBox3D boundingBox3D = face3D.GetBoundingBox();
 
@@ -84,10 +88,10 @@ namespace SAM.Analytical.Solver
 
             foreach(Tuple<int, double> tuple in tuples)
             {
-                if (@override || !panels[tuple.Item1].TryGetValue(PanelParameter.Weight, out double weight))
+                if (@override || !(face3DObjects[tuple.Item1]).HasValue(SolverParameter.Weight))
                 {
-                    weight = Math.Query.Remap(tuple.Item2, min, max, 0.2, 1);
-                    panels[tuple.Item1].SetValue(PanelParameter.Weight, weight);
+                    double weight = Math.Query.Remap(tuple.Item2, min, max, 0.2, 1);
+                    (face3DObjects[tuple.Item1]).SetValue(SolverParameter.Weight, weight);
                 }
             }
         }

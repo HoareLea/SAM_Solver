@@ -6,42 +6,28 @@ namespace SAM.Analytical.Solver
 {
     public static partial class Modify
     {
-        public static void SetMaxExtends(this List<Panel> panels, bool @override = true, double offset = 0.1, double tolerance_Angle = Core.Tolerance.Angle, double tolerance_Distance = Core.Tolerance.Distance)
+        public static void SetMaxExtends<T>(this List<T> face3DObjects, bool @override = true, double offset = 0.1, double tolerance_Angle = Core.Tolerance.Angle, double tolerance_Distance = Core.Tolerance.Distance) where T: Core.SAMObject, IFace3DObject
         {
-            if (panels == null)
+            if (face3DObjects == null)
             {
                 return;
             }
 
-            for(int i =0; i < panels.Count; i++)
+            for(int i =0; i < face3DObjects.Count; i++)
             {
-                Panel panel = panels[i];
-                if(panel == null)
+                T face3DObject = face3DObjects[i];
+                if(face3DObject == null)
                 {
                     continue;
                 }
 
                 double maxExtend = double.NaN;
-                if (!@override && panel.TryGetValue(PanelParameter.MaxExtend, out maxExtend))
+                if (!@override && face3DObject.HasValue(SolverParameter.MaxExtend))
                 {
                     continue;
                 }
 
-                double thickness = double.NaN;
-
-                Construction construction = panel.Construction;
-                if (construction != null)
-                {
-                    thickness = construction.GetThickness();
-                }
-                else
-                {
-                    if (!construction.TryGetValue(ConstructionParameter.DefaultThickness, out thickness))
-                    {
-                        thickness = double.NaN;
-                    }
-                }
-
+                double thickness = face3DObject.Thickness();
                 if(double.IsNaN(thickness))
                 {
                     maxExtend = 0.33;
@@ -57,7 +43,7 @@ namespace SAM.Analytical.Solver
 
                 double length = double.NaN;
 
-                Face3D face3D = panel.GetFace3D();
+                Face3D face3D = face3DObject.Face3D;
 
                 BoundingBox3D boundingBox3D = face3D.GetBoundingBox();
 
@@ -112,7 +98,7 @@ namespace SAM.Analytical.Solver
 
                 maxExtend = System.Math.Min(length, maxExtend);
 
-                panels[i].SetValue(PanelParameter.MaxExtend, maxExtend);
+                face3DObjects[i].SetValue(SolverParameter.MaxExtend, maxExtend);
             }
         }
     }

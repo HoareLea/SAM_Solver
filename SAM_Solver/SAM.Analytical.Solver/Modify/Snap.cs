@@ -33,7 +33,7 @@ namespace SAM.Analytical.Solver
                 List<double> bucketSizes_Temp = new List<double>();
                 foreach(Panel panel in panels)
                 {
-                    if(!panel.TryGetValue(PanelParameter.BucketSize, out double bucketSize) || double.IsNaN(bucketSize))
+                    if(!panel.TryGetValue(SolverParameter.BucketSize, out double bucketSize) || double.IsNaN(bucketSize))
                     {
                         bucketSizes_Temp.Add(0);
                     }
@@ -52,7 +52,7 @@ namespace SAM.Analytical.Solver
                 List<double> weights_Temp = new List<double>();
                 foreach (Panel panel in panels)
                 {
-                    if (!panel.TryGetValue(PanelParameter.Weight, out double weight) || double.IsNaN(weight))
+                    if (!panel.TryGetValue(SolverParameter.Weight, out double weight) || double.IsNaN(weight))
                     {
                         weights_Temp.Add(0);
                     }
@@ -72,7 +72,7 @@ namespace SAM.Analytical.Solver
                 List<double> maxExtensions_Temp = new List<double>();
                 foreach (Panel panel in panels)
                 {
-                    if (!panel.TryGetValue(PanelParameter.MaxExtend, out double maxExtend) || double.IsNaN(maxExtend))
+                    if (!panel.TryGetValue(SolverParameter.MaxExtend, out double maxExtend) || double.IsNaN(maxExtend))
                     {
                         maxExtensions_Temp.Add(0);
                     }

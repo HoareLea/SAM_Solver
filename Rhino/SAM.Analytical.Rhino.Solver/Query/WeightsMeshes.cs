@@ -20,7 +20,7 @@ namespace SAM.Analytical.Rhino.Solver
             values = new List<double>();
             foreach(Panel panel in panels)
             {
-                if(panel == null || !panel.TryGetValue(Analytical.Solver.PanelParameter.Weight, out double weight))
+                if(panel == null || !panel.TryGetValue(Analytical.Solver.SolverParameter.Weight, out double weight))
                 {
                     result.Add(null);
                     continue;

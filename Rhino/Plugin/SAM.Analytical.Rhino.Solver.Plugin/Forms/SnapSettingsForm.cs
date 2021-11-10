@@ -5,22 +5,22 @@ using System.Windows.Forms;
 
 namespace SAM.Analytical.Rhino.Solver.Plugin
 {
-    public partial class PanelForm : Form
+    public partial class SnapSettingsForm<T> : Form where T : Core.SAMObject, Geometry.Spatial.IFace3DObject 
     {
-        private List<Panel> panels;
+        private List<T> face3DObjects;
 
-        public PanelForm()
+        public SnapSettingsForm()
         {
             InitializeComponent();
         }
 
-        public PanelForm(IEnumerable<Panel> panels)
+        public SnapSettingsForm(IEnumerable<T> face3DObjects)
         {
             InitializeComponent();
 
-            if (panels != null)
+            if (face3DObjects != null)
             {
-                this.panels = new List<Panel>(panels);
+                this.face3DObjects = new List<T>(face3DObjects);
             }
         }
 
@@ -38,83 +38,83 @@ namespace SAM.Analytical.Rhino.Solver.Plugin
 
         private void Button_Reset_Click(object sender, EventArgs e)
         {
-            panels = panels?.ConvertAll(x => Create.Panel(x));
+            face3DObjects = face3DObjects?.ConvertAll(x => Core.Query.Clone(x));
 
-            Analytical.Solver.Modify.SetWeights(panels);
-            Analytical.Solver.Modify.SetBucketSizes(panels);
-            Analytical.Solver.Modify.SetMaxExtends(panels);
+            Analytical.Solver.Modify.SetWeights(face3DObjects);
+            Analytical.Solver.Modify.SetBucketSizes(face3DObjects);
+            Analytical.Solver.Modify.SetMaxExtends(face3DObjects);
 
             DialogResult = DialogResult.OK;
             Close();
         }
 
-        public List<Panel> Panels
+        public List<T> Panels
         {
             get
             {
-                if(panels != null)
+                if(face3DObjects != null)
                 {
-                    for(int i = 0; i < panels.Count; i++)
+                    for(int i = 0; i < face3DObjects.Count; i++)
                     {
-                        if(panels[i] == null)
+                        if(face3DObjects[i] == null)
                         {
                             continue;
                         }
 
-                        Panel panel = Create.Panel(panels[i]);
+                        T face3DObject = Core.Query.Clone(face3DObjects[i]);
 
                         if(double.TryParse(TextBox_BucketSize.Text, out double bucketSize))
                         {
-                            panel.SetValue(Analytical.Solver.PanelParameter.BucketSize, bucketSize);
+                            face3DObject.SetValue(Analytical.Solver.SolverParameter.BucketSize, bucketSize);
                         }
                         
-                        if(panel.TryGetValue(Analytical.Solver.PanelParameter.BucketSize, out bucketSize))
+                        if(face3DObject.TryGetValue(Analytical.Solver.SolverParameter.BucketSize, out bucketSize))
                         {
                             if(double.TryParse(TextBox_BucketSizeFactor.Text, out double factor))
                             {
-                                panel.SetValue(Analytical.Solver.PanelParameter.BucketSize, bucketSize * factor);
+                                face3DObject.SetValue(Analytical.Solver.SolverParameter.BucketSize, bucketSize * factor);
                             }
                         }
 
 
                         if (double.TryParse(TextBox_MaxExtend.Text, out double maxExtend))
                         {
-                            panel.SetValue(Analytical.Solver.PanelParameter.MaxExtend, maxExtend);
+                            face3DObject.SetValue(Analytical.Solver.SolverParameter.MaxExtend, maxExtend);
                         }
 
-                        if (panel.TryGetValue(Analytical.Solver.PanelParameter.MaxExtend, out maxExtend))
+                        if (face3DObject.TryGetValue(Analytical.Solver.SolverParameter.MaxExtend, out maxExtend))
                         {
                             if (double.TryParse(TextBox_MaxExtendFactor.Text, out double factor))
                             {
-                                panel.SetValue(Analytical.Solver.PanelParameter.MaxExtend, maxExtend * factor);
+                                face3DObject.SetValue(Analytical.Solver.SolverParameter.MaxExtend, maxExtend * factor);
                             }
                         }
 
 
                         if (double.TryParse(TextBox_Weight.Text, out double weight))
                         {
-                            panel.SetValue(Analytical.Solver.PanelParameter.Weight, weight);
+                            face3DObject.SetValue(Analytical.Solver.SolverParameter.Weight, weight);
                         }
 
-                        if (panel.TryGetValue(Analytical.Solver.PanelParameter.Weight, out weight))
+                        if (face3DObject.TryGetValue(Analytical.Solver.SolverParameter.Weight, out weight))
                         {
                             if (double.TryParse(TextBox_WeightFactor.Text, out double factor))
                             {
-                                panel.SetValue(Analytical.Solver.PanelParameter.Weight, weight * factor);
+                                face3DObject.SetValue(Analytical.Solver.SolverParameter.Weight, weight * factor);
                             }
                         }
 
-                        panels[i] = panel;
+                        face3DObjects[i] = face3DObject;
                     }
                 }
                 
-                return panels;
+                return face3DObjects;
             }
         }
 
         private void PanelForm_Load(object sender, EventArgs e)
         {
-            if(panels == null)
+            if(face3DObjects == null)
             {
                 return;
             }
@@ -122,14 +122,14 @@ namespace SAM.Analytical.Rhino.Solver.Plugin
             HashSet<double> bucketSizes = new HashSet<double>();
             HashSet<double> MaxExtends = new HashSet<double>();
             HashSet<double> Weights = new HashSet<double>();
-            foreach(Panel panel in panels)
+            foreach(T face3DObject in face3DObjects)
             {
-                if(panel == null)
+                if(face3DObject == null)
                 {
                     continue;
                 }
                 
-                if(panel.TryGetValue(Analytical.Solver.PanelParameter.BucketSize, out double bucketSize))
+                if(face3DObject.TryGetValue(Analytical.Solver.SolverParameter.BucketSize, out double bucketSize))
                 {
                     bucketSizes.Add(bucketSize);
                 }
@@ -138,7 +138,7 @@ namespace SAM.Analytical.Rhino.Solver.Plugin
                     bucketSizes.Add(double.NaN);
                 }
 
-                if (panel.TryGetValue(Analytical.Solver.PanelParameter.MaxExtend, out double maxExtend))
+                if (face3DObject.TryGetValue(Analytical.Solver.SolverParameter.MaxExtend, out double maxExtend))
                 {
                     MaxExtends.Add(maxExtend);
                 }
@@ -147,7 +147,7 @@ namespace SAM.Analytical.Rhino.Solver.Plugin
                     MaxExtends.Add(double.NaN);
                 }
 
-                if (panel.TryGetValue(Analytical.Solver.PanelParameter.Weight, out double weight))
+                if (face3DObject.TryGetValue(Analytical.Solver.SolverParameter.Weight, out double weight))
                 {
                     Weights.Add(weight);
                 }

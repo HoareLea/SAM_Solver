@@ -31,7 +31,7 @@ namespace SAM.Analytical.Solver
             }
         }
 
-        public List<T> Execute(out List<Point3D> nakedPoint3Ds, double bucketSizeFactor = 0.12)
+        public List<T> Execute(out List<Point3D> nakedPoint3Ds, double bucketSizeFactor = 0.20)
         {
             nakedPoint3Ds = null;
 

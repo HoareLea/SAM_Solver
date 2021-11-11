@@ -217,7 +217,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
                 Offset = levelSectionOffset
             };
 
-            panels = solver.Execute(out List<Geometry.Spatial.Point3D> nakedPoint3Ds, 0.12);
+            panels = solver.Execute(out List<Geometry.Spatial.Point3D> nakedPoint3Ds, 0.21);
 
             //Analytical.Solver.Modify.Snap(
             //    panels, bucketSizes, weights, maxExtensions, ranges,

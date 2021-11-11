@@ -37,10 +37,11 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\build\</OutputPath>
+    <OutputPath>..\..\build\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>..\..\build\SAM.Analytical.Grasshopper.Solver.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
@@ -53,6 +54,9 @@
     </Reference>
     <Reference Include="SAM.Analytical.Rhino">
       <HintPath>..\..\..\SAM\build\SAM.Analytical.Rhino.dll</HintPath>
+    </Reference>
+    <Reference Include="SAM.Architectural.Grasshopper">
+      <HintPath>..\..\..\SAM\build\SAM.Architectural.Grasshopper.dll</HintPath>
     </Reference>
     <Reference Include="SAM.Core, Version=1.0.7798.15099, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -81,7 +85,9 @@
     <Reference Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Component\PanelFromSnapSolver.cs" />
+    <Compile Include="Component\Obselete\PanelFromSnapSolver.cs" />
+    <Compile Include="Component\Obselete\SnapSolver.cs" />
+    <Compile Include="Component\SAMAnalyticalVisualize.cs" />
     <Compile Include="Component\SnapSolver.cs" />
     <Compile Include="Kernel\AssemblyInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -116,6 +122,9 @@
       <Version>6.32.20340.21001</Version>
       <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>
+    <PackageReference Include="Newtonsoft.Json">
+      <Version>13.0.1</Version>
+    </PackageReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\SAM_Solver1.png" />
@@ -124,9 +133,25 @@
     <None Include="Resources\SAM_Solver.png" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Rhino\SAM.Analytical.Rhino.Solver\SAM.Analytical.Rhino.Solver.csproj">
+      <Project>{08d24128-7d9b-4f86-b104-6b18971828df}</Project>
+      <Name>SAM.Analytical.Rhino.Solver</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\SAM_Solver\SAM.Analytical.Solver\SAM.Analytical.Solver.csproj">
+      <Project>{888539d6-cfe2-413d-bcee-f2daa1aa8726}</Project>
+      <Name>SAM.Analytical.Solver</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\SAM_Solver\SAM.Geometry.Solver\SAM.Geometry.Solver.csproj">
+      <Project>{5c870a26-7017-472b-9e68-fdd828367df4}</Project>
+      <Name>SAM.Geometry.Solver</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SAM.Core.Grasshopper.Solver\SAM.Core.Grasshopper.Solver.csproj">
       <Project>{cbeb4724-6ef0-48d3-b634-384fe2300d6c}</Project>
       <Name>SAM.Core.Grasshopper.Solver</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SAM.Geometry.Grasshopper.Solver\SAM.Geometry.Grasshopper.Solver.csproj">
+      <Project>{5a281f11-6356-4da7-928c-0ea8e524b99a}</Project>
+      <Name>SAM.Geometry.Grasshopper.Solver</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -12,11 +12,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{CBEB4724-6EF0-48D3-B634-384FE2300D6C}</ProjectGuid>
+    <ProjectGuid>{5A281F11-6356-4DA7-928C-0EA8E524B99A}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>SAM.Core.Grasshopper.Solver</RootNamespace>
-    <AssemblyName>SAM.Core.Grasshopper.Solver</AssemblyName>
+    <RootNamespace>SAM.Geometry.Grasshopper.Solver</RootNamespace>
+    <AssemblyName>SAM.Geometry.Grasshopper.Solver</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
@@ -31,7 +31,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DocumentationFile>..\..\build\SAM.Core.Grasshopper.Solver.xml</DocumentationFile>
+    <DocumentationFile>..\..\build\SAM.Geometry.Grasshopper.Solver.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -40,14 +40,26 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DocumentationFile>..\..\build\SAM.Core.Grasshopper.Solver.xml</DocumentationFile>
+    <DocumentationFile>..\..\build\SAM.Geometry.Grasshopper.Solver.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="SAM.Core">
+    <Reference Include="SAM.Core, Version=1.0.7984.14206, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\SAM\build\SAM.Core.dll</HintPath>
     </Reference>
     <Reference Include="SAM.Core.Grasshopper">
       <HintPath>..\..\..\SAM\build\SAM.Core.Grasshopper.dll</HintPath>
+    </Reference>
+    <Reference Include="SAM.Geometry, Version=1.0.7984.14207, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\SAM\build\SAM.Geometry.dll</HintPath>
+    </Reference>
+    <Reference Include="SAM.Geometry.Grasshopper">
+      <HintPath>..\..\..\SAM\build\SAM.Geometry.Grasshopper.dll</HintPath>
+    </Reference>
+    <Reference Include="SAM.Geometry.Rhino, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\SAM\build\SAM.Geometry.Rhino.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -60,12 +72,31 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Classes\GrasshopperExtensionSolver.cs" />
+    <Compile Include="Classes\GrasshopperGraphSolver.cs" />
+    <Compile Include="Classes\GrasshopperSnappedWall.cs" />
+    <Compile Include="Classes\GrasshopperSnapSolver.cs" />
+    <Compile Include="Component\Obsolete\GrasshopperSnapSolver.cs" />
+    <Compile Include="Component\SnapSolver.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Component\Obsolete\SnapSolver.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <Compile Include="Query\AverageDirection.cs" />
+    <Compile Include="Query\BucketBox.cs" />
+    <Compile Include="Query\FindBuckets.cs" />
+    <Compile Include="Modify\RecursiveAdd.cs" />
+    <Compile Include="Query\TipToLine.cs" />
+    <Compile Include="Query\Similarity.cs" />
+    <Compile Include="Query\SplitBucket.cs" />
+    <Compile Include="Query\FixSlab.cs" />
+    <Compile Include="Query\Merge.cs" />
+    <Compile Include="Query\Snap.cs" />
+    <Compile Include="Query\TrimAndExtend.cs" />
+    <Compile Include="Query\TrySnapToFixed.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -95,15 +126,10 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\SAM_Solver\SAM.Core.Solver\SAM.Core.Solver.csproj">
-      <Project>{dfa00ad8-8169-4e3c-943a-05f6f2196e3a}</Project>
-      <Name>SAM.Core.Solver</Name>
+    <ProjectReference Include="..\..\SAM_Solver\SAM.Geometry.Solver\SAM.Geometry.Solver.csproj">
+      <Project>{5c870a26-7017-472b-9e68-fdd828367df4}</Project>
+      <Name>SAM.Geometry.Solver</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Component\" />
-    <Folder Include="Modify\" />
-    <Folder Include="Query\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

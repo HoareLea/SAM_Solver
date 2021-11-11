@@ -2,26 +2,16 @@
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
-    <Rhino7DefaultInstallDir>$([MSBuild]::GetRegistryValueFromView('HKEY_LOCAL_MACHINE\SOFTWARE\McNeel\Rhinoceros\7.0\Install', 'Path', null, RegistryView.Registry64))</Rhino7DefaultInstallDir>
-    <Rhino7DebugInstallDir>$([MSBuild]::GetRegistryValueFromView('HKEY_CURRENT_USER\Software\McNeel\Rhinoceros\7.0-WIP-Developer-Debug-trunk\Install', 'Path', null, RegistryView.Registry64))</Rhino7DebugInstallDir>
-    <Rhino7InstallDir>$([MSBuild]::ValueOrDefault('$(Rhino7DebugInstallDir)', '$(Rhino7DefaultInstallDir)'))</Rhino7InstallDir>
-    <Rhino7DefaultPluginsDir>$([MSBuild]::GetRegistryValueFromView('HKEY_LOCAL_MACHINE\SOFTWARE\McNeel\Rhinoceros\7.0\Install', 'Default Plug-ins Folder', null, RegistryView.Registry64))</Rhino7DefaultPluginsDir>
-    <Rhino7DebugPluginsDir>$([MSBuild]::GetRegistryValueFromView('HKEY_CURRENT_USER\Software\McNeel\Rhinoceros\7.0-WIP-Developer-Debug-trunk\Install', 'Default Plug-ins Folder', null, RegistryView.Registry64))</Rhino7DebugPluginsDir>
-    <Rhino7PluginsDir>$([MSBuild]::ValueOrDefault('$(Rhino7DebugPluginsDir)', '$(Rhino7DefaultPluginsDir)'))</Rhino7PluginsDir>
-  </PropertyGroup>
-  <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{DFA00AD8-8169-4E3C-943A-05F6F2196E3A}</ProjectGuid>
+    <ProjectGuid>{08D24128-7D9B-4F86-B104-6B18971828DF}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>SAM.Core.Solver</RootNamespace>
-    <AssemblyName>SAM.Core.Solver</AssemblyName>
+    <RootNamespace>SAM.Analytical.Rhino.Solver</RootNamespace>
+    <AssemblyName>SAM.Analytical.Rhino.Solver</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -31,7 +21,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DocumentationFile>..\..\build\SAM.Core.Solver.xml</DocumentationFile>
+    <DocumentationFile>..\..\build\SAM.Analytical.Rhino.Solver.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -40,14 +30,24 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DocumentationFile>..\..\build\SAM.Core.Solver.xml</DocumentationFile>
+    <DocumentationFile>..\..\build\SAM.Analytical.Rhino.Solver.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="SAM.Analytical">
+      <HintPath>..\..\..\SAM\build\SAM.Analytical.dll</HintPath>
+    </Reference>
     <Reference Include="SAM.Core">
       <HintPath>..\..\..\SAM\build\SAM.Core.dll</HintPath>
     </Reference>
+    <Reference Include="SAM.Geometry">
+      <HintPath>..\..\..\SAM\build\SAM.Geometry.dll</HintPath>
+    </Reference>
+    <Reference Include="SAM.Geometry.Rhino">
+      <HintPath>..\..\..\SAM\build\SAM.Geometry.Rhino.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -57,15 +57,21 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Query\BucketSizeMeshes.cs" />
+    <Compile Include="Query\MaxExtendMeshes.cs" />
+    <Compile Include="Query\WeightsMeshes.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Classes\" />
-    <Folder Include="Query\" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json">
-      <Version>13.0.1</Version>
+    <PackageReference Include="RhinoCommon">
+      <Version>6.32.20340.21001</Version>
+      <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\SAM_Solver\SAM.Analytical.Solver\SAM.Analytical.Solver.csproj">
+      <Project>{888539d6-cfe2-413d-bcee-f2daa1aa8726}</Project>
+      <Name>SAM.Analytical.Solver</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

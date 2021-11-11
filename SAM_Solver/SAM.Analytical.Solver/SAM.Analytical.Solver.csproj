@@ -27,21 +27,25 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\build\</OutputPath>
+    <OutputPath>..\..\build\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DocumentationFile>..\build\SAM.Analytical.Solver.xml</DocumentationFile>
+    <DocumentationFile>..\..\build\SAM.Analytical.Solver.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\build\</OutputPath>
+    <OutputPath>..\..\build\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>..\..\build\SAM.Analytical.Solver.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Newtonsoft.Json.13.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="SAM.Analytical">
       <HintPath>..\..\..\SAM\build\SAM.Analytical.dll</HintPath>
     </Reference>
@@ -50,6 +54,10 @@
     </Reference>
     <Reference Include="SAM.Geometry">
       <HintPath>..\..\..\SAM\build\SAM.Geometry.dll</HintPath>
+    </Reference>
+    <Reference Include="SAM.Math, Version=1.0.7930.31667, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\SAM\build\SAM.Math.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -61,17 +69,26 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Enums\Parameter\SolverParameter.cs" />
+    <Compile Include="Modify\SetBucketSizes.cs" />
+    <Compile Include="Modify\SetMaxExtends.cs" />
+    <Compile Include="Modify\SetWeights.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Query\Snap.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Classes\" />
+    <Compile Include="Modify\Snap.cs" />
+    <Compile Include="Query\Air.cs" />
+    <Compile Include="Query\Thickness.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SAM.Geometry.Solver\SAM.Geometry.Solver.csproj">
       <Project>{5c870a26-7017-472b-9e68-fdd828367df4}</Project>
       <Name>SAM.Geometry.Solver</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Classes\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

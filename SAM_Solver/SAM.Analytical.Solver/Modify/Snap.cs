@@ -19,8 +19,11 @@ namespace SAM.Analytical.Solver
             double minSegmentLength,
             double toleranceDistance,
             double toleranceAngleRad,
-            double arcToleranceAngleRad)
+            double arcToleranceAngleRad,
+            out List<Point3D> nakedPoint3Ds)
         {
+            nakedPoint3Ds = null;
+
             if (panels == null)
             {
                 return;
@@ -117,9 +120,18 @@ namespace SAM.Analytical.Solver
                 arcToleranceAngleRad,
                 out List<List<Face3D>> snappedFace3Ds,
                 out List<List<Panel>> snappedPanels,
-                out List<List<Point3D>> nakedEnds);
+                out List<List<Point3D>> nakedPoint3DsList);
 
             panels.Clear();
+
+            if(nakedPoint3DsList != null)
+            {
+                nakedPoint3Ds = new List<Point3D>();
+                foreach(List<Point3D> point3Ds in nakedPoint3DsList)
+                {
+                    nakedPoint3Ds.AddRange(point3Ds);
+                }
+            }
 
             if (snappedFace3Ds == null)
             {

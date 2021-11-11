@@ -5,6 +5,8 @@ using SAM.Core.Grasshopper;
 using System;
 using System.Collections.Generic;
 using SAM.Core;
+using Grasshopper;
+using Grasshopper.Kernel.Data;
 
 namespace SAM.Analytical.Grasshopper.Solver.Component
 {
@@ -80,7 +82,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
             get
             {
                 List<GH_SAMParam> result = new List<GH_SAMParam>();
-                result.Add(new GH_SAMParam(new GooPanelParam() { Name = "panels", NickName = "panels", Description = "SAM Analytical Panels", Access = GH_ParamAccess.list }, ParamVisibility.Binding));
+                result.Add(new GH_SAMParam(new GooPanelParam() { Name = "panels", NickName = "panels", Description = "SAM Analytical Panels", Access = GH_ParamAccess.tree }, ParamVisibility.Binding));
                 result.Add(new GH_SAMParam(new global::Grasshopper.Kernel.Parameters.Param_Point() { Name = "nakedEnds", NickName = "nakedEnds", Description = "Naked Points", Access = GH_ParamAccess.list }, ParamVisibility.Voluntary));
                 return result.ToArray();
             }
@@ -213,13 +215,32 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
             index = Params.IndexOfOutputParam("panels");
             if(index != -1)
             {
-                DA.SetDataList(0, panels?.ConvertAll(x => new GooPanel(x)));
+                DataTree<GooPanel> dataTree = new DataTree<GooPanel>();
+                foreach(Panel panel in panels)
+                {
+                    int count = -1;
+
+                    Geometry.Spatial.Point3D centroid = panel?.GetBoundingBox()?.GetCentroid();
+                    if(centroid != null)
+                    {
+                        count = ranges.FindIndex(x => x.In(centroid.Z));
+                    }
+
+                    if(count == -1)
+                    {
+                        count = ranges.Count;
+                    }
+
+                    dataTree.Add(new GooPanel(panel), new GH_Path(count));
+                }
+
+                DA.SetDataTree(index, dataTree);
             }
 
             index = Params.IndexOfOutputParam("nakedEnds");
             if (index != -1)
             {
-                DA.SetDataList(0, nakedPoint3Ds?.ConvertAll(x => Geometry.Grasshopper.Convert.ToGrasshopper(x)));
+                DA.SetDataList(index, nakedPoint3Ds?.ConvertAll(x => Geometry.Grasshopper.Convert.ToGrasshopper(x)));
             }
         }
     }

@@ -8,8 +8,8 @@ namespace SAM.Analytical.Solver
 
     public static partial class Modify
     {
-        public static void Snap(
-            this List<Panel> panels,
+        public static void Snap<T>(
+            this List<T> face3DObjects,
             IEnumerable<double> bucketSizes,
             IEnumerable<double> weights,
             IEnumerable<double> maxExtensions,
@@ -20,23 +20,23 @@ namespace SAM.Analytical.Solver
             double toleranceDistance,
             double toleranceAngleRad,
             double arcToleranceAngleRad,
-            out List<Point3D> nakedPoint3Ds)
+            out List<Point3D> nakedPoint3Ds) where T: SAMObject, IFace3DObject
         {
             nakedPoint3Ds = null;
 
-            if (panels == null)
+            if (face3DObjects == null)
             {
                 return;
             }
 
             if(bucketSizes == null)
             {
-                SetBucketSizes(panels, false);
+                SetBucketSizes(face3DObjects, false);
                 
                 List<double> bucketSizes_Temp = new List<double>();
-                foreach(Panel panel in panels)
+                foreach(T face3DObject in face3DObjects)
                 {
-                    if(!panel.TryGetValue(SolverParameter.BucketSize, out double bucketSize) || double.IsNaN(bucketSize))
+                    if(!face3DObject.TryGetValue(SolverParameter.BucketSize, out double bucketSize) || double.IsNaN(bucketSize))
                     {
                         bucketSizes_Temp.Add(0);
                     }
@@ -50,12 +50,12 @@ namespace SAM.Analytical.Solver
 
             if (weights == null)
             {
-                SetWeights(panels, false);
+                SetWeights(face3DObjects, false);
 
                 List<double> weights_Temp = new List<double>();
-                foreach (Panel panel in panels)
+                foreach (T face3DObject in face3DObjects)
                 {
-                    if (!panel.TryGetValue(SolverParameter.Weight, out double weight) || double.IsNaN(weight))
+                    if (!face3DObject.TryGetValue(SolverParameter.Weight, out double weight) || double.IsNaN(weight))
                     {
                         weights_Temp.Add(0);
                     }
@@ -70,12 +70,12 @@ namespace SAM.Analytical.Solver
 
             if (maxExtensions == null)
             {
-                SetMaxExtends(panels, false);
+                SetMaxExtends(face3DObjects, false);
                 
                 List<double> maxExtensions_Temp = new List<double>();
-                foreach (Panel panel in panels)
+                foreach (T face3DObject in face3DObjects)
                 {
-                    if (!panel.TryGetValue(SolverParameter.MaxExtend, out double maxExtend) || double.IsNaN(maxExtend))
+                    if (!face3DObject.TryGetValue(SolverParameter.MaxExtend, out double maxExtend) || double.IsNaN(maxExtend))
                     {
                         maxExtensions_Temp.Add(0);
                     }
@@ -91,8 +91,8 @@ namespace SAM.Analytical.Solver
             if(levels == null)
             {
                 List<double> levels_Temp = new List<double>();
-                Dictionary<double, List<Panel>> elevationDictionary = Geometry.Spatial.Query.ElevationDictionary(panels, out double maxElevation, toleranceDistance);
-                foreach(KeyValuePair<double, List<Panel>> keyValuePair in elevationDictionary)
+                Dictionary<double, List<T>> elevationDictionary = Geometry.Spatial.Query.ElevationDictionary(face3DObjects, out double maxElevation, toleranceDistance);
+                foreach(KeyValuePair<double, List<T>> keyValuePair in elevationDictionary)
                 {
                     levels_Temp.Add(keyValuePair.Key);
                 }
@@ -107,7 +107,7 @@ namespace SAM.Analytical.Solver
             }
 
             Geometry.Solver.Query.Snap(
-                panels,
+                face3DObjects,
                 bucketSizes,
                 weights,
                 maxExtensions,
@@ -119,10 +119,10 @@ namespace SAM.Analytical.Solver
                 toleranceAngleRad,
                 arcToleranceAngleRad,
                 out List<List<Face3D>> snappedFace3Ds,
-                out List<List<Panel>> snappedPanels,
+                out List<List<T>> sourceFace3DObject,
                 out List<List<Point3D>> nakedPoint3DsList);
 
-            panels.Clear();
+            face3DObjects.Clear();
 
             if(nakedPoint3DsList != null)
             {
@@ -148,19 +148,19 @@ namespace SAM.Analytical.Solver
                 for (int j = 0; j < snappedFace3Ds[i].Count; j++)
                 {
                     Face3D face3D = snappedFace3Ds[i][j];
-                    Panel panel = snappedPanels[i][j];
-                    if (panel == null || face3D == null)
+                    T face3DObject = sourceFace3DObject[i][j];
+                    if (face3DObject == null || face3D == null)
                     {
                         continue;
                     }
 
-                    Panel panel_Temp = Create.Panel(panel.Guid, panel, face3D);
+                    T panel_Temp = Create.Face3DObject(face3DObject, face3D, toleranceDistance);
                     if (panel_Temp != null)
                     {
-                        panel = panel_Temp;
+                        face3DObject = panel_Temp;
                     }
 
-                    panels.Add(panel);
+                    face3DObjects.Add(face3DObject);
                 }
             }
         }

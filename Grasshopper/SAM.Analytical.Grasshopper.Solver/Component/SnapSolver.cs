@@ -207,10 +207,22 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
                 ranges = null;
             }
 
-            Analytical.Solver.Modify.Snap(
-                panels, bucketSizes, weights, maxExtensions, ranges,
-                levelSectionOffset, nakedNodeSnapDistance, minWallSegmentLength,
-                toleranceDistance, toleranceAngleRad, arcToleranceAngleRad, out List<Geometry.Spatial.Point3D> nakedPoint3Ds);
+            Analytical.Solver.Solver<Panel> solver = new Analytical.Solver.Solver<Panel>(panels, ranges)
+            {
+                Tolerance_Angle = toleranceAngleRad,
+                Tolerance_Distance = toleranceDistance,
+                Tolerance_Arc = arcToleranceAngleRad,
+                MinLength = minWallSegmentLength,
+                SnapDistance = nakedNodeSnapDistance,
+                Offset = levelSectionOffset
+            };
+
+            panels = solver.Execute(out List<Geometry.Spatial.Point3D> nakedPoint3Ds, 0.12);
+
+            //Analytical.Solver.Modify.Snap(
+            //    panels, bucketSizes, weights, maxExtensions, ranges,
+            //    levelSectionOffset, nakedNodeSnapDistance, minWallSegmentLength,
+            //    toleranceDistance, toleranceAngleRad, arcToleranceAngleRad, out List<Geometry.Spatial.Point3D> nakedPoint3Ds);
 
             index = Params.IndexOfOutputParam("panels");
             if(index != -1)

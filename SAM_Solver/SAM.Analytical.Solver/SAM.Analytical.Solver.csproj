@@ -69,6 +69,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Classes\Solver.cs" />
+    <Compile Include="Create\Face3DObject.cs" />
     <Compile Include="Enums\Parameter\SolverParameter.cs" />
     <Compile Include="Modify\SetBucketSizes.cs" />
     <Compile Include="Modify\SetMaxExtends.cs" />
@@ -87,8 +89,6 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Classes\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

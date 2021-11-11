@@ -215,6 +215,11 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
             index = Params.IndexOfOutputParam("panels");
             if(index != -1)
             {
+                if(ranges == null)
+                {
+                    ranges = Geometry.Spatial.Query.ElevationRanges(panels);
+                }
+                
                 DataTree<GooPanel> dataTree = new DataTree<GooPanel>();
                 foreach(Panel panel in panels)
                 {

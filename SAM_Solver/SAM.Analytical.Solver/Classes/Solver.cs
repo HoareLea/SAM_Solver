@@ -53,6 +53,7 @@ namespace SAM.Analytical.Solver
             ranges.Sort((x, y) => x.Min.CompareTo(y.Min));
 
             List<List<T>> face3DObjectsList = Enumerable.Repeat<List<T>>(null, ranges.Count).ToList();
+            List<double> minLengths = Enumerable.Repeat(double.NaN, ranges.Count).ToList();
             Parallel.For(0, ranges.Count, (int i) =>
             {
                 Range<double> range = ranges[i];
@@ -77,6 +78,35 @@ namespace SAM.Analytical.Solver
                 Modify.Snap(face3DObjects_Plane, null, null, null, ranges_Temp, Offset, SnapDistance, MinLength, Tolerance_Distance, Tolerance_Angle, Tolerance_Arc, out nakedPoint3Ds_Temp);
 
                 face3DObjectsList[i] = face3DObjects_Plane;
+                //if(face3DObjects_Plane != null && face3DObjects_Plane.Count != 0)
+                //{
+                //    double minLength = double.MaxValue;
+                //    foreach(T face3Dobject in face3DObjects_Plane)
+                //    {
+                //        Segment3D segment3D = Geometry.Spatial.Query.MaxIntersectionSegment3D(plane, face3Dobject);
+                //        if(segment3D == null || !segment3D.IsValid())
+                //        {
+                //            continue;
+                //        }
+
+                //        double length = segment3D.GetLength();
+                //        if(double.IsNaN(length) || length == 0)
+                //        {
+                //            continue;
+                //        }
+
+                //        if(length < minLength)
+                //        {
+                //            minLength = length;
+                //        }
+                //    }
+
+                //    if(minLength != double.MaxValue)
+                //    {
+                //        minLengths[i] = minLength;
+                //    }
+                //}
+
             });
 
             List<T> face3DObjects_All = new List<T>();
@@ -90,8 +120,20 @@ namespace SAM.Analytical.Solver
                 face3DObjects_All.AddRange(face3DObjects_Temp);
             }
 
+            //minLengths.RemoveAll(x => double.IsNaN(x) || x <= 0);
+            //double minLength_Temp = MinLength;
+            //if(minLengths != null && minLengths.Count != 0)
+            //{
+            //    if(minLengths.Count > 1)
+            //    {
+            //        minLengths.Sort();
+            //    }
+
+            //    minLength_Temp = minLengths[0];
+            //}
+
             IEnumerable<double> bucketSizes = Enumerable.Repeat(bucketSizeFactor, face3DObjects_All.Count);
-            Modify.Snap(face3DObjects_All, bucketSizes, null, null, ranges, Offset, SnapDistance, MinLength, Tolerance_Distance, Tolerance_Angle, Tolerance_Arc, out nakedPoint3Ds);
+            Modify.Snap(face3DObjects_All, bucketSizes, null, null, ranges, Offset, SnapDistance, MinLength * 0.8, Tolerance_Distance, Tolerance_Angle, Tolerance_Arc, out nakedPoint3Ds);
             return face3DObjects_All;
         }
     }

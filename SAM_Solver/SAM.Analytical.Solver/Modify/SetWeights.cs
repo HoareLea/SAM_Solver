@@ -39,31 +39,13 @@ namespace SAM.Analytical.Solver
                 {
                     Plane plane = Geometry.Spatial.Create.Plane(boundingBox3D.Min.Z + offset);
 
-                    PlanarIntersectionResult planarIntersectionResult = Geometry.Spatial.Create.PlanarIntersectionResult(plane, face3D, tolerance_Angle, tolerance_Distance);
-                    if (planarIntersectionResult == null || !planarIntersectionResult.Intersecting)
+                    Segment3D segment3D = Geometry.Spatial.Query.MaxIntersectionSegment3D(plane, face3D);
+                    if(segment3D == null)
                     {
                         continue;
                     }
 
-                    List<ISegmentable3D> segmentable3Ds = planarIntersectionResult.GetGeometry3Ds<ISegmentable3D>();
-                    if (segmentable3Ds == null)
-                    {
-                        continue;
-                    }
-
-                    List<Point3D> point3Ds = new List<Point3D>();
-                    foreach (ISegmentable3D segmentable3D in segmentable3Ds)
-                    {
-                        List<Point3D> point3Ds_Temp = segmentable3D?.GetPoints();
-                        if (point3Ds_Temp != null)
-                        {
-                            point3Ds.AddRange(point3Ds_Temp);
-                        }
-                    }
-
-                    point3Ds.ExtremePoints(out Point3D point3D_1, out Point3D point3D_2);
-
-                    tuples.Add(new Tuple<int, double>(i, point3D_1.Distance(point3D_2)));
+                    tuples.Add(new Tuple<int, double>(i, segment3D.GetLength()));
                 }
                 else
                 {

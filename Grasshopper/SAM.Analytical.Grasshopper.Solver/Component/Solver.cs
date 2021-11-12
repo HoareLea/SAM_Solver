@@ -10,23 +10,23 @@ using Grasshopper.Kernel.Data;
 
 namespace SAM.Analytical.Grasshopper.Solver.Component
 {
-    public class SnapSolver : GH_SAMVariableOutputParameterComponent
+    public class Solver : GH_SAMVariableOutputParameterComponent
     {
-        public override Guid ComponentGuid => new Guid("eb0fdcec-243f-4895-b036-25d6cca28eb7");
+        public override Guid ComponentGuid => new Guid("2e2be06e-55f1-4c94-92b3-71df0808eaf8");
 
 
         /// <summary>
         /// The latest version of this component
         /// </summary>
-        public override string LatestComponentVersion => "1.0.2";
+        public override string LatestComponentVersion => "1.0.0";
 
         /// <summary>
         /// Provides an Icon for the component.
         /// </summary>
         protected override System.Drawing.Bitmap Icon => Resources.SAM_Solver;
 
-        public SnapSolver()
-            : base("SnapSolver", "SnapSolver", "Snap Solver", "SAM", "Solver")
+        public Solver()
+            : base("Solver", "Solver", "SAM Solver", "SAM", "Solver")
         {
         }
 
@@ -207,22 +207,22 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
                 ranges = null;
             }
 
-            //Analytical.Solver.Solver<Panel> solver = new Analytical.Solver.Solver<Panel>(panels, ranges)
-            //{
-            //    Tolerance_Angle = toleranceAngleRad,
-            //    Tolerance_Distance = toleranceDistance,
-            //    Tolerance_Arc = arcToleranceAngleRad,
-            //    MinLength = minWallSegmentLength,
-            //    SnapDistance = nakedNodeSnapDistance,
-            //    Offset = levelSectionOffset
-            //};
+            Analytical.Solver.Solver<Panel> solver = new Analytical.Solver.Solver<Panel>(panels, ranges)
+            {
+                Tolerance_Angle = toleranceAngleRad,
+                Tolerance_Distance = toleranceDistance,
+                Tolerance_Arc = arcToleranceAngleRad,
+                MinLength = minWallSegmentLength,
+                SnapDistance = nakedNodeSnapDistance,
+                Offset = levelSectionOffset
+            };
 
-            //panels = solver.Execute(out List<Geometry.Spatial.Point3D> nakedPoint3Ds, 0.21);
+            panels = solver.Execute(out List<Geometry.Spatial.Point3D> nakedPoint3Ds, 0.21);
 
-            Analytical.Solver.Modify.Snap(
-                panels, bucketSizes, weights, maxExtensions, ranges,
-                levelSectionOffset, nakedNodeSnapDistance, minWallSegmentLength,
-                toleranceDistance, toleranceAngleRad, arcToleranceAngleRad, out List<Geometry.Spatial.Point3D> nakedPoint3Ds);
+            //Analytical.Solver.Modify.Snap(
+            //    panels, bucketSizes, weights, maxExtensions, ranges,
+            //    levelSectionOffset, nakedNodeSnapDistance, minWallSegmentLength,
+            //    toleranceDistance, toleranceAngleRad, arcToleranceAngleRad, out List<Geometry.Spatial.Point3D> nakedPoint3Ds);
 
             index = Params.IndexOfOutputParam("panels");
             if(index != -1)

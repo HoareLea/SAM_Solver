@@ -490,7 +490,7 @@ namespace SAM.Geometry.Solver
 
                 for (int i = 0; i < processedWalls.Count - 1; i++)
                 {
-                    if (isSnapped[i] || isMerged[i]) {
+                    if (isMerged[i]) {
                         continue;
                     }
                     SnappedWall current = processedWalls[i];

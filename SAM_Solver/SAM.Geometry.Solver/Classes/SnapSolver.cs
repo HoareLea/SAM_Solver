@@ -459,7 +459,8 @@ namespace SAM.Geometry.Solver
                 }
                 //Print("Current wall [{0}] anchor count: {1}, its first source: {2}", i, anchorCandidates.Count, currentWall.SourceIndices[0]);
                 string report = "";
-                bool snapped = currentWall.TrySnapIfNaked(anchorCandidates, snappingDistance, out report);
+                //bool snapped = currentWall.TrySnapIfNaked(anchorCandidates, snappingDistance, out report);
+                bool snapped = currentWall.TrySnapIfNaked(anchorCandidates, currentWall.MaxExtension, out report);
                 sb.AppendLine(report);
             }
             //walls.RemoveAll(w => w.ProjectedAxis.GetLength() < SAM.Core.Tolerance.Distance);
@@ -489,6 +490,9 @@ namespace SAM.Geometry.Solver
 
                 for (int i = 0; i < processedWalls.Count - 1; i++)
                 {
+                    if (isSnapped[i] || isMerged[i]) {
+                        continue;
+                    }
                     SnappedWall current = processedWalls[i];
                     for (int j = i + 1; j < processedWalls.Count; j++)
                     {

@@ -20,7 +20,7 @@ namespace SAM.Analytical.Solver
             double toleranceDistance,
             double toleranceAngleRad,
             double arcToleranceAngleRad,
-            out List<Point3D> nakedPoint3Ds) where T: SAMObject, IFace3DObject
+            out List<Point3D> nakedPoint3Ds) where T: ISAMObject, IFace3DObject
         {
             nakedPoint3Ds = null;
 

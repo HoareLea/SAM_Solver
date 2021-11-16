@@ -88,6 +88,7 @@
     <Compile Include="Component\Obselete\PanelFromSnapSolver.cs" />
     <Compile Include="Component\Obselete\SnapSolver.cs" />
     <Compile Include="Component\SAMAnalyticalVisualize.cs" />
+    <Compile Include="Component\PartitionSolver.cs" />
     <Compile Include="Component\Solver.cs" />
     <Compile Include="Component\SnapSolver.cs" />
     <Compile Include="Kernel\AssemblyInfo.cs" />

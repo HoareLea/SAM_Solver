@@ -7,7 +7,7 @@ namespace SAM.Analytical.Solver
 {
     public static partial class Modify
     {
-        public static void SetBucketSizes<T>(this List<T> face3DObjects, bool @override = true, double factor = 0.6, double minBucketSize = 0.2) where T : Core.SAMObject, IFace3DObject
+        public static void SetBucketSizes<T>(this List<T> face3DObjects, bool @override = true, double factor = 0.6, double minBucketSize = 0.2) where T : Core.ISAMObject, IFace3DObject
         {
             if (face3DObjects == null)
             {

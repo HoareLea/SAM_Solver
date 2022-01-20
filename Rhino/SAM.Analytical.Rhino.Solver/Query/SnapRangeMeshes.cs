@@ -17,10 +17,11 @@ namespace SAM.Analytical.Rhino.Solver
         /// <param name="offset"></param>
         /// <param name="halfResolution"> Half the number of arc vertices.</param>
         /// <returns></returns>
-        public static List<Tuple<Mesh, Mesh>> SnapRangeMeshes(this IEnumerable<Panel> panels, out List<double> values, double offset = 0.15, int halfResolution = 30)
+        public static List<Tuple<Mesh, Mesh>> SnapRangeMeshes(this IEnumerable<Panel> panels, out List<Tuple<Point3d, Point3d>> snapRangePoints, out List<double> values, double offset = 0.15, int halfResolution = 30)
         {
             // the range is equal to MaxExtend parameter
             values = null;
+            snapRangePoints = null;
             if (panels == null) {
                 return null;
             }
@@ -30,6 +31,7 @@ namespace SAM.Analytical.Rhino.Solver
             double singleStepAngle = oneSideAngle / halfResolution;
 
             List <Tuple<Mesh, Mesh>> result = new List<Tuple<Mesh, Mesh>>();
+            snapRangePoints = new List<Tuple<Point3d, Point3d>>();
             values = new List<double>();
             foreach (Panel panel in panels) {
                 if (panel == null) {
@@ -91,6 +93,7 @@ namespace SAM.Analytical.Rhino.Solver
                 startRangeMesh.Transform(Transform.Mirror(midPt, tangentVec));
 
                 result.Add(new Tuple<Mesh, Mesh>(startRangeMesh, endRangeMesh));
+                snapRangePoints.Add(new Tuple<Point3d, Point3d>(startPt, endPt));
                 values.Add(maxExtend);
             }
 

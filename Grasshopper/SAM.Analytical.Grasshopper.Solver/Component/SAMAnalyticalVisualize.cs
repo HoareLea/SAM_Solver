@@ -95,6 +95,8 @@ namespace SAM.Analytical.Grasshopper.Solver
                 result.Add(new GH_SAMParam(new global::Grasshopper.Kernel.Parameters.Param_Number() { Name = "weights", NickName = "weights", Description = "Weights", Access = GH_ParamAccess.list }, ParamVisibility.Voluntary));
 
                 result.Add(new GH_SAMParam(new global::Grasshopper.Kernel.Parameters.Param_Mesh() { Name = "snapRangeMeshes", NickName = "snapRangeMeshes", Description = "Snap Range Meshes", Access = GH_ParamAccess.list }, ParamVisibility.Binding));
+                result.Add(new GH_SAMParam(new global::Grasshopper.Kernel.Parameters.Param_Point() { Name = "snapRangePoints", NickName = "snapRangePoints", Description = "Snap Range Points", Access = GH_ParamAccess.list }, ParamVisibility.Voluntary));
+                result.Add(new GH_SAMParam(new global::Grasshopper.Kernel.Parameters.Param_Number() { Name = "values", NickName = "values", Description = "Values", Access = GH_ParamAccess.list }, ParamVisibility.Voluntary));
 
                 return result.ToArray();
             }
@@ -117,7 +119,7 @@ namespace SAM.Analytical.Grasshopper.Solver
             List<Mesh> bucketSizeMeshes = Rhino.Solver.Query.BucketSizeMeshes(panels, out List<Point3d> bucketSizePoints, out List<double> bucketSizes);
             List<Tuple<Mesh, Mesh>> maxExtendMeshes = Rhino.Solver.Query.MaxExtendMeshes(panels, out List<Tuple<Point3d, Point3d>> maxExtendPoints, out List<double> maxExtends);
             List<Mesh> weightMeshes = Rhino.Solver.Query.WeightsMeshes(panels, out List<Point3d> weightPoints, out List<double> weights);
-            List<Tuple<Mesh, Mesh>> snapRangeMeshes = Rhino.Solver.Query.SnapRangeMeshes(panels, out List<double> values);
+            List<Tuple<Mesh, Mesh>> snapRangeMeshes = Rhino.Solver.Query.SnapRangeMeshes(panels, out List<Tuple<Point3d, Point3d>> snapRangePoints, out List<double> values);
 
 
             index = Params.IndexOfOutputParam("lines");
@@ -265,6 +267,37 @@ namespace SAM.Analytical.Grasshopper.Solver
                 }
 
                 dataAccess.SetDataList(index, meshes);
+            }
+
+            index = Params.IndexOfOutputParam("snapRangePoints");
+            if (index != -1)
+            {
+                List<Point3d> points = new List<Point3d>();
+                foreach (Tuple<Point3d, Point3d> tuple in snapRangePoints)
+                {
+                    if (tuple == null)
+                    {
+                        continue;
+                    }
+
+                    if (tuple.Item1 != null)
+                    {
+                        points.Add(tuple.Item1);
+                    }
+
+                    if (tuple.Item2 != null)
+                    {
+                        points.Add(tuple.Item2);
+                    }
+                }
+
+                dataAccess.SetDataList(index, points);
+            }
+
+            index = Params.IndexOfOutputParam("values");
+            if (index != -1)
+            {
+                dataAccess.SetDataList(index, values);
             }
         }
     }

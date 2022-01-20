@@ -26,7 +26,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
         protected override System.Drawing.Bitmap Icon => Resources.SAM_Solver;
 
         public PartitionSolver()
-            : base("PartitionSolver", "PartitionSolver", "SAM Solver", "SAM", "Solver")
+            : base("PartitionSolver", "PartitionSolver", "SAM Solver", "SAM WIP", "Solver")
         {
         }
 

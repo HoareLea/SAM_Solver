@@ -26,7 +26,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
         protected override System.Drawing.Bitmap Icon => Resources.SAM_Solver;
 
         public SnapSolver()
-            : base("SnapSolver", "SnapSolver", "Snap Solver", "SAM", "Solver")
+            : base("SnapSolver", "SnapSolver", "Snap Solver", "SAM WIP", "Solver")
         {
         }
 

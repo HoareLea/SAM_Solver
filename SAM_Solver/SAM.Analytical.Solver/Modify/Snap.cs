@@ -149,7 +149,7 @@ namespace SAM.Analytical.Solver
                 {
                     Face3D face3D = snappedFace3Ds[i][j];
                     T face3DObject = sourceFace3DObject[i][j];
-                    if (face3DObject == null || face3D == null)
+                    if (face3DObject == null || face3D == null || !face3D.IsValid())
                     {
                         continue;
                     }

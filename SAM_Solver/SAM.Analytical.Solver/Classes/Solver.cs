@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SAM.Analytical.Solver
 {
-    public class Solver<T> where T: ISAMObject, IFace3DObject
+    public class Solver<T> where T: IParameterizedSAMObject, IFace3DObject
     {
         public double Tolerance_Distance { get; set; }  = Tolerance.Distance;
         public double Tolerance_Angle { get; set; } = Tolerance.Angle;

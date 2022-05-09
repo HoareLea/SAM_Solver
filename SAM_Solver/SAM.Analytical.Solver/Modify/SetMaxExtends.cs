@@ -5,7 +5,7 @@ namespace SAM.Analytical.Solver
 {
     public static partial class Modify
     {
-        public static void SetMaxExtends<T>(this List<T> face3DObjects, bool @override = true, double offset = 0.1) where T: Core.ISAMObject, IFace3DObject
+        public static void SetMaxExtends<T>(this List<T> face3DObjects, bool @override = true, double offset = 0.1) where T: Core.IParameterizedSAMObject, IFace3DObject
         {
             if (face3DObjects == null)
             {

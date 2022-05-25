@@ -54,23 +54,25 @@ namespace SAM.Analytical.Solver
 
             List<List<T>> face3DObjectsList = Enumerable.Repeat<List<T>>(null, ranges.Count).ToList();
             List<double> minLengths = Enumerable.Repeat(double.NaN, ranges.Count).ToList();
-            Parallel.For(0, ranges.Count, (int i) =>
+            //Parallel.For(0, ranges.Count, (int i) =>
+            for (int i = 0; i < ranges.Count; i++)
             {
                 Range<double> range = ranges[i];
 
                 Plane plane = Geometry.Spatial.Create.Plane(range.Min + Offset);
 
                 Dictionary<T, List<ISegmentable3D>> dictionary = face3DObjects.SectionDictionary<T, ISegmentable3D>(plane, Tolerance_Angle, Tolerance_Distance);
-                if(dictionary == null || dictionary.Count == 0)
+                if (dictionary == null || dictionary.Count == 0)
                 {
-                    return;
+                    continue;
+                    //return;
                 }
 
                 List<Point3D> nakedPoint3Ds_Temp = new List<Point3D>();
                 List<Range<double>> ranges_Temp = new List<Range<double>>() { range };
 
                 List<T> face3DObjects_Plane = new List<T>();
-                foreach(KeyValuePair<T, List<ISegmentable3D>> keyValuePair in dictionary)
+                foreach (KeyValuePair<T, List<ISegmentable3D>> keyValuePair in dictionary)
                 {
                     face3DObjects_Plane.Add(keyValuePair.Key);
                 }
@@ -107,7 +109,8 @@ namespace SAM.Analytical.Solver
                 //    }
                 //}
 
-            });
+                //});
+            }
 
             List<T> face3DObjects_All = new List<T>();
             foreach(List<T> face3DObjects_Temp in face3DObjectsList)

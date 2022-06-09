@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using SAM.Core;
 using Grasshopper;
 using Grasshopper.Kernel.Data;
+using SAM.Analytical.Solver;
+using System.Linq;
 
 namespace SAM.Analytical.Grasshopper.Solver.Component
 {
@@ -177,21 +179,43 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
                 DA.GetData(index, ref arcToleranceAngleRad);
             }
 
-            partitions = partitions?.ConvertAll(x => x.Clone<IPartition>());
-
-            if(bucketSizes == null || bucketSizes.Count == 0)
+            for (int i = 0; i < partitions.Count; i++)
             {
-                bucketSizes = null;
-            }
+                IPartition partition_Temp = partitions[i]?.Clone();
+                if (partition_Temp == null)
+                {
+                    continue;
+                }
 
-            if (weights == null || weights.Count == 0)
-            {
-                weights = null;
-            }
+                if (bucketSizes != null && bucketSizes.Count != 0)
+                {
+                    double bucketSize = bucketSizes.Count < i ? bucketSizes.Last() : bucketSizes[i];
+                    if (!double.IsNaN(bucketSize))
+                    {
+                        partition_Temp.SetValue(SolverParameter.BucketSize, bucketSize);
+                    }
+                }
 
-            if (maxExtensions == null || maxExtensions.Count == 0)
-            {
-                maxExtensions = null;
+                if (weights != null && weights.Count != 0)
+                {
+                    double weight = weights.Count < i ? weights.Last() : weights[i];
+                    if (!double.IsNaN(weight))
+                    {
+                        partition_Temp.SetValue(SolverParameter.Weight, weight);
+                    }
+                }
+
+                if (maxExtensions != null && maxExtensions.Count != 0)
+                {
+                    double maxExtension = maxExtensions.Count < i ? maxExtensions.Last() : maxExtensions[i];
+                    if (!double.IsNaN(maxExtension))
+                    {
+                        partition_Temp.SetValue(SolverParameter.MaxExtend, maxExtension);
+                    }
+                }
+
+                partitions[i] = partition_Temp;
+
             }
 
             List<Range<double>> ranges = new List<Range<double>>();
@@ -207,7 +231,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
                 ranges = null;
             }
 
-            Analytical.Solver.Solver<IPartition> partitionSolver = new Analytical.Solver.Solver<IPartition>(partitions, ranges)
+            Solver<IPartition> partitionSolver = new Solver<IPartition>(partitions, ranges)
             {
                 Tolerance_Angle = toleranceAngleRad,
                 Tolerance_Distance = toleranceDistance,

@@ -25,7 +25,7 @@ namespace SAM.Geometry.Solver
         public static readonly double OpenNodeSnapAngleRangeRad = 2 * System.Math.PI / 3; // allow for 120 degrees in both directions
         public List<int> SourceIndices { get; private set; }
         public List<Segment2D> SourceSegments { get; private set; }
-        public Core.Range<double> OriginalHeight { get; private set; }
+        public Range<double> OriginalHeight { get; private set; }
         public double Elevation { get; private set; }
         public double Weight { get; private set; }
         public double BucketSize { get; private set; }
@@ -34,7 +34,7 @@ namespace SAM.Geometry.Solver
         public bool NakedStart { get; private set; }
         public bool NakedEnd { get; private set; }
 
-        public SnappedWall(int sourceIndex, Segment3D axis, double weight, double bucketSize, double maxExtension, Core.Range<double> originalHeight)
+        public SnappedWall(int sourceIndex, Segment3D axis, double weight, double bucketSize, double maxExtension, Range<double> originalHeight)
         {
             Elevation = (axis.GetStart().Z + axis.GetEnd().Z) / 2;
             SourceIndices = new List<int>();
@@ -372,13 +372,13 @@ namespace SAM.Geometry.Solver
             //var tempProjectionAxis = this.ProjectedAxis.Extend(1000, true, true);
             double snappedStartParam = this.ProjectedAxis.ClosestParameter(other.ProjectedAxis.Start);
             double snappedEndParam = this.ProjectedAxis.ClosestParameter(other.ProjectedAxis.End);
-            Core.Range<double> otherRange = new Core.Range<double>(snappedStartParam, snappedEndParam);
+            Range<double> otherRange = new Range<double>(snappedStartParam, snappedEndParam);
             otherRange = MakeRangeIncreasing(otherRange);
 
             if (Core.Query.AlmostEqual(this.Elevation, other.Elevation, SnapSolver.ModelTolerance)) // same level - merge in
             {
                 otherMergedIn = true;
-                Core.Range<double> thisNewRange = new Core.Range<double>(System.Math.Min(otherRange.Min, 0), System.Math.Max(otherRange.Max, 1));
+                Range<double> thisNewRange = new Range<double>(System.Math.Min(otherRange.Min, 0), System.Math.Max(otherRange.Max, 1));
                 Point2D newStart = this.ProjectedAxis.GetPoint(thisNewRange.Min);
                 Point2D newEnd = this.ProjectedAxis.GetPoint(thisNewRange.Max);
 
@@ -442,10 +442,10 @@ namespace SAM.Geometry.Solver
             return true;
         }
 
-        private Core.Range<double> MakeRangeIncreasing(Core.Range<double> range)
+        private Range<double> MakeRangeIncreasing(Range<double> range)
         {
             if (range.Min > range.Max)
-                return new Core.Range<double>(range.Max, range.Min);
+                return new Range<double>(range.Max, range.Min);
             else return range;
         }
 
@@ -824,7 +824,7 @@ namespace SAM.Geometry.Solver
 
             double paramBucketMargin = System.Math.Min(this.MaxExtension, this.Length * ExtensionLimitLengthRatio) / this.Length;
             //double paramBucketMargin = this.MaxExtension / this.Length;
-            Core.Range<double> dominantRange = new Core.Range<double>(-paramBucketMargin, 1 + paramBucketMargin);
+            Range<double> dominantRange = new Range<double>(-paramBucketMargin, 1 + paramBucketMargin);
 
             bool containsStart = dominantRange.In(paramFrom) || 
                 paramFrom.AlmostEqual(dominantRange.Min) || 
@@ -839,7 +839,7 @@ namespace SAM.Geometry.Solver
                 return true;
             }
 
-            Core.Range<double> otherRange = new Core.Range<double>(paramFrom, paramTo);
+            Range<double> otherRange = new Range<double>(paramFrom, paramTo);
             if (otherRange.In(dominantRange.Min) && otherRange.In(dominantRange.Max) ||
                 otherRange.Min.AlmostEqual(dominantRange.Min) && otherRange.Max.AlmostEqual(dominantRange.Max))
             {

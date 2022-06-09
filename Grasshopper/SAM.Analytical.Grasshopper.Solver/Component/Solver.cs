@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using SAM.Core;
 using Grasshopper;
 using Grasshopper.Kernel.Data;
+using System.Linq;
+using SAM.Analytical.Solver;
 
 namespace SAM.Analytical.Grasshopper.Solver.Component
 {
@@ -177,21 +179,43 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
                 DA.GetData(index, ref arcToleranceAngleRad);
             }
 
-            panels = panels?.ConvertAll(x => Create.Panel(x));
-
-            if(bucketSizes == null || bucketSizes.Count == 0)
+            for(int i = 0; i < panels.Count; i++)
             {
-                bucketSizes = null;
-            }
+                Panel panel_Temp = Create.Panel(panels[i]);
+                if(panel_Temp == null)
+                {
+                    continue;
+                }
 
-            if (weights == null || weights.Count == 0)
-            {
-                weights = null;
-            }
+                if(bucketSizes != null && bucketSizes.Count != 0)
+                {
+                    double bucketSize = bucketSizes.Count < i ? bucketSizes.Last() : bucketSizes[i];
+                    if(!double.IsNaN(bucketSize))
+                    {
+                        panel_Temp.SetValue(SolverParameter.BucketSize, bucketSize);
+                    }
+                }
 
-            if (maxExtensions == null || maxExtensions.Count == 0)
-            {
-                maxExtensions = null;
+                if (weights != null && weights.Count != 0)
+                {
+                    double weight = weights.Count < i ? weights.Last() : weights[i];
+                    if (!double.IsNaN(weight))
+                    {
+                        panel_Temp.SetValue(SolverParameter.Weight, weight);
+                    }
+                }
+
+                if (maxExtensions != null && maxExtensions.Count != 0)
+                {
+                    double maxExtension = maxExtensions.Count < i ? maxExtensions.Last() : maxExtensions[i];
+                    if (!double.IsNaN(maxExtension))
+                    {
+                        panel_Temp.SetValue(SolverParameter.MaxExtend, maxExtension);
+                    }
+                }
+
+                panels[i] = panel_Temp;
+
             }
 
             List<Range<double>> ranges = new List<Range<double>>();
@@ -207,7 +231,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
                 ranges = null;
             }
 
-            Analytical.Solver.Solver<Panel> solver = new Analytical.Solver.Solver<Panel>(panels, ranges)
+            Solver<Panel> solver = new Solver<Panel>(panels, ranges)
             {
                 Tolerance_Angle = toleranceAngleRad,
                 Tolerance_Distance = toleranceDistance,

@@ -189,7 +189,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
 
                 if (bucketSizes != null && bucketSizes.Count != 0)
                 {
-                    double bucketSize = bucketSizes.Count < i ? bucketSizes.Last() : bucketSizes[i];
+                    double bucketSize = bucketSizes.Count <= i ? bucketSizes.Last() : bucketSizes[i];
                     if (!double.IsNaN(bucketSize))
                     {
                         partition_Temp.SetValue(SolverParameter.BucketSize, bucketSize);
@@ -198,7 +198,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
 
                 if (weights != null && weights.Count != 0)
                 {
-                    double weight = weights.Count < i ? weights.Last() : weights[i];
+                    double weight = weights.Count <= i ? weights.Last() : weights[i];
                     if (!double.IsNaN(weight))
                     {
                         partition_Temp.SetValue(SolverParameter.Weight, weight);
@@ -207,7 +207,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
 
                 if (maxExtensions != null && maxExtensions.Count != 0)
                 {
-                    double maxExtension = maxExtensions.Count < i ? maxExtensions.Last() : maxExtensions[i];
+                    double maxExtension = maxExtensions.Count <= i ? maxExtensions.Last() : maxExtensions[i];
                     if (!double.IsNaN(maxExtension))
                     {
                         partition_Temp.SetValue(SolverParameter.MaxExtend, maxExtension);

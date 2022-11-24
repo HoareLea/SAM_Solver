@@ -12,6 +12,7 @@ using System.Linq;
 
 namespace SAM.Analytical.Grasshopper.Solver.Component
 {
+    [Obsolete("Obsolete since 2021.11.24")]
     public class PartitionSolver : GH_SAMVariableOutputParameterComponent
     {
         public override Guid ComponentGuid => new Guid("28af0153-19c3-4fa2-afe2-9eeffa8f6c2e");
@@ -26,6 +27,8 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
         /// Provides an Icon for the component.
         /// </summary>
         protected override System.Drawing.Bitmap Icon => Resources.SAM_Solver;
+
+        public override GH_Exposure Exposure => GH_Exposure.hidden;
 
         public PartitionSolver()
             : base("PartitionSolver", "PartitionSolver", "SAM Solver", "SAM WIP", "Solver")

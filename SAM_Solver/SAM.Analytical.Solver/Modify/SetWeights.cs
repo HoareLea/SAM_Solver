@@ -9,7 +9,7 @@ namespace SAM.Analytical.Solver
     {
         public static void SetWeights<T>(this List<T> face3DObjects, bool @override = true, double offset = 0.1) where T : Core.IParameterizedSAMObject, IFace3DObject 
         {
-            if (face3DObjects == null)
+            if (face3DObjects == null || face3DObjects.Count == 0)
             {
                 return;
             }

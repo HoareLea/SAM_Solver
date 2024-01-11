@@ -251,7 +251,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
             {
                 if(ranges == null)
                 {
-                    ranges = Geometry.Spatial.Query.ElevationRanges(partitions);
+                    ranges = Geometry.Object.Spatial.Query.ElevationRanges(partitions);
                 }
                 
                 DataTree<GooPartition> dataTree = new DataTree<GooPartition>();

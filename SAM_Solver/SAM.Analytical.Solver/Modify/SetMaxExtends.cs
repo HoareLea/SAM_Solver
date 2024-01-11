@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using SAM.Geometry.Object.Spatial;
 using SAM.Geometry.Spatial;
 
 namespace SAM.Analytical.Solver

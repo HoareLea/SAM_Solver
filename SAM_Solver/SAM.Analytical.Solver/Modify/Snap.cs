@@ -1,6 +1,7 @@
 ﻿
 using System.Collections.Generic;
 using SAM.Core;
+using SAM.Geometry.Object.Spatial;
 using SAM.Geometry.Spatial;
 
 namespace SAM.Analytical.Solver
@@ -91,7 +92,7 @@ namespace SAM.Analytical.Solver
             if(levels == null)
             {
                 List<double> levels_Temp = new List<double>();
-                Dictionary<double, List<T>> elevationDictionary = Geometry.Spatial.Query.ElevationDictionary(face3DObjects, out double maxElevation, toleranceDistance);
+                Dictionary<double, List<T>> elevationDictionary = Geometry.Object.Spatial.Query.ElevationDictionary(face3DObjects, out double maxElevation, toleranceDistance);
                 foreach(KeyValuePair<double, List<T>> keyValuePair in elevationDictionary)
                 {
                     levels_Temp.Add(keyValuePair.Key);

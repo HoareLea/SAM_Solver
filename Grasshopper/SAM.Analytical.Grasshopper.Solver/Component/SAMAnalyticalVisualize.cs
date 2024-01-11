@@ -133,7 +133,7 @@ namespace SAM.Analytical.Grasshopper.Solver
 
                     Geometry.Spatial.Plane plane = Geometry.Spatial.Create.Plane(boundingBox3D.Min.Z + 0.1);
 
-                    Geometry.Spatial.Segment3D segment3D = Geometry.Spatial.Query.MaxIntersectionSegment3D(plane, panel);
+                    Geometry.Spatial.Segment3D segment3D = Geometry.Object.Spatial.Query.MaxIntersectionSegment3D(plane, panel);
 
                     lines.Add(Geometry.Rhino.Convert.ToRhino_Line(segment3D));
                 }

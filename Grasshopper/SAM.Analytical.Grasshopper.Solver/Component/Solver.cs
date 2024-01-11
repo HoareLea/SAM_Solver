@@ -253,7 +253,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
             {
                 if(ranges == null)
                 {
-                    ranges = Geometry.Spatial.Query.ElevationRanges(panels);
+                    ranges = Geometry.Object.Spatial.Query.ElevationRanges(panels);
                 }
                 
                 DataTree<GooPanel> dataTree = new DataTree<GooPanel>();

@@ -3,7 +3,7 @@ using SAM.Core.Attributes;
 
 namespace SAM.Analytical.Solver
 {
-    [AssociatedTypes(typeof(Geometry.Spatial.IFace3DObject)), Description("Solver Parameter")]
+    [AssociatedTypes(typeof(Geometry.Object.Spatial.IFace3DObject)), Description("Solver Parameter")]
     public enum SolverParameter
     {
         [ParameterProperties("Bucket Size", "Bucket Size [m]"), DoubleParameterValue(0)] BucketSize,

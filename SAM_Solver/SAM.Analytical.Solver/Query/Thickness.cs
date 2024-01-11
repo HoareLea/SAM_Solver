@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using SAM.Geometry.Spatial;
+﻿using SAM.Geometry.Object.Spatial;
 
 namespace SAM.Analytical.Solver
 {

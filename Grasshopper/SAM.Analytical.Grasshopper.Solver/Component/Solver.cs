@@ -9,6 +9,11 @@ using Grasshopper;
 using Grasshopper.Kernel.Data;
 using System.Linq;
 using SAM.Analytical.Solver;
+using SAM.Geometry.Grasshopper;
+using SAM.Geometry.Spatial;
+using SAM.Geometry.Object.Spatial;
+using SAM.Geometry.Planar;
+using System.Runtime.Remoting.Messaging;
 
 namespace SAM.Analytical.Grasshopper.Solver.Component
 {
@@ -20,7 +25,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
         /// <summary>
         /// The latest version of this component
         /// </summary>
-        public override string LatestComponentVersion => "1.0.1";
+        public override string LatestComponentVersion => "1.0.2";
 
         /// <summary>
         /// Provides an Icon for the component.
@@ -85,7 +90,9 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
             {
                 List<GH_SAMParam> result = new List<GH_SAMParam>();
                 result.Add(new GH_SAMParam(new GooPanelParam() { Name = "panels", NickName = "panels", Description = "SAM Analytical Panels", Access = GH_ParamAccess.tree }, ParamVisibility.Binding));
+                result.Add(new GH_SAMParam(new GooSAMGeometryParam() { Name = "shells", NickName = "shells", Description = "SAM Geometry Shells", Access = GH_ParamAccess.tree }, ParamVisibility.Binding));
                 result.Add(new GH_SAMParam(new global::Grasshopper.Kernel.Parameters.Param_Point() { Name = "nakedEnds", NickName = "nakedEnds", Description = "Naked Points", Access = GH_ParamAccess.list }, ParamVisibility.Voluntary));
+
                 return result.ToArray();
             }
         }
@@ -96,7 +103,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
             return true;
         }
 
-        protected override void SolveInstance(IGH_DataAccess DA)
+        protected override void SolveInstance(IGH_DataAccess dataAccess)
         {
             List<Panel> panels = new List<Panel>();
             List<double> bucketSizes = new List<double>();
@@ -114,7 +121,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
             int index = -1;
 
             index = Params.IndexOfInputParam("_panels");
-            if (index == -1 || !DA.GetDataList(index, panels))
+            if (index == -1 || !dataAccess.GetDataList(index, panels))
             {
                 return;
             }
@@ -122,61 +129,61 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
             index = Params.IndexOfInputParam("bucketSizes_");
             if(index != -1)
             {
-                DA.GetDataList(index, bucketSizes);
+                dataAccess.GetDataList(index, bucketSizes);
             }
 
             index = Params.IndexOfInputParam("weights_");
             if (index != -1)
             {
-                DA.GetDataList(index, weights);
+                dataAccess.GetDataList(index, weights);
             }
 
             index = Params.IndexOfInputParam("maxExtensions_");
             if (index != -1)
             {
-                DA.GetDataList(index, maxExtensions);
+                dataAccess.GetDataList(index, maxExtensions);
             }
 
             index = Params.IndexOfInputParam("levels_");
             if (index != -1)
             {
-                DA.GetDataList(index, levels);
+                dataAccess.GetDataList(index, levels);
             }
 
             index = Params.IndexOfInputParam("_levelOffset_");
             if (index != -1)
             {
-                DA.GetData(index, ref levelSectionOffset);
+                dataAccess.GetData(index, ref levelSectionOffset);
             }
 
             index = Params.IndexOfInputParam("_nakedNodeSnapDistance_");
             if (index != -1)
             {
-                DA.GetData(index, ref nakedNodeSnapDistance);
+                dataAccess.GetData(index, ref nakedNodeSnapDistance);
             }
 
             index = Params.IndexOfInputParam("_minWallSegmentLength_");
             if (index != -1)
             {
-                DA.GetData(index, ref minWallSegmentLength);
+                dataAccess.GetData(index, ref minWallSegmentLength);
             }
 
             index = Params.IndexOfInputParam("_toleranceDistance_");
             if (index != -1)
             {
-                DA.GetData(index, ref toleranceDistance);
+                dataAccess.GetData(index, ref toleranceDistance);
             }
 
             index = Params.IndexOfInputParam("_toleranceAngle_");
             if (index != -1)
             {
-                DA.GetData(index, ref toleranceAngleRad);
+                dataAccess.GetData(index, ref toleranceAngleRad);
             }
 
             index = Params.IndexOfInputParam("_toleranceArc_");
             if (index != -1)
             {
-                DA.GetData(index, ref arcToleranceAngleRad);
+                dataAccess.GetData(index, ref arcToleranceAngleRad);
             }
 
             for(int i = 0; i < panels.Count; i++)
@@ -255,34 +262,225 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
                 {
                     ranges = Geometry.Object.Spatial.Query.ElevationRanges(panels);
                 }
-                
-                DataTree<GooPanel> dataTree = new DataTree<GooPanel>();
-                foreach(Panel panel in panels)
+
+                Dictionary<int, List<Panel>> dictionary = new Dictionary<int, List<Panel>>();
+                foreach (Panel panel in panels)
                 {
                     int count = -1;
 
                     Geometry.Spatial.Point3D centroid = panel?.GetBoundingBox()?.GetCentroid();
-                    if(centroid != null)
+                    if (centroid != null)
                     {
                         count = ranges.FindIndex(x => x.In(centroid.Z));
                     }
 
-                    if(count == -1)
+                    if (count == -1)
                     {
                         count = ranges.Count;
                     }
 
-                    dataTree.Add(new GooPanel(panel), new GH_Path(count));
+                    if(!dictionary.TryGetValue(count, out List<Panel> panels_Temp) || panels_Temp == null)
+                    {
+                        panels_Temp = new List<Panel>();
+                        dictionary[count] = panels_Temp;
+                    }
+
+                    panels_Temp.Add(panel);
                 }
 
-                DA.SetDataTree(index, dataTree);
+                DataTree<GooSAMGeometry> dataTree_Shell = new DataTree<GooSAMGeometry>();
+                DataTree<GooPanel> dataTree_Panel = new DataTree<GooPanel>();
+                foreach(KeyValuePair<int, List<Panel>> keyValuePair in dictionary)
+                {
+                    GH_Path path = new GH_Path(keyValuePair.Key);
+                    List<Panel> panels_Temp = keyValuePair.Value;
+
+                    foreach(Panel panel in panels_Temp)
+                    {
+                        dataTree_Panel.Add(new GooPanel(panel), path);
+                    }
+
+                    List<Shell> shells = GetShells(panels_Temp, toleranceDistance);
+                    if(shells != null)
+                    {
+                        foreach (Shell shell in shells)
+                        {
+                            dataTree_Shell.Add(new GooSAMGeometry(shell), path);
+                        }
+                    }
+                }
+
+                dataAccess.SetDataTree(index, dataTree_Panel);
+
+                index = Params.IndexOfOutputParam("shells");
+                if(index != -1)
+                {
+                    dataAccess.SetDataTree(index, dataTree_Shell);
+                }
             }
 
             index = Params.IndexOfOutputParam("nakedEnds");
             if (index != -1)
             {
-                DA.SetDataList(index, nakedPoint3Ds?.ConvertAll(x => Geometry.Grasshopper.Convert.ToGrasshopper(x)));
+                dataAccess.SetDataList(index, nakedPoint3Ds?.ConvertAll(x => Geometry.Grasshopper.Convert.ToGrasshopper(x)));
             }
+        }
+
+        private List<Shell> GetShells(IEnumerable<Panel> panels, double tolerance)
+        {
+            if(panels == null)
+            {
+                return null;
+            }
+
+            BoundingBox3D boundingBox3D = panels.BoundingBox3D();
+            if(boundingBox3D == null)
+            {
+                return null;
+            }
+
+            double elevation_Min = boundingBox3D.Min.Z;
+            double elevation_Max = boundingBox3D.Max.Z;
+
+            Point3D point3D = boundingBox3D.GetCentroid();
+
+            Geometry.Spatial.Plane plane_Min = new Geometry.Spatial.Plane(new Point3D(point3D.X, point3D.Y, elevation_Min), Vector3D.WorldZ);
+            Geometry.Spatial.Plane plane = new Geometry.Spatial.Plane(point3D, Vector3D.WorldZ);
+            Geometry.Spatial.Plane plane_Max = new Geometry.Spatial.Plane(new Point3D(point3D.X, point3D.Y, elevation_Max), Vector3D.WorldZ);
+
+
+            Dictionary<Panel, List<ISegmentable2D>> dictionary = Analytical.Query.SectionDictionary<ISegmentable2D>(panels, plane);
+            if(dictionary == null)
+            {
+                return null;
+            }
+
+            List<Tuple<Panel, Face3D, BoundingBox3D, List<Point3D>>> tuples = new List<Tuple<Panel, Face3D, BoundingBox3D, List<Point3D>>>();
+
+            List<Segment2D> segment2Ds = new List<Segment2D>();
+            foreach(KeyValuePair<Panel, List<ISegmentable2D>> keyValuePair in dictionary)
+            {
+                foreach(ISegmentable2D segmentable2D in keyValuePair.Value)
+                {
+                    segment2Ds.AddRange(segmentable2D.GetSegments());
+                }
+
+                Face3D face3D = keyValuePair.Key.Face3D;
+
+                BoundingBox3D boundingBox3D_Face3D = face3D.GetBoundingBox();
+
+                List<Point3D> point3Ds = (face3D.GetExternalEdge3D() as ISegmentable3D)?.GetPoints();
+
+                tuples.Add(new Tuple<Panel, Face3D, BoundingBox3D, List<Point3D>>(keyValuePair.Key, face3D, boundingBox3D_Face3D, point3Ds));
+            }
+
+            List<Face2D> face2Ds = segment2Ds.Face2Ds();
+            face2Ds.Holes()?.ForEach(x => face2Ds.Add(new Face2D(x)));
+
+            Func<Point3D, Point3D> findExistingPoint3D = new Func<Point3D, Point3D>((Point3D x) =>
+            {
+                foreach (Tuple<Panel, Face3D, BoundingBox3D, List<Point3D>> tuple in tuples)
+                {
+                    foreach (Point3D point3D_Temp in tuple.Item4)
+                    {
+                        if (x.Distance(point3D_Temp) < Tolerance.MacroDistance)
+                        {
+                            return point3D_Temp;
+                        }
+                    }
+                }
+                return x;
+            });
+
+            Func<IClosedPlanar3D, Geometry.Spatial.Plane, Polygon2D> createPolygon2D = new Func<IClosedPlanar3D, Geometry.Spatial.Plane, Polygon2D>((IClosedPlanar3D x, Geometry.Spatial.Plane y) =>
+            {
+                ISegmentable3D segmentable3D = x as ISegmentable3D;
+                if (segmentable3D == null)
+                {
+                    return null;
+                }
+
+                List<Point3D> point3Ds = new List<Point3D>();
+                foreach (Point3D point3D_Segmentable3D in segmentable3D.GetPoints())
+                {
+                    Point3D point3D_Temp = y.Project(point3D_Segmentable3D);
+                    point3D_Temp = findExistingPoint3D.Invoke(point3D_Temp);
+                    if (point3D_Temp != null)
+                    {
+                        continue;
+                    }
+
+                    Point3D point3D_Project = y.Project(point3D_Temp);
+                    if (point3D_Project.Distance(point3D_Temp) > tolerance)
+                    {
+                        point3D_Temp = point3D_Temp.Mid(point3D_Project);
+                    }
+
+                    point3Ds.Add(point3D_Temp);
+
+                }
+
+                if (point3Ds.Count < 3)
+                {
+                    return null;
+                }
+
+                return new Polygon2D(point3Ds.ConvertAll(a => y.Convert(a)));
+            });
+
+            List<Shell> result = new List<Shell>();
+            foreach (Face2D face2D in face2Ds)
+            {
+                List<Segment2D> segment2Ds_Face2D = (face2D?.ExternalEdge2D as ISegmentable2D)?.GetSegments();
+                if(segment2Ds_Face2D == null)
+                {
+                    continue;
+                }
+
+                face2D.InternalEdge2Ds?.FindAll(x => x is ISegmentable2D).ForEach(x => segment2Ds_Face2D.AddRange(((ISegmentable2D)x).GetSegments()));
+            
+                if(segment2Ds_Face2D == null || segment2Ds_Face2D.Count == 0)
+                {
+                    continue;
+                }
+
+                List<Face3D> face3Ds = new List<Face3D>();
+                foreach (Segment2D segment2D in segment2Ds_Face2D)
+                {
+                    Point3D point3D_Segment2D = plane.Convert(segment2D.Mid());
+
+                    Tuple<Panel, Face3D, BoundingBox3D, List<Point3D>> tuple = tuples.Find(x => x.Item3.InRange(point3D) && x.Item2.On(point3D));
+                    face3Ds.Add(tuple.Item2);
+                }
+
+                Polygon2D externalEdge;
+                List<Polygon2D> internalEdges;
+                Face3D face3D_Temp = null;
+
+                Face3D face3D = plane.Convert(face2D);
+
+                externalEdge = createPolygon2D(face3D.GetExternalEdge3D(), plane_Min);
+                internalEdges = face3D.GetInternalEdge3Ds()?.ConvertAll(x => createPolygon2D(x, plane_Min));
+
+                face3D_Temp = Geometry.Spatial.Create.Face3Ds(externalEdge, internalEdges, plane_Min)?.FirstOrDefault();
+                if(face3D_Temp != null)
+                {
+                    face3Ds.Add(face3D_Temp);
+                }
+
+                externalEdge = createPolygon2D(face3D.GetExternalEdge3D(), plane_Max);
+                internalEdges = face3D.GetInternalEdge3Ds()?.ConvertAll(x => createPolygon2D(x, plane_Max));
+
+                face3D_Temp = Geometry.Spatial.Create.Face3Ds(externalEdge, internalEdges, plane_Max)?.FirstOrDefault();
+                if (face3D_Temp != null)
+                {
+                    face3Ds.Add(face3D_Temp);
+                }
+
+                result.Add(new Shell(face3Ds));
+            }
+
+            return result;
         }
     }
 }

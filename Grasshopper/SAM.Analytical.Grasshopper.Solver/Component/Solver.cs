@@ -405,7 +405,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
                 {
                     Point3D point3D_Temp = y.Project(point3D_Segmentable3D);
                     point3D_Temp = findExistingPoint3D.Invoke(point3D_Temp);
-                    if (point3D_Temp != null)
+                    if (point3D_Temp == null)
                     {
                         continue;
                     }
@@ -449,7 +449,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
                 {
                     Point3D point3D_Segment2D = plane.Convert(segment2D.Mid());
 
-                    Tuple<Panel, Face3D, BoundingBox3D, List<Point3D>> tuple = tuples.Find(x => x.Item3.InRange(point3D) && x.Item2.On(point3D));
+                    Tuple<Panel, Face3D, BoundingBox3D, List<Point3D>> tuple = tuples.Find(x => x.Item3.InRange(point3D_Segment2D) && x.Item2.On(point3D_Segment2D));
                     face3Ds.Add(tuple.Item2);
                 }
 

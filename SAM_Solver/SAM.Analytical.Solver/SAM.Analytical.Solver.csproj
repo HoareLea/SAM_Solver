@@ -70,6 +70,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Classes\Solver.cs" />
+    <Compile Include="Create\AdjacencyCluster.cs" />
     <Compile Include="Create\Face3DObject.cs" />
     <Compile Include="Enums\Parameter\SolverParameter.cs" />
     <Compile Include="Modify\SetBucketSizes.cs" />

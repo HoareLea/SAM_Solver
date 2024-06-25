@@ -19,7 +19,10 @@ namespace SAM.Analytical.Solver
 
             int index = 1;
 
-            List<Shell> shells_Split = Geometry.Spatial.Query.Split(shells, tolerance_Distance: tolerance);
+            List<Shell> shells_Split = new List<Shell>(shells);
+            shells_Split = shells_Split.FindAll(x => x != null).ConvertAll(x => new Shell(x));
+            
+            Geometry.Spatial.Modify.SplitCoplanarFace3Ds(shells_Split, tolerance_Distance: tolerance);
             if(shells_Split == null || shells_Split.Count == 0)
             {
                 return result;

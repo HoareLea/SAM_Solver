@@ -1,4 +1,5 @@
 ﻿using SAM.Geometry.Spatial;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -45,6 +46,8 @@ namespace SAM.Analytical.Solver
                 });
             }
 
+            List<Tuple<Panel, BoundingBox3D, Face3D>> tuples = new List<Tuple<Panel, BoundingBox3D, Face3D>>();
+
             foreach(Shell shell in shells_Split)
             {
                 List<Face3D> face3Ds = shell?.Face3Ds;
@@ -84,7 +87,14 @@ namespace SAM.Analytical.Solver
                         continue;
                     }
 
-                    Panel panel = null;
+                    Point3D point3D = face3D.InternalPoint3D();
+
+                    Panel panel = tuples.FindAll(x => x.Item2.InRange(point3D, Core.Tolerance.MacroDistance)).Find(x => x.Item3.Inside(point3D, Core.Tolerance.MacroDistance))?.Item1;
+                    if(panel != null)
+                    {
+                        result.AddRelation(panel, space);
+                        continue;
+                    }
 
                     List<Panel> panels_Face3D = Query.PanelsByFace3D(panels, face3D, 0.5, Core.Tolerance.MacroDistance, tolerance_Distance: tolerance);
                     if(panels_Face3D != null && panels_Face3D.Count != 0)
@@ -106,6 +116,10 @@ namespace SAM.Analytical.Solver
                     result.AddObject(panel);
 
                     result.AddRelation(panel, space);
+
+
+
+                    tuples.Add(new Tuple<Panel, BoundingBox3D, Face3D>(panel, face3D.GetBoundingBox(), face3D));
                 }
             }
 

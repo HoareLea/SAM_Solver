@@ -45,9 +45,9 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
             get
             {
                 List<GH_SAMParam> result = new List<GH_SAMParam>();
-                result.Add(new GH_SAMParam(new GooSAMGeometryParam() { Name = "_shells", NickName = "_shells", Description = "Shells", Access = GH_ParamAccess.list }, ParamVisibility.Binding));
-                result.Add(new GH_SAMParam(new GooPanelParam() { Name = "panels_", NickName = "panels", Description = "Walls represented by panels (Roofs and Floors will be added through the process). Shells will be snapped to the given panels geometry.", Access = GH_ParamAccess.list, Optional = true }, ParamVisibility.Binding));
-                result.Add(new GH_SAMParam(new GooSpaceParam() { Name = "spaces_", NickName = "spaces_", Description = "Spaces", Access = GH_ParamAccess.list, Optional = true }, ParamVisibility.Binding));
+                result.Add(new GH_SAMParam(new GooPanelParam() { Name = "panels_", NickName = "panels", Description = "Walls represented by panels (Roofs and Floors will be added through the process). Shells will be snapped to the given panels geometry.", Access = GH_ParamAccess.list, Optional = true, DataMapping = GH_DataMapping.Flatten }, ParamVisibility.Binding));
+                result.Add(new GH_SAMParam(new GooSAMGeometryParam() { Name = "_shells", NickName = "_shells", Description = "Shells", Access = GH_ParamAccess.list, DataMapping = GH_DataMapping.Flatten }, ParamVisibility.Binding));
+                result.Add(new GH_SAMParam(new GooSpaceParam() { Name = "spaces_", NickName = "spaces_", Description = "Spaces", Access = GH_ParamAccess.list, Optional = true, DataMapping = GH_DataMapping.Flatten }, ParamVisibility.Binding));
                 result.Add(new GH_SAMParam(new GooLocationParam() { Name = "location_", NickName = "location_", Description = "Location", Access = GH_ParamAccess.item, Optional = true }, ParamVisibility.Binding));
                 result.Add(new GH_SAMParam(new GooAddressParam() { Name = "address_", NickName = "address_", Description = "Address", Access = GH_ParamAccess.item, Optional = true }, ParamVisibility.Binding));
 

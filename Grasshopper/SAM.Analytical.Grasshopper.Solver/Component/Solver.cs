@@ -300,7 +300,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
                         dataTree_Panel.Add(new GooPanel(panel), path);
                     }
 
-                    List<Shell> shells = GetShells(panels_Temp, toleranceDistance);
+                    List<Shell> shells = getShells(panels_Temp, toleranceDistance);
                     if(shells != null)
                     {
                         foreach (Shell shell in shells)
@@ -326,7 +326,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
             }
         }
 
-        private List<Shell> GetShells(IEnumerable<Panel> panels, double tolerance)
+        private List<Shell> getShells(IEnumerable<Panel> panels, double tolerance)
         {
             if(panels == null)
             {
@@ -344,7 +344,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
 
             Point3D point3D = boundingBox3D.GetCentroid();
 
-            Geometry.Spatial.Plane plane_Min = new Geometry.Spatial.Plane(new Point3D(point3D.X, point3D.Y, elevation_Min), Vector3D.WorldZ);
+            Geometry.Spatial.Plane plane_Min = new Geometry.Spatial.Plane(new Point3D(point3D.X, point3D.Y, elevation_Min), Vector3D.WorldZ.GetNegated());
             Geometry.Spatial.Plane plane = new Geometry.Spatial.Plane(point3D, Vector3D.WorldZ);
             Geometry.Spatial.Plane plane_Max = new Geometry.Spatial.Plane(new Point3D(point3D.X, point3D.Y, elevation_Max), Vector3D.WorldZ);
 

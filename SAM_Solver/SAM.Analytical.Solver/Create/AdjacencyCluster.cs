@@ -55,13 +55,17 @@ namespace SAM.Analytical.Solver
 
             foreach(Shell shell in shells_Split)
             {
-                List<Face3D> face3Ds = shell?.Face3Ds;
+                Shell shell_Temp = new Shell(shell);
+
+                shell_Temp.OrientNormals();
+
+                List<Face3D> face3Ds = shell_Temp?.Face3Ds;
                 if(face3Ds == null || face3Ds.Count < 3)
                 {
                     continue;
                 }
 
-                BoundingBox3D boundingBox3D = shell.GetBoundingBox();
+                BoundingBox3D boundingBox3D = shell_Temp.GetBoundingBox();
 
                 Space space = null;
                 if(spaces != null)
@@ -69,10 +73,10 @@ namespace SAM.Analytical.Solver
                     List<Space> spaces_Shell = spaces.ToList().FindAll(x => x?.Location != null && boundingBox3D.Inside(x.Location));
                     if(spaces_Shell != null && spaces_Shell.Count != 0)
                     {
-                        space = spaces_Shell.Find(x => shell.Inside(x.Location));
+                        space = spaces_Shell.Find(x => shell_Temp.Inside(x.Location));
                         if(space == null)
                         {
-                            space = spaces_Shell.Find(x => shell.Inside(new Point3D(x.Location.X, x.Location.Y, x.Location.Z + 0.01)));
+                            space = spaces_Shell.Find(x => shell_Temp.Inside(new Point3D(x.Location.X, x.Location.Y, x.Location.Z + 0.01)));
                         }
                     }
                 }
@@ -80,17 +84,17 @@ namespace SAM.Analytical.Solver
                 if(space == null)
                 {
                     string name = "Space " + index.ToString();
-                    space = new Space(name, shell.CalculatedInternalPoint3D());
+                    space = new Space(name, shell_Temp.CalculatedInternalPoint3D());
                     index++;
                 }
 
-                double? area = shell.Section().ConvertAll(x => x?.GetArea()).FindAll(x => x != null && x.HasValue && !double.IsNaN(x.Value)).Sum();
+                double? area = shell_Temp.Section().ConvertAll(x => x?.GetArea()).FindAll(x => x != null && x.HasValue && !double.IsNaN(x.Value)).Sum();
                 if(area != null && area.HasValue && !double.IsNaN(area.Value))
                 {
                     space.SetValue(SpaceParameter.Area, area);
                 }
 
-                double volume = shell.Volume();
+                double volume = shell_Temp.Volume();
                 if(!double.IsNaN(volume))
                 {
                     space.SetValue(SpaceParameter.Volume, volume);

@@ -1,4 +1,6 @@
-﻿using SAM.Geometry.Spatial;
+﻿using SAM.Core;
+using SAM.Geometry.Planar;
+using SAM.Geometry.Spatial;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -79,6 +81,19 @@ namespace SAM.Analytical.Solver
                 {
                     string name = "Space " + index.ToString();
                     space = new Space(name, shell.CalculatedInternalPoint3D());
+                    index++;
+                }
+
+                double? area = shell.Section().ConvertAll(x => x?.GetArea()).FindAll(x => x != null && x.HasValue && !double.IsNaN(x.Value)).Sum();
+                if(area != null && area.HasValue && !double.IsNaN(area.Value))
+                {
+                    space.SetValue(SpaceParameter.Area, area);
+                }
+
+                double volume = shell.Volume();
+                if(!double.IsNaN(volume))
+                {
+                    space.SetValue(SpaceParameter.Volume, volume);
                 }
 
                 result.AddObject(space);
@@ -92,7 +107,7 @@ namespace SAM.Analytical.Solver
 
                     Point3D point3D = face3D.InternalPoint3D();
 
-                    Panel panel = tuples.FindAll(x => x.Item2.InRange(point3D, Core.Tolerance.MacroDistance)).Find(x => x.Item3.Inside(point3D, Core.Tolerance.MacroDistance))?.Item1;
+                    Panel panel = tuples.FindAll(x => x.Item2.InRange(point3D, Tolerance.MacroDistance)).Find(x => x.Item3.Inside(point3D, Core.Tolerance.MacroDistance))?.Item1;
                     if(panel != null)
                     {
                         result.AddRelation(panel, space);
@@ -119,8 +134,6 @@ namespace SAM.Analytical.Solver
                     result.AddObject(panel);
 
                     result.AddRelation(panel, space);
-
-
 
                     tuples.Add(new Tuple<Panel, BoundingBox3D, Face3D>(panel, face3D.GetBoundingBox(), face3D));
                 }

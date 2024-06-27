@@ -25,7 +25,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
         /// <summary>
         /// The latest version of this component
         /// </summary>
-        public override string LatestComponentVersion => "1.0.0";
+        public override string LatestComponentVersion => "1.0.1";
 
         /// <summary>
         /// Provides an Icon for the component.
@@ -54,6 +54,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
                 result.Add(new GH_SAMParam(new GooProfileLibraryParam() { Name = "profileLibrary_", NickName = "profileLibrary_", Description = "ProfileLibrary", Access = GH_ParamAccess.item, Optional = true }, ParamVisibility.Voluntary));
                 result.Add(new GH_SAMParam(new GooMaterialLibraryParam() { Name = "materialLibrary_", NickName = "materialLibrary_", Description = "MaterialLibrary", Access = GH_ParamAccess.item, Optional = true }, ParamVisibility.Voluntary));
 
+                result.Add(new GH_SAMParam(new global::Grasshopper.Kernel.Parameters.Param_Number() { Name = "groundElevation_", NickName = "groundElevation_", Description = "Ground Elevation", Access = GH_ParamAccess.item, Optional = true }, ParamVisibility.Binding));
 
                 result.Add(new GH_SAMParam(new global::Grasshopper.Kernel.Parameters.Param_Number() { Name = "tolerance_", NickName = "tolerance_", Description = "Tolerance", Access = GH_ParamAccess.item, Optional = true }, ParamVisibility.Binding));
 
@@ -129,7 +130,16 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
                 dataAccess.GetData(index, ref tolerance);
             }
 
+            double groundElevation = 0;
+            index = Params.IndexOfInputParam("groundElevation_");
+            if (index != -1)
+            {
+                dataAccess.GetData(index, ref groundElevation);
+            }
+
             AdjacencyCluster adjacencyCluster = Analytical.Solver.Create.AdjacencyCluster(shells, panels, spaces, tolerance);
+
+            adjacencyCluster.UpdatePanelTypes(groundElevation);
 
             ProfileLibrary profileLibrary = Analytical.Query.DefaultProfileLibrary();
             index = Params.IndexOfInputParam("profileLibrary_");

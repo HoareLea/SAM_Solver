@@ -30,6 +30,8 @@ namespace SAM.Analytical.Solver
                 return result;
             }
 
+            List<Panel> panels_Temp = null;
+
             if(panels != null)
             {
                 List<Point3D> point3Ds = new List<Point3D>();
@@ -49,7 +51,11 @@ namespace SAM.Analytical.Solver
                 {
                     shells_Split[i] = shells_Split[i].Snap(point3Ds, Core.Tolerance.MacroDistance);
                 });
+
+                panels_Temp = new List<Panel>(panels);
             }
+
+            panels_Temp = panels_Temp?.ConvertAll(x => Analytical.Create.Panel(Guid.NewGuid(), x));
 
             List<Tuple<Panel, BoundingBox3D, Face3D>> tuples = new List<Tuple<Panel, BoundingBox3D, Face3D>>();
 
@@ -118,7 +124,7 @@ namespace SAM.Analytical.Solver
                         continue;
                     }
 
-                    List<Panel> panels_Face3D = Query.PanelsByFace3D(panels, face3D, 0.5, Core.Tolerance.MacroDistance, tolerance_Distance: tolerance);
+                    List<Panel> panels_Face3D = Query.PanelsByFace3D(panels_Temp, face3D, 0.5, Core.Tolerance.MacroDistance, tolerance_Distance: tolerance);
                     if(panels_Face3D != null && panels_Face3D.Count != 0)
                     {
                         panel = Analytical.Create.Panel(panels_Face3D[0].Guid, panels_Face3D[0], face3D);

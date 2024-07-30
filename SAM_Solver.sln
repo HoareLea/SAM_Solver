@@ -1,9 +1,9 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30320.27
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SAM.Core.Solver", "SAM_Solver\SAM.Core.Solver\SAM.Core.Solver.csproj", "{DFA00AD8-8169-4E3C-943A-05F6F2196E3A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SAM.Core.Solver", "SAM_Solver\SAM.Core.Solver\SAM.Core.Solver.csproj", "{DFA00AD8-8169-4E3C-943A-05F6F2196E3A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SAM.Core.Grasshopper.Solver", "Grasshopper\SAM.Core.Grasshopper.Solver\SAM.Core.Grasshopper.Solver.csproj", "{CBEB4724-6EF0-48D3-B634-384FE2300D6C}"
 EndProject
@@ -13,9 +13,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Grasshopper", "Grasshopper"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SAM.Analytical.Grasshopper.Solver", "Grasshopper\SAM.Analytical.Grasshopper.Solver\SAM.Analytical.Grasshopper.Solver.csproj", "{FDBEC246-857F-40DC-B03F-2FA68BA7D437}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SAM.Analytical.Solver", "SAM_Solver\SAM.Analytical.Solver\SAM.Analytical.Solver.csproj", "{888539D6-CFE2-413D-BCEE-F2DAA1AA8726}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SAM.Analytical.Solver", "SAM_Solver\SAM.Analytical.Solver\SAM.Analytical.Solver.csproj", "{888539D6-CFE2-413D-BCEE-F2DAA1AA8726}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SAM.Geometry.Solver", "SAM_Solver\SAM.Geometry.Solver\SAM.Geometry.Solver.csproj", "{5C870A26-7017-472B-9E68-FDD828367DF4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SAM.Geometry.Solver", "SAM_Solver\SAM.Geometry.Solver\SAM.Geometry.Solver.csproj", "{5C870A26-7017-472B-9E68-FDD828367DF4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SAM.Geometry.Grasshopper.Solver", "Grasshopper\SAM.Geometry.Grasshopper.Solver\SAM.Geometry.Grasshopper.Solver.csproj", "{5A281F11-6356-4DA7-928C-0EA8E524B99A}"
 EndProject

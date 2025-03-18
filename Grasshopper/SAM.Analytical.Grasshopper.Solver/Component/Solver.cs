@@ -25,7 +25,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
         /// <summary>
         /// The latest version of this component
         /// </summary>
-        public override string LatestComponentVersion => "1.0.2";
+        public override string LatestComponentVersion => "1.0.3";
 
         /// <summary>
         /// Provides an Icon for the component.
@@ -55,6 +55,10 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
 
                 paramNumber = new global::Grasshopper.Kernel.Parameters.Param_Number() { Name = "_levelOffset_", NickName = "_levelOffset_", Description = "Level Section Offset", Access = GH_ParamAccess.item };
                 paramNumber.SetPersistentData(Geometry.Solver.SnapSolver.DEFAULT_LevelSectionOffset);
+                result.Add(new GH_SAMParam(paramNumber, ParamVisibility.Voluntary));
+
+                paramNumber = new global::Grasshopper.Kernel.Parameters.Param_Number() { Name = "bucketBetweenLevels_", NickName = "bucketBetweenLevels_", Description = "A global parameter that aligns walls between levels within a defined bucket distance, correcting offsets to ensure consistency.", Access = GH_ParamAccess.item, Optional = true };
+                paramNumber.SetPersistentData(0.21);
                 result.Add(new GH_SAMParam(paramNumber, ParamVisibility.Voluntary));
 
                 paramNumber = new global::Grasshopper.Kernel.Parameters.Param_Number() { Name = "_nakedNodeSnapDistance_", NickName = "_nakedNodeSnapDistance_", Description = "Snap distance for a naked node", Access = GH_ParamAccess.item };
@@ -156,6 +160,13 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
                 dataAccess.GetData(index, ref levelSectionOffset);
             }
 
+            double bucketBetweenLevels = 0.21;
+            index = Params.IndexOfInputParam("bucketBetweenLevels_");
+            if (index != -1)
+            {
+                dataAccess.GetData(index, ref bucketBetweenLevels);
+            }
+
             index = Params.IndexOfInputParam("_nakedNodeSnapDistance_");
             if (index != -1)
             {
@@ -248,7 +259,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
                 Offset = levelSectionOffset
             };
 
-            panels = solver.Execute(out List<Geometry.Spatial.Point3D> nakedPoint3Ds, 0.21);
+            panels = solver.Execute(out List<Geometry.Spatial.Point3D> nakedPoint3Ds, bucketBetweenLevels);
 
             //Analytical.Solver.Modify.Snap(
             //    panels, bucketSizes, weights, maxExtensions, ranges,

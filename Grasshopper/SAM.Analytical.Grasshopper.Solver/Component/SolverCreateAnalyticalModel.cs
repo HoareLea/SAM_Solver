@@ -1,19 +1,12 @@
 ﻿using Grasshopper.Kernel;
-using Rhino.Geometry;
 using SAM.Analytical.Grasshopper.Solver.Properties;
 using SAM.Core.Grasshopper;
 using System;
 using System.Collections.Generic;
 using SAM.Core;
-using Grasshopper;
-using Grasshopper.Kernel.Data;
 using System.Linq;
-using SAM.Analytical.Solver;
 using SAM.Geometry.Grasshopper;
 using SAM.Geometry.Spatial;
-using SAM.Geometry.Object.Spatial;
-using SAM.Geometry.Planar;
-using System.Runtime.Remoting.Messaging;
 
 namespace SAM.Analytical.Grasshopper.Solver.Component
 {

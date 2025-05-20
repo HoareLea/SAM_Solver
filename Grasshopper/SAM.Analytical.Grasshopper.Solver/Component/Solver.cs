@@ -13,7 +13,6 @@ using SAM.Geometry.Grasshopper;
 using SAM.Geometry.Spatial;
 using SAM.Geometry.Object.Spatial;
 using SAM.Geometry.Planar;
-using System.Runtime.Remoting.Messaging;
 
 namespace SAM.Analytical.Grasshopper.Solver.Component
 {

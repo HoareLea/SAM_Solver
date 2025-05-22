@@ -3,6 +3,8 @@
 	  <TargetFramework>net8.0-windows</TargetFramework>
     <OutputType>Library</OutputType>
     <OutputPath>..\..\build\</OutputPath>
+	  <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+	  <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="SAM.Analytical">

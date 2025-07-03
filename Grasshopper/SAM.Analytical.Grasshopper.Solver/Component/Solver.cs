@@ -260,18 +260,20 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
 
             panels = solver.Execute(out List<Point3D> nakedPoint3Ds, bucketBetweenLevels);
 
-
-            //Make sure each panel has unique Guid!
-            for (int i = 0; i < panels.Count; i++)
+            if(panels != null)
             {
-                Guid guid = panels[i].Guid;
-
-                List<Panel> panels_Guid = panels.FindAll(x => x.Guid == guid);
-                while(panels_Guid != null && panels_Guid.Count > 1)
+                //Make sure each panel has unique Guid!
+                for (int i = 0; i < panels.Count; i++)
                 {
-                    guid = Guid.NewGuid();
-                    panels[i] = Create.Panel(guid, panels[i]);
-                    panels_Guid = panels.FindAll(x => x.Guid == guid);
+                    Guid guid = panels[i].Guid;
+
+                    List<Panel> panels_Guid = panels.FindAll(x => x.Guid == guid);
+                    while (panels_Guid != null && panels_Guid.Count > 1)
+                    {
+                        guid = Guid.NewGuid();
+                        panels[i] = Create.Panel(guid, panels[i]);
+                        panels_Guid = panels.FindAll(x => x.Guid == guid);
+                    }
                 }
             }
 

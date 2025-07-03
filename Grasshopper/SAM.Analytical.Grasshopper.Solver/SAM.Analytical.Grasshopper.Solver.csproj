@@ -27,6 +27,20 @@
     <DocumentationFile>..\..\build\SAM.Analytical.Grasshopper.Solver.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="Classes\**" />
+    <Compile Remove="Convert\**" />
+    <Compile Remove="Modify\**" />
+    <Compile Remove="Query\**" />
+    <EmbeddedResource Remove="Classes\**" />
+    <EmbeddedResource Remove="Convert\**" />
+    <EmbeddedResource Remove="Modify\**" />
+    <EmbeddedResource Remove="Query\**" />
+    <None Remove="Classes\**" />
+    <None Remove="Convert\**" />
+    <None Remove="Modify\**" />
+    <None Remove="Query\**" />
+  </ItemGroup>
+  <ItemGroup>
     <Reference Include="SAM.Analytical, Version=1.0.7798.15100, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\SAM\build\SAM.Analytical.dll</HintPath>
@@ -57,13 +71,6 @@
     <Reference Include="SAM.Geometry.Rhino">
       <HintPath>..\..\..\SAM\build\SAM.Geometry.Rhino.dll</HintPath>
     </Reference>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Classes\" />
-    <Folder Include="Convert\ToGrasshopper\" />
-    <Folder Include="Convert\ToRhino\" />
-    <Folder Include="Modify\" />
-    <Folder Include="Query\" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Grasshopper">

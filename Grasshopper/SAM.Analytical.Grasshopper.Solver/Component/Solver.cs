@@ -258,7 +258,22 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
                 Offset = levelSectionOffset
             };
 
-            panels = solver.Execute(out List<Geometry.Spatial.Point3D> nakedPoint3Ds, bucketBetweenLevels);
+            panels = solver.Execute(out List<Point3D> nakedPoint3Ds, bucketBetweenLevels);
+
+
+            //Make sure each panel has unique Guid!
+            for (int i = 0; i < panels.Count; i++)
+            {
+                Guid guid = panels[i].Guid;
+
+                List<Panel> panels_Guid = panels.FindAll(x => x.Guid == guid);
+                while(panels_Guid != null && panels_Guid.Count > 1)
+                {
+                    guid = Guid.NewGuid();
+                    panels[i] = Create.Panel(guid, panels[i]);
+                    panels_Guid = panels.FindAll(x => x.Guid == guid);
+                }
+            }
 
             //Analytical.Solver.Modify.Snap(
             //    panels, bucketSizes, weights, maxExtensions, ranges,

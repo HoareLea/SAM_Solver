@@ -27,20 +27,6 @@
     <DocumentationFile>..\..\build\SAM.Analytical.Grasshopper.Solver.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Remove="Classes\**" />
-    <Compile Remove="Convert\**" />
-    <Compile Remove="Modify\**" />
-    <Compile Remove="Query\**" />
-    <EmbeddedResource Remove="Classes\**" />
-    <EmbeddedResource Remove="Convert\**" />
-    <EmbeddedResource Remove="Modify\**" />
-    <EmbeddedResource Remove="Query\**" />
-    <None Remove="Classes\**" />
-    <None Remove="Convert\**" />
-    <None Remove="Modify\**" />
-    <None Remove="Query\**" />
-  </ItemGroup>
-  <ItemGroup>
     <Reference Include="SAM.Analytical, Version=1.0.7798.15100, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\SAM\build\SAM.Analytical.dll</HintPath>
@@ -74,7 +60,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Grasshopper">
-      <Version>8.19.25132.1001</Version>
+      <Version>8.21.25188.17001</Version>
       <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />

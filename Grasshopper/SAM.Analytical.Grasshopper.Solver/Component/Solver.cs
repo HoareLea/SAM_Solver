@@ -24,7 +24,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
         /// <summary>
         /// The latest version of this component
         /// </summary>
-        public override string LatestComponentVersion => "1.0.3";
+        public override string LatestComponentVersion => "1.0.4";
 
         /// <summary>
         /// Provides an Icon for the component.
@@ -93,7 +93,9 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
             {
                 List<GH_SAMParam> result = new List<GH_SAMParam>();
                 result.Add(new GH_SAMParam(new GooPanelParam() { Name = "panels", NickName = "panels", Description = "SAM Analytical Panels", Access = GH_ParamAccess.tree }, ParamVisibility.Binding));
-                result.Add(new GH_SAMParam(new GooSAMGeometryParam() { Name = "shells", NickName = "shells", Description = "SAM Geometry Shells", Access = GH_ParamAccess.tree }, ParamVisibility.Binding));
+                result.Add(new GH_SAMParam(new GooSAMGeometryParam() { Name = "outlines", NickName = "outlines iSAM Geometry", Description = "iSAM Geometry Segment3D\nTop-level section outlines on xy plane of walls at each level \n Input for CreateAdjacencyCluster", Access = GH_ParamAccess.tree }, ParamVisibility.Binding));
+
+                result.Add(new GH_SAMParam(new GooSAMGeometryParam() { Name = "shells", NickName = "shells", Description = "SAM Geometry Shells", Access = GH_ParamAccess.tree }, ParamVisibility.Voluntary));
                 result.Add(new GH_SAMParam(new global::Grasshopper.Kernel.Parameters.Param_Point() { Name = "nakedEnds", NickName = "nakedEnds", Description = "Naked Points", Access = GH_ParamAccess.list }, ParamVisibility.Voluntary));
 
                 return result.ToArray();
@@ -315,7 +317,11 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
                     panels_Temp.Add(panel);
                 }
 
-                DataTree<GooSAMGeometry> dataTree_Shell = new DataTree<GooSAMGeometry>();
+                int index_Shells = Params.IndexOfOutputParam("shells");
+                int index_Outlines = Params.IndexOfOutputParam("outlines");
+
+                DataTree<GooSAMGeometry> dataTree_Shell = index_Shells == -1 ? null : new DataTree<GooSAMGeometry>();
+                DataTree<GooSAMGeometry> dataTree_Outlines = index_Outlines == -1 ? null : new DataTree<GooSAMGeometry>();
                 DataTree<GooPanel> dataTree_Panel = new DataTree<GooPanel>();
                 foreach(KeyValuePair<int, List<Panel>> keyValuePair in dictionary)
                 {
@@ -327,22 +333,44 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
                         dataTree_Panel.Add(new GooPanel(panel), path);
                     }
 
-                    List<Shell> shells = getShells(panels_Temp, toleranceDistance);
-                    if(shells != null)
+                    if(dataTree_Shell is not null)
                     {
-                        foreach (Shell shell in shells)
+                        List<Shell> shells = getShells(panels_Temp, toleranceDistance);
+                        if (shells != null)
                         {
-                            dataTree_Shell.Add(new GooSAMGeometry(shell), path);
+                            foreach (Shell shell in shells)
+                            {
+                                dataTree_Shell.Add(new GooSAMGeometry(shell), path);
+                            }
                         }
+                    }
+
+                    if (dataTree_Outlines is not null)
+                    {
+                        double elevation = ranges[keyValuePair.Key].Max;
+
+                        Dictionary<Panel, List<ISAMGeometry3D>> dictionary_Section = Analytical.Query.SectionDictionary<ISAMGeometry3D>(panels_Temp, Geometry.Spatial.Plane.WorldXY.GetMoved(new Vector3D(0, 0, elevation)) as Geometry.Spatial.Plane, toleranceDistance);
+
+                        List<ISAMGeometry3D> sAMGeometry3Ds = new List<ISAMGeometry3D>();
+                        foreach(List<ISAMGeometry3D> sAMGeometry3Ds_Temp in dictionary_Section.Values )
+                        {
+                            sAMGeometry3Ds_Temp.ForEach(x => dataTree_Outlines.Add(new GooSAMGeometry(x), path));
+                        }
+
+
                     }
                 }
 
                 dataAccess.SetDataTree(index, dataTree_Panel);
 
-                index = Params.IndexOfOutputParam("shells");
-                if(index != -1)
+                if(index_Shells != -1)
                 {
-                    dataAccess.SetDataTree(index, dataTree_Shell);
+                    dataAccess.SetDataTree(index_Shells, dataTree_Shell);
+                }
+
+                if (index_Outlines != -1)
+                {
+                    dataAccess.SetDataTree(index_Outlines, dataTree_Outlines);
                 }
             }
 

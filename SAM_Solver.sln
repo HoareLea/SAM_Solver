@@ -1,7 +1,6 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30320.27
+# Visual Studio Version 18
+VisualStudioVersion = 18.0.11217.181 d18.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SAM.Core.Solver", "SAM_Solver\SAM.Core.Solver\SAM.Core.Solver.csproj", "{DFA00AD8-8169-4E3C-943A-05F6F2196E3A}"
 EndProject
@@ -22,6 +21,11 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Rhino", "Rhino", "{68D50D6A-680B-41E9-B822-73406F932F40}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SAM.Analytical.Rhino.Solver", "Rhino\SAM.Analytical.Rhino.Solver\SAM.Analytical.Rhino.Solver.csproj", "{08D24128-7D9B-4F86-B104-6B18971828DF}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{68B72EA3-27BC-44BA-9148-C9B9C7E5F553}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

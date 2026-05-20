@@ -5,15 +5,12 @@
     <OutputPath>..\..\build\</OutputPath>
 	  <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 	  <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-    <Deterministic>false</Deterministic>
   </PropertyGroup>
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <AssemblyTitle>SAM.Core.Solver</AssemblyTitle>
     <Product>SAM.Core.Solver</Product>
     <Copyright>Copyright ©  2020</Copyright>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="SAM.Analytical">

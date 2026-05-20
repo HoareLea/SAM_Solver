@@ -43,7 +43,7 @@
       <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-    <PackageReference Include="System.Text.Json" Version="10.0.8" />
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\SAM_Solver\SAM.Core.Solver\SAM.Core.Solver.csproj" />

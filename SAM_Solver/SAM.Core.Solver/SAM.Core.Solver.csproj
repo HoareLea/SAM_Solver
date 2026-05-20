@@ -9,6 +9,7 @@
     <Rhino7PluginsDir>$([MSBuild]::ValueOrDefault('$(Rhino7DebugPluginsDir)', '$(Rhino7DefaultPluginsDir)'))</Rhino7PluginsDir>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <OutputPath>..\..\build\</OutputPath>
+    <Deterministic>false</Deterministic>
 	  <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 	  <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
   </PropertyGroup>
@@ -16,7 +17,7 @@
     <OutputType>Library</OutputType>
     <AssemblyTitle>SAM.Core.Solver</AssemblyTitle>
     <Product>SAM.Core.Solver</Product>
-    <Copyright>Copyright ©  2020</Copyright>
+    <Copyright>Copyright ©  2026</Copyright>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <FileVersion>1.0.0.0</FileVersion>
   </PropertyGroup>
@@ -35,6 +36,6 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-    <PackageReference Include="System.Text.Json" Version="10.0.8" />
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
   </ItemGroup>
 </Project>

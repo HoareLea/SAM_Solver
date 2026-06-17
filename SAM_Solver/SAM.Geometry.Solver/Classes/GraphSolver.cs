@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿// SPDX-License-Identifier: LGPL-3.0-or-later
+// Copyright (c) 2020-2026 Michal Dengusiak & Jakub Ziolkowski and contributors
+using System.Collections.Generic;
 using System.Linq;
 using SAM.Geometry.Planar;
 using SAM.Geometry.Spatial;
@@ -10,11 +12,13 @@ namespace SAM.Geometry.Solver
         public double Tolerance { get; private set; }
         private List<Edge> Edges { get; set; }
         private List<Node> Nodes { get; set; }
+        private NodeGrid _nodeGrid;
         public GraphSolver(List<Segment2D> lines, List<double> weights, double snapTolerance)
         {
             Tolerance = snapTolerance;
             Edges = new List<Edge>();
             Nodes = new List<Node>();
+            _nodeGrid = new NodeGrid(snapTolerance);
             for (int i = 0; i < lines.Count; i++)
             {
                 AddEdge(lines[i], weights[i]); // this is unsafe of course, to assume exact numbers of items (but safe in the context of the snap solver
@@ -53,38 +57,62 @@ namespace SAM.Geometry.Solver
         }
 
         private void AddEdge(Segment2D edge, double weight)
-        {           
-            Node nodeFrom = Nodes.FirstOrDefault(nd => nd.IsCoincident(edge.Start, Tolerance));
+        {
+            Node nodeFrom = FindCoincidentNode(edge.Start);
             if (nodeFrom == null)
             {
-                nodeFrom = new Node(edge.Start, weight);
+                nodeFrom = new Node(Nodes.Count, edge.Start, weight);
                 Nodes.Add(nodeFrom);
             }
             else
             {
                 nodeFrom.MergeIn(edge.Start, weight);
             }
-            Node nodeTo = Nodes.FirstOrDefault(nd => nd.IsCoincident(edge.End, Tolerance));
+            _nodeGrid.Add(edge.Start, nodeFrom.Index);
+
+            Node nodeTo = FindCoincidentNode(edge.End);
             if (nodeTo == null)
             {
-                nodeTo = new Node(edge.End, weight);
+                nodeTo = new Node(Nodes.Count, edge.End, weight);
                 Nodes.Add(nodeTo);
             }
             else
             {
                 nodeTo.MergeIn(edge.End, weight);
             }
+            _nodeGrid.Add(edge.End, nodeTo.Index);
+
             Edges.Add(new Edge(Edges.Count, nodeFrom, nodeTo));
+        }
+
+        /// <summary>
+        /// Returns the lowest-index existing node coincident with <paramref name="point"/> within
+        /// Tolerance, or null. The cell grid narrows the search to the point's neighbourhood while
+        /// preserving the original "first coincident node" result of the former linear scan.
+        /// </summary>
+        private Node FindCoincidentNode(Point2D point)
+        {
+            int best = -1;
+            foreach (int index in _nodeGrid.CandidateNodeIndices(point))
+            {
+                if ((best == -1 || index < best) && Nodes[index].IsCoincident(point, Tolerance))
+                {
+                    best = index;
+                }
+            }
+            return best == -1 ? null : Nodes[best];
         }
 
         private class Node
         {
+            public int Index { get; private set; }
             public Point2D Location { get; private set; }
             public List<double> Weights { get; private set; }
             public List<Point2D> CoincidentPoints { get; private set; }
 
-            public Node(Point2D pt, double weight)
+            public Node(int index, Point2D pt, double weight)
             {
+                Index = index;
                 Location = pt;
                 Weights = new List<double>() { weight };
                 CoincidentPoints = new List<Point2D>() { pt };
@@ -147,8 +175,73 @@ namespace SAM.Geometry.Solver
             }
             public bool Equals(Edge other)
             {
-                return (this.From == other.From && this.To == other.To) || 
+                return (this.From == other.From && this.To == other.To) ||
                     (this.From == other.To && this.To == other.From);
+            }
+        }
+
+        /// <summary>
+        /// Uniform spatial hash mapping a 2D cell to the node indices registered in it. The cell size is
+        /// at least the snap tolerance, so any point within tolerance of a stored node falls in that
+        /// node's cell or an immediate neighbour, making a 3x3 neighbourhood lookup exhaustive.
+        /// </summary>
+        private class NodeGrid
+        {
+            private readonly double _cellSize;
+            private readonly Dictionary<long, List<int>> _cells = new Dictionary<long, List<int>>();
+
+            public NodeGrid(double tolerance)
+            {
+                // Floor the cell size to avoid integer overflow of cell coordinates when tolerance is tiny;
+                // a larger cell only widens the candidate set, never changing the coincidence result.
+                _cellSize = System.Math.Max(tolerance, 1e-3);
+            }
+
+            private int CellCoordinate(double value)
+            {
+                return (int)System.Math.Floor(value / _cellSize);
+            }
+
+            private static long Key(int cellX, int cellY)
+            {
+                return ((long)cellX << 32) | (uint)cellY;
+            }
+
+            public void Add(Point2D point, int nodeIndex)
+            {
+                long key = Key(CellCoordinate(point.X), CellCoordinate(point.Y));
+                List<int> bucket;
+                if (!_cells.TryGetValue(key, out bucket))
+                {
+                    bucket = new List<int>();
+                    _cells[key] = bucket;
+                }
+                if (!bucket.Contains(nodeIndex))
+                {
+                    bucket.Add(nodeIndex);
+                }
+            }
+
+            public IEnumerable<int> CandidateNodeIndices(Point2D point)
+            {
+                int cellX = CellCoordinate(point.X);
+                int cellY = CellCoordinate(point.Y);
+                HashSet<int> candidates = new HashSet<int>();
+                for (int dx = -1; dx <= 1; dx++)
+                {
+                    for (int dy = -1; dy <= 1; dy++)
+                    {
+                        List<int> bucket;
+                        if (_cells.TryGetValue(Key(cellX + dx, cellY + dy), out bucket))
+                        {
+                            for (int k = 0; k < bucket.Count; k++)
+                            {
+                                candidates.Add(bucket[k]);
+                            }
+                        }
+                    }
+                }
+                return candidates;
             }
         }
     }

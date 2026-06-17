@@ -160,6 +160,16 @@ jobs:
             & msbuild $sln /t:Rebuild @common
           }
 
+      - name: Run solver unit tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $repo = '${{ env.REPO_NAME }}'
+          # The SAM dependency DLLs the test project references were produced by the build above.
+          $testProject = Join-Path $repo 'SAM_Solver\SAM.Solver.Tests\SAM.Solver.Tests.csproj'
+          Write-Host "==> Test: $testProject"
+          & dotnet test $testProject -c Release --logger "trx;LogFileName=solver-tests.trx"
+
       - name: Upload build folders (optional)
         uses: actions/upload-artifact@v4
         with:

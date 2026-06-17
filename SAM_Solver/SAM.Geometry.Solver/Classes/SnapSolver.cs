@@ -1,5 +1,9 @@
-﻿using SAM.Geometry.Planar;
+﻿// SPDX-License-Identifier: LGPL-3.0-or-later
+// Copyright (c) 2020-2026 Michal Dengusiak & Jakub Ziolkowski and contributors
+using SAM.Geometry.Planar;
 using SAM.Geometry.Spatial;
+using NetTopologySuite.Geometries;
+using NetTopologySuite.Index.Strtree;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -106,7 +110,17 @@ namespace SAM.Geometry.Solver
 
         private const double BUCKET_SIZE = 0.35;
         /// <summary>
-        /// 
+        /// Upper bound on the SnapAndAdjustWalls fixed-point iteration so a non-converging
+        /// model cannot hang the host. Mirrors the bounded loops in MergeColinearWalls / ExtensionSolver.
+        /// </summary>
+        private const int MAX_SNAP_ADJUST_ITERATIONS = 1000;
+        /// <summary>
+        /// Non-fatal diagnostics raised during the most recent solver operations
+        /// (e.g. hitting an iteration cap). Inspect after a solve to detect degraded output.
+        /// </summary>
+        public static List<string> SolverWarnings { get; } = new List<string>();
+        /// <summary>
+        ///
         /// </summary>
         /// <param name="PanelsBrepInput"></param>
         /// <param name="BucketSizesInput"></param>
@@ -152,14 +166,16 @@ namespace SAM.Geometry.Solver
             Weights = AdjustListLength(Weights, PanelsFaces3D.Count, defaultValue: 1.0);
             MaxExtensions = AdjustListLength(MaxExtensions, PanelsFaces3D.Count, defaultValue: 0.5);
             
-            List<SnappedWall> walls = RegisterWalls(PanelsFaces3D, BucketSizes, Weights, MaxExtensions, Levels, LevelSectionOffset);
-            List<SnappedWall> snapped = SnapAndAdjustWalls(walls);
+            List<SnappedWall> snapped = RegisterWalls(PanelsFaces3D, BucketSizes, Weights, MaxExtensions, Levels, LevelSectionOffset);
+
+            snapped = SnapAndAdjustWalls(snapped);
             TrimAndExtendWalls(snapped);
             snapped = ExplodeWallsAtIntersections(snapped);
             SnapOpenNodes(snapped, NakedNodeSnapDistance);
             snapped = CreateGraph(snapped, MinWallSegmentLength); // graph processing
             snapped = MergeColinearWalls(snapped, sameSourcePanelsOnly: true);
-            MarkNakedNodes(snapped);
+
+            MarkNakedNodes(snapped); // metadata only (naked flags); never rolled back
 
             SortedList<double, List<SnappedWall>> snappedWallsPerFloor = SortWallsByElevation(snapped);
             //GH_Path levelPath = new GH_Path(0);
@@ -201,12 +217,53 @@ namespace SAM.Geometry.Solver
             }
             return snappedWallsPerFloor;
         }
+
+        /// <summary>
+        /// Axis-aligned bounding box of a projected axis, optionally grown by <paramref name="expansion"/>.
+        /// </summary>
+        private static Envelope AxisEnvelope(Segment2D axis, double expansion)
+        {
+            Point2D start = axis.Start;
+            Point2D end = axis.End;
+            Envelope envelope = new Envelope(
+                System.Math.Min(start.X, end.X), System.Math.Max(start.X, end.X),
+                System.Math.Min(start.Y, end.Y), System.Math.Max(start.Y, end.Y));
+            if (expansion > 0)
+            {
+                envelope.ExpandBy(expansion);
+            }
+            return envelope;
+        }
+
+        /// <summary>
+        /// Spatial index of wall projected-axis bounding boxes, keyed by list position.
+        /// Querying an expanded envelope returns a superset of the walls the equivalent all-pairs
+        /// loop would have examined, so callers keep their original inner checks unchanged.
+        /// </summary>
+        private static STRtree<int> BuildAxisIndex(List<SnappedWall> walls)
+        {
+            STRtree<int> index = new STRtree<int>();
+            for (int i = 0; i < walls.Count; i++)
+            {
+                index.Insert(AxisEnvelope(walls[i].ProjectedAxis, 0), i);
+            }
+            return index;
+        }
+
         private static void MarkNakedNodes(List<SnappedWall> walls)
         {
+            if (walls.Count == 0)
+            {
+                return;
+            }
+
+            STRtree<int> index = BuildAxisIndex(walls);
             for (int i = 0; i < walls.Count; i++)
             {
                 walls[i].ResetNakedStatus();
-                for (int j = 0; j < walls.Count; j++)
+                // A wall can only affect wall i's naked status if it passes within SAMTolerance of
+                // wall i's endpoints, i.e. its box overlaps wall i's box grown by SAMTolerance.
+                foreach (int j in index.Query(AxisEnvelope(walls[i].ProjectedAxis, SAMTolerance)))
                 {
                     if (i == j)
                     {
@@ -399,12 +456,16 @@ namespace SAM.Geometry.Solver
         private static List<SnappedWall> ExplodeWallsAtIntersections(List<SnappedWall> walls)
         {
             List<SnappedWall> split = new List<SnappedWall>();
-            
+
+            STRtree<int> index = walls.Count > 0 ? BuildAxisIndex(walls) : null;
+            // Both axes are extended by ModelTolerance before the intersection test (within SAMTolerance),
+            // so a generous box grows by twice that extension plus the test tolerance to stay a superset.
+            double explodeExpansion = (2 * ModelTolerance) + SAMTolerance;
             for (int i = 0; i < walls.Count; i++)
             {
                 // find all intersections between this wall and walls on the same level
                 List<Point2D> intersections = new List<Point2D>();
-                for (int j = 0; j < walls.Count; j++)
+                foreach (int j in index.Query(AxisEnvelope(walls[i].ProjectedAxis, explodeExpansion)))
                 {
                     if (i == j)
                     {
@@ -438,13 +499,18 @@ namespace SAM.Geometry.Solver
         private static void SnapOpenNodes(List<SnappedWall> walls, double snappingDistance)
         {
             List<SnappedWall> wallsByLength = walls.OrderBy(w => w.Length).ToList(); // start snapping from the shortest
+            STRtree<int> index = wallsByLength.Count > 0 ? BuildAxisIndex(wallsByLength) : null;
             System.Text.StringBuilder sb = new System.Text.StringBuilder();
             for (int i = 0; i < wallsByLength.Count; i++)
             {
                 SnappedWall currentWall = wallsByLength[i];
                 //Print("Current wall [{0}] , its first source: {1}", i, currentWall.SourceIndices[0]);
                 List<Point2D> anchorCandidates = new List<Point2D>();
-                for (int j = 0; j < wallsByLength.Count; j++)
+                // Only walls within the snap reach (MaxExtension) can supply anchors; sort the queried
+                // candidates so the anchor ordering matches the original ascending scan exactly.
+                List<int> candidateIndices = index.Query(AxisEnvelope(currentWall.ProjectedAxis, currentWall.MaxExtension)).ToList();
+                candidateIndices.Sort();
+                foreach (int j in candidateIndices)
                 {
                     if (!Core.Query.AlmostEqual(currentWall.Elevation, wallsByLength[j].Elevation, ModelTolerance)) // same level only
                     {
@@ -482,12 +548,16 @@ namespace SAM.Geometry.Solver
 
             bool anySnapped = false;
             // snap iteratively until there are no changes in the model
+            int safetyCounter = 0;
             do
             {
                 anySnapped = false;
                 bool[] isSnapped = new bool[processedWalls.Count];
                 bool[] isMerged = new bool[processedWalls.Count];
 
+                // Left as an all-pairs scan deliberately: `current` absorbs candidates and grows during
+                // the pass, so a precomputed bounding-box filter could miss walls that come into reach
+                // after a merge. The outer loop is now bounded by MAX_SNAP_ADJUST_ITERATIONS.
                 for (int i = 0; i < processedWalls.Count - 1; i++)
                 {
                     if (isMerged[i]) {
@@ -532,7 +602,15 @@ namespace SAM.Geometry.Solver
                 }
                 processedWalls = allButMerged;
 
-            } while (anySnapped == true);
+                safetyCounter++;
+            } while (anySnapped == true && safetyCounter < MAX_SNAP_ADJUST_ITERATIONS);
+
+            if (safetyCounter >= MAX_SNAP_ADJUST_ITERATIONS && anySnapped)
+            {
+                // The loop is bounded so a non-converging model can no longer hang the host;
+                // surface the event instead of stopping silently.
+                SolverWarnings.Add("SnapAndAdjustWalls reached the iteration cap (" + MAX_SNAP_ADJUST_ITERATIONS + "); the snapped model may be incomplete.");
+            }
 
             MarkNakedNodes(processedWalls);
 

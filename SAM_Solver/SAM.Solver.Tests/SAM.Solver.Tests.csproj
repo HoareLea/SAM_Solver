@@ -24,10 +24,24 @@
     <Reference Include="SAM.Geometry">
       <HintPath>..\..\..\SAM\build\SAM.Geometry.dll</HintPath>
     </Reference>
+    <Reference Include="SAM.Analytical">
+      <HintPath>..\..\..\SAM\build\SAM.Analytical.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\SAM.Geometry.Solver\SAM.Geometry.Solver.csproj" />
+    <ProjectReference Include="..\SAM.Analytical.Solver\SAM.Analytical.Solver.csproj" />
+  </ItemGroup>
+
+  <!-- Transitive SAM runtime dependencies of SAM.Analytical.dll, referenced only inside that
+       assembly, so copy them next to the test host for AutoTuneSolver / ClosureReport tests. -->
+  <ItemGroup>
+    <None Include="..\..\..\SAM\build\SAM.Architectural.dll" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\..\SAM\build\SAM.Math.dll" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\..\SAM\build\SAM.Units.dll" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\..\SAM\build\MathNet.Numerics.dll" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\..\SAM\build\QuickGraph.NETStandard.dll" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

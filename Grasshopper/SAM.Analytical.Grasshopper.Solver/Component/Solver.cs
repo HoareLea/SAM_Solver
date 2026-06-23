@@ -24,7 +24,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
         /// <summary>
         /// The latest version of this component
         /// </summary>
-        public override string LatestComponentVersion => "1.0.4";
+        public override string LatestComponentVersion => "1.0.6";
 
         /// <summary>
         /// Provides an Icon for the component.
@@ -97,6 +97,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
 
                 result.Add(new GH_SAMParam(new GooSAMGeometryParam() { Name = "shells", NickName = "shells", Description = "SAM Geometry Shells", Access = GH_ParamAccess.tree }, ParamVisibility.Voluntary));
                 result.Add(new GH_SAMParam(new global::Grasshopper.Kernel.Parameters.Param_Point() { Name = "nakedEnds", NickName = "nakedEnds", Description = "Naked Points", Access = GH_ParamAccess.list }, ParamVisibility.Voluntary));
+                result.Add(new GH_SAMParam(new global::Grasshopper.Kernel.Parameters.Param_String() { Name = "report", NickName = "report", Description = "Closure report of the solved model: rooms (closed loops), enclosed area, naked ends and wall segments — totals and a per-level breakdown. Same metric as AutoTuneSolver, so the two components can be compared directly.", Access = GH_ParamAccess.item }, ParamVisibility.Voluntary));
 
                 return result.ToArray();
             }
@@ -378,6 +379,20 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
             if (index != -1)
             {
                 dataAccess.SetDataList(index, nakedPoint3Ds?.ConvertAll(x => Geometry.Grasshopper.Convert.ToGrasshopper(x)));
+            }
+
+            index = Params.IndexOfOutputParam("report");
+            if (index != -1)
+            {
+                List<Range<double>> ranges_Report = ranges;
+                if (ranges_Report == null && panels != null)
+                {
+                    ranges_Report = Geometry.Object.Spatial.Query.ElevationRanges(panels);
+                }
+
+                ClosureReport closureReport = panels == null ? null
+                    : ClosureReport.Create(panels.Cast<IFace3DObject>(), ranges_Report, levelSectionOffset, toleranceAngleRad, toleranceDistance);
+                dataAccess.SetData(index, closureReport?.ToString());
             }
         }
 

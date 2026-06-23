@@ -2,7 +2,11 @@
 // Copyright (c) 2020–2026 Michal Dengusiak & Jakub Ziolkowski and contributors
 
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+
+// Expose internal helpers (e.g. SnapSolver.AreParallelWithinTolerance) to the unit-test assembly.
+[assembly: InternalsVisibleTo("SAM.Solver.Tests")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

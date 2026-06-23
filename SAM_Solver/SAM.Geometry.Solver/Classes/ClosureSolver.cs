@@ -118,15 +118,39 @@ namespace SAM.Geometry.Solver
                 }
             }
 
-            foreach (NetTopologySuite.Geometries.Geometry dangle in polygonizer.GetDangles())
+            // Naked ends = nodes of degree 1 in the noded line network. Polygonizer.GetDangles() returns
+            // whole dangling lines, so its endpoints include the junction where a tail meets a closed loop
+            // (degree >= 2) - counting that would inflate the naked-end count and make AutoTune escalate
+            // panels around closed-room corners. Tally the degree of every noded endpoint and keep only
+            // the free (degree-1) ones.
+            Dictionary<string, int> endpointDegree = new Dictionary<string, int>();
+            Dictionary<string, Coordinate> endpointCoordinate = new Dictionary<string, Coordinate>();
+            foreach (ISegmentString segmentString in noder.GetNodedSubstrings())
             {
-                result.DangleCount++;
-                Coordinate[] coordinates = dangle.Coordinates;
-                if (coordinates.Length > 0)
+                Coordinate[] coordinates = segmentString.Coordinates;
+                if (coordinates == null || coordinates.Length < 2)
                 {
-                    result.DangleEnds.Add(new Point2D(coordinates[0].X, coordinates[0].Y));
-                    result.DangleEnds.Add(new Point2D(coordinates[coordinates.Length - 1].X, coordinates[coordinates.Length - 1].Y));
+                    continue;
                 }
+
+                foreach (Coordinate coordinate in new[] { coordinates[0], coordinates[coordinates.Length - 1] })
+                {
+                    string key = System.Math.Round(coordinate.X / gridSize) + "_" + System.Math.Round(coordinate.Y / gridSize);
+                    endpointDegree[key] = endpointDegree.TryGetValue(key, out int degree) ? degree + 1 : 1;
+                    endpointCoordinate[key] = coordinate;
+                }
+            }
+
+            foreach (KeyValuePair<string, int> entry in endpointDegree)
+            {
+                if (entry.Value != 1)
+                {
+                    continue; // connected node, not a naked end
+                }
+
+                result.DangleCount++;
+                Coordinate coordinate = endpointCoordinate[entry.Key];
+                result.DangleEnds.Add(new Point2D(coordinate.X, coordinate.Y));
             }
 
             return result;

@@ -39,7 +39,7 @@ namespace SAM.Solver.Tests
         }
 
         [Fact]
-        public void SquareWithProtrudingTail_StaysOneRoom_AndReportsTheTailAsADangle()
+        public void SquareWithProtrudingTail_StaysOneRoom_AndReportsOnlyTheFreeTailEndAsNaked()
         {
             List<Segment2D> segments = Square(1.0);
             segments.Add(Segment(0, 0, -0.5, 0)); // tail off a corner: not part of any loop
@@ -47,7 +47,12 @@ namespace SAM.Solver.Tests
             ClosureSolver.Result result = ClosureSolver.Polygonize(segments);
 
             Assert.Single(result.Rooms);
-            Assert.True(result.DangleCount >= 1);
+            // Exactly one naked end: the free tail tip. The junction at the square corner is connected
+            // (degree >= 2), so it must not be reported as a naked end.
+            Assert.Equal(1, result.DangleCount);
+            Assert.Single(result.DangleEnds);
+            Assert.Equal(-0.5, result.DangleEnds[0].X, 3);
+            Assert.Equal(0.0, result.DangleEnds[0].Y, 3);
         }
 
         [Fact]

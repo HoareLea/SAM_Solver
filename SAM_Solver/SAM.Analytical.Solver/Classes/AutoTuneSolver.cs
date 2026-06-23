@@ -257,6 +257,17 @@ namespace SAM.Analytical.Solver
                     }
                 }
 
+                // Restore the panels to the accepted escalation state. A neutral round advances
+                // escalationStep / MaxExtend past the state that produced bestSolved without updating it,
+                // so on any exit (over-merge, ladder/maxRounds exhausted) the live state can be ahead of
+                // the returned geometry. Restoring keeps the reused input panels and the reported
+                // escalation consistent with bestSolved, and lets the width candidates (auto-merge path)
+                // re-solve from the accepted state rather than a later climb.
+                foreach (KeyValuePair<T, int> entry in bestEscalationStep)
+                {
+                    ApplyStep(entry.Key, entry.Value, baselineBucket, baselineExtend, escalationStep);
+                }
+
                 int selectedParallelMergeSkips = SnapSolver.SolverWarnings
                     .Skip(warningStartIndex)
                     .Count(w => w != null && w.StartsWith("Parallel merge skipped"));
@@ -266,13 +277,6 @@ namespace SAM.Analytical.Solver
 
                 if (useAutoMergeSlitWidth)
                 {
-                    // Restore the panels to the accepted escalation state so the width candidates re-solve
-                    // from the same parameters that produced bestSolved, not from a later neutral climb.
-                    foreach (KeyValuePair<T, int> entry in bestEscalationStep)
-                    {
-                        ApplyStep(entry.Key, entry.Value, baselineBucket, baselineExtend, escalationStep);
-                    }
-
                     MergeSelection mergeSelection = SelectMergeSlitWidth(bestSolved, bestNaked, bestClosure, ranges_Temp, mergeSlitWidthCandidates, report);
                     bestSolved = mergeSelection.Solved;
                     bestNaked = mergeSelection.Naked;

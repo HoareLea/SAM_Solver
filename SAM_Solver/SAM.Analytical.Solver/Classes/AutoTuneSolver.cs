@@ -674,43 +674,6 @@ namespace SAM.Analytical.Solver
             return segment2Ds;
         }
 
-        private List<LevelSegment> LevelSegmentSources(List<T> solved, Range<double> range, out Plane plane)
-        {
-            plane = SAM.Geometry.Spatial.Create.Plane(range.Min + Offset);
-
-            List<LevelSegment> result = new List<LevelSegment>();
-            Dictionary<T, List<ISegmentable2D>> dictionary = solved.SectionDictionary<T, ISegmentable2D>(plane, Tolerance_Angle, Tolerance_Distance);
-            if (dictionary == null)
-            {
-                return result;
-            }
-
-            foreach (KeyValuePair<T, List<ISegmentable2D>> keyValuePair in dictionary)
-            {
-                List<ISegmentable2D> segmentable2Ds = keyValuePair.Value;
-                if (segmentable2Ds == null)
-                {
-                    continue;
-                }
-
-                foreach (ISegmentable2D segmentable2D in segmentable2Ds)
-                {
-                    List<Segment2D> segments = segmentable2D?.GetSegments();
-                    if (segments == null)
-                    {
-                        continue;
-                    }
-
-                    foreach (Segment2D segment in segments)
-                    {
-                        result.Add(new LevelSegment(segment, keyValuePair.Key));
-                    }
-                }
-            }
-
-            return result;
-        }
-
         /// <summary>
         /// Count remaining parallel "double-wall" slits in a solved result: pairs of near-parallel,
         /// overlapping wall axes separated by 0.02-0.5 m. Diagnostic only (for the report).
@@ -738,125 +701,22 @@ namespace SAM.Analytical.Solver
                 return new SlitDiagnostics();
             }
 
-            // A slit pair is within MaxSlitGap perpendicular distance, so an STRtree of segment boxes
-            // grown by that gap returns a strict superset of the pairs the former all-pairs scan tested -
-            // the count is unchanged while the per-level cost drops from O(n^2) toward O(n log n).
-            const double MinSlitOverlap = 0.05;
-            const double ParallelDot = 0.99;
-            double minSlitGap = System.Math.Max(0, SlitDiagnosticMinGap);
-            double maxSlitGap = SlitDiagnosticMaxGap > minSlitGap ? SlitDiagnosticMaxGap : 0.5;
+            // Single source of truth: the shared Slits detection (reused by the OCCT components).
+            List<Segment3D> slits = solved.Slits(
+                out List<T> panels,
+                ranges_Temp,
+                Offset,
+                SlitDiagnosticMinGap,
+                SlitDiagnosticMaxGap,
+                SlitDiagnosticMaxOverlap,
+                Tolerance_Angle,
+                Tolerance_Distance);
 
-            SlitDiagnostics result = new SlitDiagnostics
+            return new SlitDiagnostics
             {
-                Slits = new List<Segment3D>(),
-                Panels = new List<T>()
+                Slits = slits ?? new List<Segment3D>(),
+                Panels = panels ?? new List<T>()
             };
-            foreach (Range<double> range in ranges_Temp)
-            {
-                try
-                {
-                    List<LevelSegment> segments = LevelSegmentSources(solved, range, out Plane plane);
-                    if (segments.Count < 2)
-                    {
-                        continue;
-                    }
-
-                    double elevation = plane?.Origin?.Z ?? range.Min;
-
-                    NetTopologySuite.Index.Strtree.STRtree<int> index = new NetTopologySuite.Index.Strtree.STRtree<int>();
-                    for (int i = 0; i < segments.Count; i++)
-                    {
-                        index.Insert(SegmentEnvelope(segments[i].Segment, 0), i);
-                    }
-
-                    for (int i = 0; i < segments.Count; i++)
-                    {
-                        Vector2D ui = segments[i].Segment.Direction.Unit;
-                        foreach (int j in index.Query(SegmentEnvelope(segments[i].Segment, maxSlitGap)))
-                        {
-                            if (j <= i)
-                            {
-                                continue; // count each pair once
-                            }
-
-                            Vector2D uj = segments[j].Segment.Direction.Unit;
-                            if (System.Math.Abs((ui.X * uj.X) + (ui.Y * uj.Y)) < ParallelDot)
-                            {
-                                continue;
-                            }
-
-                            if (TryCreateSlitMarker(segments[i].Segment, segments[j].Segment, elevation, minSlitGap, maxSlitGap, MinSlitOverlap, out Segment3D slit))
-                            {
-                                result.Slits.Add(slit);
-                                result.AddPanel(segments[i].Source);
-                                result.AddPanel(segments[j].Source);
-                            }
-                        }
-                    }
-                }
-                catch
-                {
-                }
-            }
-            return result;
-        }
-
-        private bool TryCreateSlitMarker(Segment2D reference, Segment2D other, double elevation, double minGap, double maxGap, double minOverlap, out Segment3D slit)
-        {
-            slit = null;
-
-            double startParameter = reference.ClosestParameter(other.Start);
-            double endParameter = reference.ClosestParameter(other.End);
-            double overlapMin = System.Math.Max(0, System.Math.Min(startParameter, endParameter));
-            double overlapMax = System.Math.Min(1, System.Math.Max(startParameter, endParameter));
-            if (overlapMax <= overlapMin)
-            {
-                return false;
-            }
-
-            double overlapLength = (overlapMax - overlapMin) * reference.GetLength();
-            if (overlapLength < minOverlap)
-            {
-                return false;
-            }
-
-            if (SlitDiagnosticMaxOverlap > 0 && overlapLength > SlitDiagnosticMaxOverlap)
-            {
-                return false;
-            }
-
-            double parameter = (overlapMin + overlapMax) / 2;
-            Point2D referencePoint = reference.GetPoint(parameter);
-            double otherParameter = other.ClosestParameter(referencePoint).Clamp(0, 1);
-            Point2D otherPoint = other.GetPoint(otherParameter);
-
-            double gap = referencePoint.Distance(otherPoint);
-            if (gap <= minGap || gap > maxGap)
-            {
-                return false;
-            }
-
-            slit = new Segment3D(
-                new Point3D(referencePoint.X, referencePoint.Y, elevation),
-                new Point3D(otherPoint.X, otherPoint.Y, elevation));
-            return true;
-        }
-
-        /// <summary>
-        /// Axis-aligned bounding box of a segment, optionally grown by <paramref name="expansion"/>.
-        /// </summary>
-        private static NetTopologySuite.Geometries.Envelope SegmentEnvelope(Segment2D segment, double expansion)
-        {
-            Point2D start = segment.Start;
-            Point2D end = segment.End;
-            NetTopologySuite.Geometries.Envelope envelope = new NetTopologySuite.Geometries.Envelope(
-                System.Math.Min(start.X, end.X), System.Math.Max(start.X, end.X),
-                System.Math.Min(start.Y, end.Y), System.Math.Max(start.Y, end.Y));
-            if (expansion > 0)
-            {
-                envelope.ExpandBy(expansion);
-            }
-            return envelope;
         }
 
         /// <summary>
@@ -901,18 +761,6 @@ namespace SAM.Analytical.Solver
                 SlitDiagnostics = slitDiagnostics;
                 RemainingSlits = SlitDiagnostics.Slits == null ? 0 : SlitDiagnostics.Slits.Count;
                 ParallelMergeSkips = parallelMergeSkips;
-            }
-        }
-
-        private struct LevelSegment
-        {
-            public Segment2D Segment;
-            public T Source;
-
-            public LevelSegment(Segment2D segment, T source)
-            {
-                Segment = segment;
-                Source = source;
             }
         }
 

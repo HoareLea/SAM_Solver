@@ -1,5 +1,9 @@
-﻿using SAM.Geometry.Planar;
+﻿// SPDX-License-Identifier: LGPL-3.0-or-later
+// Copyright (c) 2020-2026 Michal Dengusiak & Jakub Ziolkowski and contributors
+using SAM.Geometry.Planar;
 using SAM.Geometry.Spatial;
+using NetTopologySuite.Geometries;
+using NetTopologySuite.Index.Strtree;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -106,7 +110,38 @@ namespace SAM.Geometry.Solver
 
         private const double BUCKET_SIZE = 0.35;
         /// <summary>
-        /// 
+        /// Upper bound on the SnapAndAdjustWalls fixed-point iteration so a non-converging
+        /// model cannot hang the host. Mirrors the bounded loops in MergeColinearWalls / ExtensionSolver.
+        /// </summary>
+        private const int MAX_SNAP_ADJUST_ITERATIONS = 1000;
+        /// <summary>
+        /// Non-fatal diagnostics raised during the most recent solver operations
+        /// (e.g. hitting an iteration cap). Inspect after a solve to detect degraded output.
+        /// </summary>
+        public static List<string> SolverWarnings { get; } = new List<string>();
+        /// <summary>
+        /// Enclosed-area change (m²) treated as noise when comparing closure signatures, so
+        /// legitimate snap/trim jitter neither blocks a parallel-merge nor erases a real room.
+        /// </summary>
+        private const double AreaTolerance = 1e-3;
+        /// <summary>
+        /// A recognised loop counts as a real room only if the minimum side of its bounding
+        /// rectangle is at least this (m). Smaller loops are slivers and are ignored. The parallel-merge
+        /// guard raises this floor to the merge width (see <see cref="PerpendicularMergeTolerance"/>).
+        /// </summary>
+        private const double MinLoopRectangleSide = 0.2;
+        /// <summary>
+        /// When greater than zero, a final pass merges near-parallel, overlapping wall axes whose
+        /// perpendicular offset is at most this distance (m) onto a single length-weighted axis -
+        /// collapsing "double-wall" slits. 0 (default) disables it. The merge is closure-guarded per
+        /// level: a merge that would reduce the count or enclosed area of rooms <b>wider than the merge
+        /// width</b> is skipped. Choose a width below your narrowest real room/corridor - a genuine space
+        /// narrower than the width is bounded by the same kind of parallel wall pair as a slit and cannot
+        /// be told apart from one, so it may be collapsed.
+        /// </summary>
+        public static double PerpendicularMergeTolerance { get; set; } = 0;
+        /// <summary>
+        ///
         /// </summary>
         /// <param name="PanelsBrepInput"></param>
         /// <param name="BucketSizesInput"></param>
@@ -152,14 +187,16 @@ namespace SAM.Geometry.Solver
             Weights = AdjustListLength(Weights, PanelsFaces3D.Count, defaultValue: 1.0);
             MaxExtensions = AdjustListLength(MaxExtensions, PanelsFaces3D.Count, defaultValue: 0.5);
             
-            List<SnappedWall> walls = RegisterWalls(PanelsFaces3D, BucketSizes, Weights, MaxExtensions, Levels, LevelSectionOffset);
-            List<SnappedWall> snapped = SnapAndAdjustWalls(walls);
-            TrimAndExtendWalls(snapped);
-            snapped = ExplodeWallsAtIntersections(snapped);
-            SnapOpenNodes(snapped, NakedNodeSnapDistance);
-            snapped = CreateGraph(snapped, MinWallSegmentLength); // graph processing
-            snapped = MergeColinearWalls(snapped, sameSourcePanelsOnly: true);
-            MarkNakedNodes(snapped);
+            List<SnappedWall> snapped = RegisterWalls(PanelsFaces3D, BucketSizes, Weights, MaxExtensions, Levels, LevelSectionOffset);
+
+            snapped = SolveStraightLine(snapped);
+
+            if (PerpendicularMergeTolerance > 0)
+            {
+                snapped = MergeParallelWalls(snapped, PerpendicularMergeTolerance);
+            }
+
+            MarkNakedNodes(snapped); // metadata only (naked flags); never rolled back
 
             SortedList<double, List<SnappedWall>> snappedWallsPerFloor = SortWallsByElevation(snapped);
             //GH_Path levelPath = new GH_Path(0);
@@ -187,6 +224,21 @@ namespace SAM.Geometry.Solver
                 }
             }
         }
+
+        /// <summary>
+        /// The solve pipeline: each pass runs exactly once, in order.
+        /// </summary>
+        private List<SnappedWall> SolveStraightLine(List<SnappedWall> snapped)
+        {
+            snapped = SnapAndAdjustWalls(snapped);
+            TrimAndExtendWalls(snapped);
+            snapped = ExplodeWallsAtIntersections(snapped);
+            SnapOpenNodes(snapped, NakedNodeSnapDistance);
+            snapped = CreateGraph(snapped, MinWallSegmentLength); // graph processing
+            snapped = MergeColinearWalls(snapped, sameSourcePanelsOnly: true);
+            return snapped;
+        }
+
         private static SortedList<double, List<SnappedWall>> SortWallsByElevation(List<SnappedWall> walls)
         {
             SortedList<double, List<SnappedWall>> snappedWallsPerFloor = new SortedList<double, List<SnappedWall>>();
@@ -201,12 +253,123 @@ namespace SAM.Geometry.Solver
             }
             return snappedWallsPerFloor;
         }
+        /// <summary>
+        /// Number of significant closed loops (rooms) and their total enclosed area for one level.
+        /// </summary>
+        public struct ClosureSignature
+        {
+            public int LoopCount;
+            public double Area;
+        }
+
+        /// <summary>
+        /// Recognise closed loops from a set of 2D wall axes (via NTS polygonization) and summarise
+        /// them, ignoring sliver loops whose bounding-rectangle minimum side is below
+        /// <see cref="MinLoopRectangleSide"/>. Pure and side-effect free for unit testing.
+        /// </summary>
+        public static ClosureSignature ComputeClosure(IEnumerable<Segment2D> axes, double tolerance)
+        {
+            return ComputeClosure(axes, tolerance, MinLoopRectangleSide);
+        }
+
+        /// <summary>
+        /// As <see cref="ComputeClosure(IEnumerable{Segment2D}, double)"/>, but with an explicit minimum
+        /// room side: loops whose bounding-rectangle minimum side is below <paramref name="minRoomSide"/>
+        /// are treated as slivers and excluded. The parallel-merge guard raises this to the merge width
+        /// so a gap the caller declared a "slit" is not mistaken for a room.
+        /// </summary>
+        public static ClosureSignature ComputeClosure(IEnumerable<Segment2D> axes, double tolerance, double minRoomSide)
+        {
+            ClosureSignature signature = new ClosureSignature { LoopCount = 0, Area = 0 };
+            if (axes == null)
+            {
+                return signature;
+            }
+
+            List<Segment2D> segments = axes.Where(axis => axis != null).ToList();
+            if (segments.Count < 3)
+            {
+                return signature; // cannot enclose a region
+            }
+
+            List<Polygon2D> loops = SAM.Geometry.Planar.Create.Polygon2Ds(segments, tolerance);
+            if (loops == null)
+            {
+                return signature;
+            }
+
+            foreach (Polygon2D loop in loops)
+            {
+                if (loop == null)
+                {
+                    continue;
+                }
+
+                List<Point2D> points = loop.GetPoints();
+                if (points == null || points.Count < 3)
+                {
+                    continue;
+                }
+
+                Rectangle2D rectangle = SAM.Geometry.Planar.Create.Rectangle2D(points);
+                if (rectangle == null || System.Math.Min(rectangle.Width, rectangle.Height) < minRoomSide)
+                {
+                    continue; // sliver loop: not a real room, exclude from the signature
+                }
+
+                signature.LoopCount++;
+                signature.Area += System.Math.Abs(loop.GetArea());
+            }
+
+            return signature;
+        }
+
+        /// <summary>
+        /// Axis-aligned bounding box of a projected axis, optionally grown by <paramref name="expansion"/>.
+        /// </summary>
+        private static Envelope AxisEnvelope(Segment2D axis, double expansion)
+        {
+            Point2D start = axis.Start;
+            Point2D end = axis.End;
+            Envelope envelope = new Envelope(
+                System.Math.Min(start.X, end.X), System.Math.Max(start.X, end.X),
+                System.Math.Min(start.Y, end.Y), System.Math.Max(start.Y, end.Y));
+            if (expansion > 0)
+            {
+                envelope.ExpandBy(expansion);
+            }
+            return envelope;
+        }
+
+        /// <summary>
+        /// Spatial index of wall projected-axis bounding boxes, keyed by list position.
+        /// Querying an expanded envelope returns a superset of the walls the equivalent all-pairs
+        /// loop would have examined, so callers keep their original inner checks unchanged.
+        /// </summary>
+        private static STRtree<int> BuildAxisIndex(List<SnappedWall> walls)
+        {
+            STRtree<int> index = new STRtree<int>();
+            for (int i = 0; i < walls.Count; i++)
+            {
+                index.Insert(AxisEnvelope(walls[i].ProjectedAxis, 0), i);
+            }
+            return index;
+        }
+
         private static void MarkNakedNodes(List<SnappedWall> walls)
         {
+            if (walls.Count == 0)
+            {
+                return;
+            }
+
+            STRtree<int> index = BuildAxisIndex(walls);
             for (int i = 0; i < walls.Count; i++)
             {
                 walls[i].ResetNakedStatus();
-                for (int j = 0; j < walls.Count; j++)
+                // A wall can only affect wall i's naked status if it passes within SAMTolerance of
+                // wall i's endpoints, i.e. its box overlaps wall i's box grown by SAMTolerance.
+                foreach (int j in index.Query(AxisEnvelope(walls[i].ProjectedAxis, SAMTolerance)))
                 {
                     if (i == j)
                     {
@@ -389,6 +552,324 @@ namespace SAM.Geometry.Solver
             }
             return merged;
         }
+
+        /// <summary>
+        /// Merge near-parallel, overlapping wall axes whose perpendicular offset is within
+        /// <paramref name="tolerance"/> onto a single length-weighted axis (collapsing "double-wall"
+        /// slits). Closure-guarded per level: a level whose merge would reduce the count or enclosed area
+        /// of rooms wider than the merge width is left unmerged, so any room wider than the chosen width
+        /// is never erased (a genuine space narrower than the width is indistinguishable from a slit).
+        /// </summary>
+        private static List<SnappedWall> MergeParallelWalls(List<SnappedWall> walls, double tolerance)
+        {
+            if (walls == null || walls.Count == 0 || tolerance <= 0)
+            {
+                return walls;
+            }
+
+            // A gap up to the merge width is, by the caller's choice, a "slit" - so the guard must not
+            // treat the thin loop it forms as a room. Protect only rooms wider than the merge width
+            // (never below the normal sliver floor). Otherwise a 0.21 m slit reads as a 0.2 m+ room and
+            // the merge is wrongly skipped.
+            double minRoomSide = System.Math.Max(MinLoopRectangleSide, tolerance);
+
+            List<SnappedWall> result = new List<SnappedWall>();
+            foreach (KeyValuePair<double, List<SnappedWall>> floor in SortWallsByElevation(walls))
+            {
+                result.AddRange(MergeParallelOneLevel(floor.Value, floor.Key, tolerance, minRoomSide));
+            }
+            return result;
+        }
+
+        private static List<SnappedWall> MergeParallelOneLevel(List<SnappedWall> walls, double elevation, double tolerance, double minRoomSide)
+        {
+            int count = walls.Count;
+            if (count < 2)
+            {
+                return new List<SnappedWall>(walls);
+            }
+
+            int[] parent = new int[count];
+            for (int i = 0; i < count; i++)
+            {
+                parent[i] = i;
+            }
+
+            for (int i = 0; i < count; i++)
+            {
+                for (int j = i + 1; j < count; j++)
+                {
+                    if (AreParallelWithinTolerance(walls[i].ProjectedAxis, walls[j].ProjectedAxis, tolerance))
+                    {
+                        UnionFind_Union(parent, i, j);
+                    }
+                }
+            }
+
+            Dictionary<int, List<int>> groups = new Dictionary<int, List<int>>();
+            for (int i = 0; i < count; i++)
+            {
+                int root = UnionFind_Find(parent, i);
+                if (!groups.TryGetValue(root, out List<int> group))
+                {
+                    group = new List<int>();
+                    groups[root] = group;
+                }
+                group.Add(i);
+            }
+
+            // Closure of this level as-is, counting only rooms wider than the merge width. The open-end
+            // count guards against a merge that bounds no room but still breaks connectivity (an averaged
+            // axis that no longer lands on the perpendicular stubs that touched the original slit sides).
+            List<Segment2D> originalAxes = walls.Select(wall => wall.ProjectedAxis).ToList();
+            ClosureSignature baseline = ComputeClosure(originalAxes, ModelTolerance, minRoomSide);
+            int baselineOpenEnds = OpenEndpointCount(originalAxes, ModelTolerance);
+
+            List<SnappedWall> result = new List<SnappedWall>();
+            foreach (List<int> group in groups.Values)
+            {
+                if (group.Count == 1)
+                {
+                    result.Add(walls[group[0]]);
+                    continue;
+                }
+
+                SnappedWall mergedWall = BuildMergedParallelWall(walls, group, elevation);
+
+                // Per-group guard: merge this group only if doing so (with every other wall left as-is)
+                // does not reduce the count/area of rooms wider than the merge width, and does not open
+                // any new naked end. This unblocks safe merges even when another group on the same level
+                // must be protected.
+                HashSet<int> groupMembers = new HashSet<int>(group);
+                List<Segment2D> candidateAxes = new List<Segment2D>();
+                for (int k = 0; k < count; k++)
+                {
+                    if (!groupMembers.Contains(k))
+                    {
+                        candidateAxes.Add(walls[k].ProjectedAxis);
+                    }
+                }
+                candidateAxes.Add(mergedWall.ProjectedAxis);
+
+                ClosureSignature after = ComputeClosure(candidateAxes, ModelTolerance, minRoomSide);
+                int afterOpenEnds = OpenEndpointCount(candidateAxes, ModelTolerance);
+                if (after.LoopCount < baseline.LoopCount || after.Area < baseline.Area - AreaTolerance)
+                {
+                    foreach (int id in group)
+                    {
+                        result.Add(walls[id]); // keep this group unmerged - it bounds a real room
+                    }
+                    SolverWarnings.Add("Parallel merge skipped for a wall group: it would reduce the count/area of rooms wider than the merge width.");
+                }
+                else if (afterOpenEnds > baselineOpenEnds)
+                {
+                    foreach (int id in group)
+                    {
+                        result.Add(walls[id]); // keep this group unmerged - merging would open a naked end
+                    }
+                    SolverWarnings.Add("Parallel merge skipped for a wall group: it would open a new naked end.");
+                }
+                else
+                {
+                    result.Add(mergedWall);
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Number of segment endpoints in <paramref name="axes"/> that are not within
+        /// <paramref name="tolerance"/> of any other axis (i.e. open / naked ends). Used by the parallel
+        /// merge guard to reject a merge that would disconnect a wall it previously touched.
+        /// </summary>
+        internal static int OpenEndpointCount(List<Segment2D> axes, double tolerance)
+        {
+            int open = 0;
+            for (int i = 0; i < axes.Count; i++)
+            {
+                Segment2D axis = axes[i];
+                if (axis == null)
+                {
+                    continue;
+                }
+
+                foreach (Point2D end in new[] { axis.Start, axis.End })
+                {
+                    bool connected = false;
+                    for (int j = 0; j < axes.Count; j++)
+                    {
+                        if (j == i || axes[j] == null)
+                        {
+                            continue;
+                        }
+
+                        if (axes[j].Distance(end) <= tolerance)
+                        {
+                            connected = true;
+                            break;
+                        }
+                    }
+
+                    if (!connected)
+                    {
+                        open++;
+                    }
+                }
+            }
+            return open;
+        }
+
+        internal static bool AreParallelWithinTolerance(Segment2D a, Segment2D b, double tolerance)
+        {
+            Vector2D ua = a.Direction.Unit;
+            Vector2D ub = b.Direction.Unit;
+            if (System.Math.Abs((ua.X * ub.X) + (ua.Y * ub.Y)) < 0.99)
+            {
+                return false; // not parallel
+            }
+
+            Point2D a0 = a.Start;
+            Point2D a1 = a.End;
+            Point2D b0 = b.Start;
+            Point2D b1 = b.End;
+
+            // Require a real overlap along the shared axis (project both axes onto a's direction). Without
+            // it, two staggered walls that only come close at adjacent endpoints - e.g. either side of a
+            // doorway - would be grouped and bridged into one long wall across the gap. A midpoint-only
+            // test missed short-overlap slits; a minimum-distance-only test over-merges these end-to-end
+            // pairs. Overlap + perpendicular gap captures genuine "double-wall" slits and nothing else.
+            double ta0 = (a0.X * ua.X) + (a0.Y * ua.Y);
+            double ta1 = (a1.X * ua.X) + (a1.Y * ua.Y);
+            double tb0 = (b0.X * ua.X) + (b0.Y * ua.Y);
+            double tb1 = (b1.X * ua.X) + (b1.Y * ua.Y);
+
+            // Degenerate (zero-length) axes can't form a slit.
+            if (System.Math.Abs(ta1 - ta0) <= ModelTolerance || System.Math.Abs(tb1 - tb0) <= ModelTolerance)
+            {
+                return false;
+            }
+
+            double lo = System.Math.Max(System.Math.Min(ta0, ta1), System.Math.Min(tb0, tb1));
+            double hi = System.Math.Min(System.Math.Max(ta0, ta1), System.Math.Max(tb0, tb1));
+            if (hi - lo <= ModelTolerance)
+            {
+                return false; // no axial overlap: not a double-wall slit
+            }
+
+            // The two axes may be slightly skewed within the 0.99 direction tolerance, so the perpendicular
+            // gap varies along the overlap. Measure it at both ends of the shared overlap (points at the
+            // same axial coordinate differ only perpendicularly) and require the larger within tolerance,
+            // so a pair that is close at one end but splays apart at the other is not merged.
+            double gapLo = PointAtAxial(a0, a1, ta0, ta1, lo).Distance(PointAtAxial(b0, b1, tb0, tb1, lo));
+            double gapHi = PointAtAxial(a0, a1, ta0, ta1, hi).Distance(PointAtAxial(b0, b1, tb0, tb1, hi));
+            return System.Math.Max(gapLo, gapHi) <= tolerance;
+        }
+
+        /// <summary>
+        /// Point on the segment p0->p1 at axial coordinate <paramref name="t"/> (the projection onto the
+        /// shared direction, where <paramref name="t0"/>/<paramref name="t1"/> are the projections of
+        /// p0/p1). Used to compare the two parallel axes at the same axial position.
+        /// </summary>
+        private static Point2D PointAtAxial(Point2D p0, Point2D p1, double t0, double t1, double t)
+        {
+            double denom = t1 - t0;
+            double s = System.Math.Abs(denom) < 1e-12 ? 0 : (t - t0) / denom;
+            return new Point2D(p0.X + (s * (p1.X - p0.X)), p0.Y + (s * (p1.Y - p0.Y)));
+        }
+
+        private static SnappedWall BuildMergedParallelWall(List<SnappedWall> walls, List<int> group, double elevation)
+        {
+            int lead = group[0];
+            double bestLength = walls[lead].ProjectedAxis.GetLength();
+            foreach (int id in group)
+            {
+                double length = walls[id].ProjectedAxis.GetLength();
+                if (length > bestLength)
+                {
+                    bestLength = length;
+                    lead = id;
+                }
+            }
+
+            Segment2D leadAxis = walls[lead].ProjectedAxis;
+            Vector2D dir = leadAxis.Direction.Unit;
+            double nx = -dir.Y;
+            double ny = dir.X;
+            Point2D anchor = leadAxis.Start;
+
+            double weightSum = 0, perpSum = 0, minParam = double.MaxValue, maxParam = double.MinValue;
+            foreach (int id in group)
+            {
+                Segment2D axis = walls[id].ProjectedAxis;
+                double weight = axis.GetLength();
+                if (weight <= 0)
+                {
+                    weight = 1e-6;
+                }
+                foreach (Point2D point in new Point2D[] { axis.Start, axis.End })
+                {
+                    double param = ((point.X - anchor.X) * dir.X) + ((point.Y - anchor.Y) * dir.Y);
+                    double perp = ((point.X - anchor.X) * nx) + ((point.Y - anchor.Y) * ny);
+                    perpSum += (weight / 2.0) * perp; // each endpoint carries half the wall's weight
+                    if (param < minParam) minParam = param;
+                    if (param > maxParam) maxParam = param;
+                }
+                weightSum += weight;
+            }
+            double perpAverage = weightSum > 0 ? perpSum / weightSum : 0;
+
+            Point2D start2D = new Point2D(anchor.X + (minParam * dir.X) + (perpAverage * nx), anchor.Y + (minParam * dir.Y) + (perpAverage * ny));
+            Point2D end2D = new Point2D(anchor.X + (maxParam * dir.X) + (perpAverage * nx), anchor.Y + (maxParam * dir.Y) + (perpAverage * ny));
+
+            Segment3D axis3D = new Segment3D(
+                new Point3D(start2D.X, start2D.Y, elevation),
+                new Point3D(end2D.X, end2D.Y, elevation));
+
+            SnappedWall master = walls[lead];
+            SnappedWall mergedWall = new SnappedWall(master.SourceIndices[0], axis3D, master.Weight, master.BucketSize, master.MaxExtension, master.OriginalHeight);
+
+            Segment2D projected = new Segment2D(start2D, end2D);
+            for (int m = 1; m < master.SourceIndices.Count; m++)
+            {
+                mergedWall.SourceIndices.Add(master.SourceIndices[m]);
+                mergedWall.SourceSegments.Add(projected);
+            }
+            foreach (int id in group)
+            {
+                if (id == lead)
+                {
+                    continue;
+                }
+                SnappedWall other = walls[id];
+                for (int m = 0; m < other.SourceIndices.Count; m++)
+                {
+                    mergedWall.SourceIndices.Add(other.SourceIndices[m]);
+                    mergedWall.SourceSegments.Add(projected);
+                }
+            }
+            return mergedWall;
+        }
+
+        private static int UnionFind_Find(int[] parent, int x)
+        {
+            while (parent[x] != x)
+            {
+                parent[x] = parent[parent[x]];
+                x = parent[x];
+            }
+            return x;
+        }
+
+        private static void UnionFind_Union(int[] parent, int a, int b)
+        {
+            int rootA = UnionFind_Find(parent, a);
+            int rootB = UnionFind_Find(parent, b);
+            if (rootA != rootB)
+            {
+                parent[rootA] = rootB;
+            }
+        }
+
         private static double OrthoDistance2d(Point2D ptA, Point2D ptB)
         {
             double distance = System.Math.Abs(ptA.X - ptB.X);
@@ -399,12 +880,16 @@ namespace SAM.Geometry.Solver
         private static List<SnappedWall> ExplodeWallsAtIntersections(List<SnappedWall> walls)
         {
             List<SnappedWall> split = new List<SnappedWall>();
-            
+
+            STRtree<int> index = walls.Count > 0 ? BuildAxisIndex(walls) : null;
+            // Both axes are extended by ModelTolerance before the intersection test (within SAMTolerance),
+            // so a generous box grows by twice that extension plus the test tolerance to stay a superset.
+            double explodeExpansion = (2 * ModelTolerance) + SAMTolerance;
             for (int i = 0; i < walls.Count; i++)
             {
                 // find all intersections between this wall and walls on the same level
                 List<Point2D> intersections = new List<Point2D>();
-                for (int j = 0; j < walls.Count; j++)
+                foreach (int j in index.Query(AxisEnvelope(walls[i].ProjectedAxis, explodeExpansion)))
                 {
                     if (i == j)
                     {
@@ -414,8 +899,6 @@ namespace SAM.Geometry.Solver
                     {// in this version of the algorithm the split is created even if the walls are on different levels. Uncomment "continue" to split only on the same level
                      //continue;
                     }
-                    double myParam = 0;
-                    double theirParam = 0;
                     Segment2D currentExtended = walls[i].ProjectedAxis;
                     Segment2D otherExtended = walls[j].ProjectedAxis;
                     currentExtended = currentExtended.Extend(ModelTolerance, true, true);
@@ -435,16 +918,22 @@ namespace SAM.Geometry.Solver
             MarkNakedNodes(split);
             return split;
         }
+
         private static void SnapOpenNodes(List<SnappedWall> walls, double snappingDistance)
         {
             List<SnappedWall> wallsByLength = walls.OrderBy(w => w.Length).ToList(); // start snapping from the shortest
+            STRtree<int> index = wallsByLength.Count > 0 ? BuildAxisIndex(wallsByLength) : null;
             System.Text.StringBuilder sb = new System.Text.StringBuilder();
             for (int i = 0; i < wallsByLength.Count; i++)
             {
                 SnappedWall currentWall = wallsByLength[i];
                 //Print("Current wall [{0}] , its first source: {1}", i, currentWall.SourceIndices[0]);
                 List<Point2D> anchorCandidates = new List<Point2D>();
-                for (int j = 0; j < wallsByLength.Count; j++)
+                // Only walls within the snap reach (MaxExtension) can supply anchors; sort the queried
+                // candidates so the anchor ordering matches the original ascending scan exactly.
+                List<int> candidateIndices = index.Query(AxisEnvelope(currentWall.ProjectedAxis, currentWall.MaxExtension)).ToList();
+                candidateIndices.Sort();
+                foreach (int j in candidateIndices)
                 {
                     if (!Core.Query.AlmostEqual(currentWall.Elevation, wallsByLength[j].Elevation, ModelTolerance)) // same level only
                     {
@@ -482,12 +971,16 @@ namespace SAM.Geometry.Solver
 
             bool anySnapped = false;
             // snap iteratively until there are no changes in the model
+            int safetyCounter = 0;
             do
             {
                 anySnapped = false;
                 bool[] isSnapped = new bool[processedWalls.Count];
                 bool[] isMerged = new bool[processedWalls.Count];
 
+                // Left as an all-pairs scan deliberately: `current` absorbs candidates and grows during
+                // the pass, so a precomputed bounding-box filter could miss walls that come into reach
+                // after a merge. The outer loop is now bounded by MAX_SNAP_ADJUST_ITERATIONS.
                 for (int i = 0; i < processedWalls.Count - 1; i++)
                 {
                     if (isMerged[i]) {
@@ -532,7 +1025,15 @@ namespace SAM.Geometry.Solver
                 }
                 processedWalls = allButMerged;
 
-            } while (anySnapped == true);
+                safetyCounter++;
+            } while (anySnapped == true && safetyCounter < MAX_SNAP_ADJUST_ITERATIONS);
+
+            if (safetyCounter >= MAX_SNAP_ADJUST_ITERATIONS && anySnapped)
+            {
+                // The loop is bounded so a non-converging model can no longer hang the host;
+                // surface the event instead of stopping silently.
+                SolverWarnings.Add("SnapAndAdjustWalls reached the iteration cap (" + MAX_SNAP_ADJUST_ITERATIONS + "); the snapped model may be incomplete.");
+            }
 
             MarkNakedNodes(processedWalls);
 

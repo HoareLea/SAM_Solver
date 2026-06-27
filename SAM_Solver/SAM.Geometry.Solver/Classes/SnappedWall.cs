@@ -1,4 +1,6 @@
-﻿using SAM.Geometry.Planar;
+﻿// SPDX-License-Identifier: LGPL-3.0-or-later
+// Copyright (c) 2020-2026 Michal Dengusiak & Jakub Ziolkowski and contributors
+using SAM.Geometry.Planar;
 using SAM.Geometry.Spatial;
 using SAM.Core;
 using System.Collections.Generic;
@@ -661,6 +663,9 @@ namespace SAM.Geometry.Solver
                 {
                     snappedStart = ProjectedAxis.Start;
                     snappedEnd = ProjectedAxis.End;
+                    // Keep the safe fallback but make the previously invisible failure investigable:
+                    // record which source wall hit the null/NaN path so the root cause can be traced.
+                    SnapSolver.SolverWarnings.Add("SnappedWall (source " + (SourceIndices.Count > 0 ? SourceIndices[0] : -1) + "): a snapped endpoint was null/NaN; fell back to the original projected axis.");
                 }
 
 

@@ -1,4 +1,4 @@
-﻿using Grasshopper.Kernel;
+using Grasshopper.Kernel;
 using Rhino.Geometry;
 using SAM.Analytical.Grasshopper.Solver.Properties;
 using SAM.Core.Grasshopper;
@@ -16,23 +16,29 @@ using SAM.Geometry.Planar;
 
 namespace SAM.Analytical.Grasshopper.Solver.Component
 {
-    public class Solver : GH_SAMVariableOutputParameterComponent
+    /// <summary>
+    /// Variant of the SAM Solver that runs on wall axis curves, polylines and SAM geometry
+    /// (Segment3D, Face3D, ...) instead of panel surfaces. Each input is reduced to a set of wall
+    /// centreline segments (faces contribute their external edges), extruded vertically into a
+    /// panel, snapped/cleaned with the same <see cref="Solver{T}"/> engine and returned with the
+    /// same panels / outlines / shells / nakedEnds outputs as the original Solver component.
+    /// </summary>
+    public class SolverCurves : GH_SAMVariableOutputParameterComponent
     {
-        public override Guid ComponentGuid => new Guid("2e2be06e-55f1-4c94-92b3-71df0808eaf8");
-
+        public override Guid ComponentGuid => new Guid("12102e43-312a-4f03-ac66-70e070754028");
 
         /// <summary>
         /// The latest version of this component
         /// </summary>
-        public override string LatestComponentVersion => "1.0.6";
+        public override string LatestComponentVersion => "1.0.1";
 
         /// <summary>
         /// Provides an Icon for the component.
         /// </summary>
         protected override System.Drawing.Bitmap Icon => Resources.SAM_Solver;
 
-        public Solver()
-            : base("Solver", "Solver", "SAM Solver", "SAM", "Solver")
+        public SolverCurves()
+            : base("SolverCurves", "SolverCurves", "SAM Solver running on wall axis curves, polylines and SAM geometry instead of panels", "SAM", "Solver")
         {
         }
 
@@ -44,10 +50,16 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
             get
             {
                 List<GH_SAMParam> result = new List<GH_SAMParam>();
-                result.Add(new GH_SAMParam(new GooPanelParam() { Name = "_panels", NickName = "_panels", Description = "Panels represented as a list of surface brep geometry.", Access = GH_ParamAccess.list, DataMapping = GH_DataMapping.Flatten}, ParamVisibility.Binding));
-                result.Add(new GH_SAMParam(new global::Grasshopper.Kernel.Parameters.Param_Number() { Name = "bucketSizes_", NickName = "bucketSizes_", Description = "Bucket size per panel.\ndefault: 0.12", Access = GH_ParamAccess.list, Optional = true }, ParamVisibility.Voluntary));
-                result.Add(new GH_SAMParam(new global::Grasshopper.Kernel.Parameters.Param_Number() { Name = "weights_", NickName = "weights_", Description = "A list of weighs or the panels\ndefault: between 0.2 - 1 nad air: 0", Access = GH_ParamAccess.list, Optional = true }, ParamVisibility.Voluntary));
-                result.Add(new GH_SAMParam(new global::Grasshopper.Kernel.Parameters.Param_Number() { Name = "maxExtensions_", NickName = "maxExtensions_", Description = "Maximum extensions in a snapping process\ndefault: depends on panel thickness", Access = GH_ParamAccess.list, Optional = true }, ParamVisibility.Voluntary));
+                result.Add(new GH_SAMParam(new global::Grasshopper.Kernel.Parameters.Param_Curve() { Name = "_curves", NickName = "_curves", Description = "Wall axes represented as a list of curves or polylines.\nEach segment is treated as a wall centreline.", Access = GH_ParamAccess.list, Optional = true, DataMapping = GH_DataMapping.Flatten }, ParamVisibility.Binding));
+                result.Add(new GH_SAMParam(new GooSAMGeometryParam() { Name = "geometry_", NickName = "geometry_", Description = "Wall axes represented as SAM geometry (Segment3D, Face3D, Polyline3D, ...).\nExternal edges are extracted from faces.", Access = GH_ParamAccess.list, Optional = true, DataMapping = GH_DataMapping.Flatten }, ParamVisibility.Binding));
+
+                global::Grasshopper.Kernel.Parameters.Param_Number paramNumber_Height = new global::Grasshopper.Kernel.Parameters.Param_Number() { Name = "_wallHeight_", NickName = "_wallHeight_", Description = "Height used to extrude each axis into a vertical wall panel before snapping.\ndefault: 3.0", Access = GH_ParamAccess.item };
+                paramNumber_Height.SetPersistentData(3.0);
+                result.Add(new GH_SAMParam(paramNumber_Height, ParamVisibility.Binding));
+
+                result.Add(new GH_SAMParam(new global::Grasshopper.Kernel.Parameters.Param_Number() { Name = "bucketSizes_", NickName = "bucketSizes_", Description = "Bucket size per input axis.\ndefault: 0.12", Access = GH_ParamAccess.list, Optional = true }, ParamVisibility.Voluntary));
+                result.Add(new GH_SAMParam(new global::Grasshopper.Kernel.Parameters.Param_Number() { Name = "weights_", NickName = "weights_", Description = "A list of weights for the axes\ndefault: between 0.2 - 1 and air: 0", Access = GH_ParamAccess.list, Optional = true }, ParamVisibility.Voluntary));
+                result.Add(new GH_SAMParam(new global::Grasshopper.Kernel.Parameters.Param_Number() { Name = "maxExtensions_", NickName = "maxExtensions_", Description = "Maximum extensions in a snapping process\ndefault: depends on wall thickness", Access = GH_ParamAccess.list, Optional = true }, ParamVisibility.Voluntary));
                 result.Add(new GH_SAMParam(new global::Grasshopper.Kernel.Parameters.Param_Interval() { Name = "levels_", NickName = "levels_", Description = "Information on each floor's elevation", Access = GH_ParamAccess.list, Optional = true }, ParamVisibility.Binding));
 
                 global::Grasshopper.Kernel.Parameters.Param_Number paramNumber;
@@ -72,7 +84,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
                 paramNumber.SetPersistentData(Tolerance.Distance);
                 result.Add(new GH_SAMParam(paramNumber, ParamVisibility.Voluntary));
 
-                paramNumber = new global::Grasshopper.Kernel.Parameters.Param_Number() { Name = "_toleranceAngle_", NickName = "_toleranceAngle_", Description = "Distance angle in radians \nUse it to align panels between levels\ndefault 0.034907 RAD = 2 deg", Access = GH_ParamAccess.item };
+                paramNumber = new global::Grasshopper.Kernel.Parameters.Param_Number() { Name = "_toleranceAngle_", NickName = "_toleranceAngle_", Description = "Distance angle in radians \nUse it to align walls between levels\ndefault 0.034907 RAD = 2 deg", Access = GH_ParamAccess.item };
                 paramNumber.SetPersistentData(Tolerance.Angle);
                 result.Add(new GH_SAMParam(paramNumber, ParamVisibility.Voluntary));
 
@@ -97,26 +109,21 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
 
                 result.Add(new GH_SAMParam(new GooSAMGeometryParam() { Name = "shells", NickName = "shells", Description = "SAM Geometry Shells", Access = GH_ParamAccess.tree }, ParamVisibility.Voluntary));
                 result.Add(new GH_SAMParam(new global::Grasshopper.Kernel.Parameters.Param_Point() { Name = "nakedEnds", NickName = "nakedEnds", Description = "Naked Points", Access = GH_ParamAccess.list }, ParamVisibility.Voluntary));
-                result.Add(new GH_SAMParam(new global::Grasshopper.Kernel.Parameters.Param_String() { Name = "report", NickName = "report", Description = "Closure report of the solved model: rooms (closed loops), enclosed area, naked ends and wall segments — totals and a per-level breakdown. Same metric as AutoTuneSolver, so the two components can be compared directly.", Access = GH_ParamAccess.item }, ParamVisibility.Voluntary));
 
                 return result.ToArray();
             }
         }
 
-        private bool CheckTolerance()
-        {
-            //Rhino.RhinoDoc.ActiveDoc.ModelAbsoluteTolerance;
-            return true;
-        }
-
         protected override void SolveInstance(IGH_DataAccess dataAccess)
         {
-            List<Panel> panels = new List<Panel>();
+            List<Curve> curves = new List<Curve>();
+            List<ISAMGeometry3D> geometries = new List<ISAMGeometry3D>();
             List<double> bucketSizes = new List<double>();
             List<double> weights = new List<double>();
             List<double> maxExtensions = new List<double>();
             List<Interval> levels = new List<Interval>();
 
+            double wallHeight = 3.0;
             double levelSectionOffset = Geometry.Solver.SnapSolver.DEFAULT_LevelSectionOffset;
             double nakedNodeSnapDistance = Geometry.Solver.SnapSolver.DEFAULT_NakedNodeSnapDistance;
             double minWallSegmentLength = Geometry.Solver.SnapSolver.DEFAULT_MinWallSegmentLength;
@@ -126,14 +133,39 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
 
             int index = -1;
 
-            index = Params.IndexOfInputParam("_panels");
-            if (index == -1 || !dataAccess.GetDataList(index, panels))
+            bool hasCurves = false;
+            index = Params.IndexOfInputParam("_curves");
+            if (index != -1)
             {
+                hasCurves = dataAccess.GetDataList(index, curves);
+            }
+
+            bool hasGeometry = false;
+            index = Params.IndexOfInputParam("geometry_");
+            if (index != -1)
+            {
+                hasGeometry = dataAccess.GetDataList(index, geometries);
+            }
+
+            if (!hasCurves && !hasGeometry)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Provide wall axes through _curves and/or geometry_.");
                 return;
             }
 
+            index = Params.IndexOfInputParam("_wallHeight_");
+            if (index != -1)
+            {
+                dataAccess.GetData(index, ref wallHeight);
+            }
+
+            if (double.IsNaN(wallHeight) || wallHeight <= 0)
+            {
+                wallHeight = 3.0;
+            }
+
             index = Params.IndexOfInputParam("bucketSizes_");
-            if(index != -1)
+            if (index != -1)
             {
                 dataAccess.GetDataList(index, bucketSizes);
             }
@@ -199,43 +231,29 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
                 dataAccess.GetData(index, ref arcToleranceAngleRad);
             }
 
-            for(int i = 0; i < panels.Count; i++)
+            // Convert each input axis (curve, polyline or SAM geometry) into vertical wall panels.
+            // Each axis becomes a wall centreline that is extruded vertically by wallHeight so that
+            // the existing panel based Solver engine can snap and clean the wall network. The bucket
+            // size / weight / max extension lists are applied per input axis.
+            List<Panel> panels = new List<Panel>();
+            int sourceIndex = 0;
+
+            foreach (Curve curve in curves)
             {
-                Panel panel_Temp = Create.Panel(panels[i]);
-                if(panel_Temp == null)
-                {
-                    continue;
-                }
+                AddPanels(panels, ToSegment3Ds(curve, toleranceDistance), wallHeight, sourceIndex, bucketSizes, weights, maxExtensions, toleranceDistance);
+                sourceIndex++;
+            }
 
-                if(bucketSizes != null && bucketSizes.Count != 0)
-                {
-                    double bucketSize = bucketSizes.Count <= i ? bucketSizes.Last() : bucketSizes[i];
-                    if(!double.IsNaN(bucketSize))
-                    {
-                        panel_Temp.SetValue(SolverParameter.BucketSize, bucketSize);
-                    }
-                }
+            foreach (ISAMGeometry3D geometry in geometries)
+            {
+                AddPanels(panels, ToSegment3Ds(geometry, toleranceDistance), wallHeight, sourceIndex, bucketSizes, weights, maxExtensions, toleranceDistance);
+                sourceIndex++;
+            }
 
-                if (weights != null && weights.Count != 0)
-                {
-                    double weight = weights.Count <= i ? weights.Last() : weights[i];
-                    if (!double.IsNaN(weight))
-                    {
-                        panel_Temp.SetValue(SolverParameter.Weight, weight);
-                    }
-                }
-
-                if (maxExtensions != null && maxExtensions.Count != 0)
-                {
-                    double maxExtension = maxExtensions.Count <= i ? maxExtensions.Last() : maxExtensions[i];
-                    if (!double.IsNaN(maxExtension))
-                    {
-                        panel_Temp.SetValue(SolverParameter.MaxExtend, maxExtension);
-                    }
-                }
-
-                panels[i] = panel_Temp;
-
+            if (panels.Count < 2)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "At least two wall axis segments are required to run the solver.");
+                return;
             }
 
             List<Range<double>> ranges = new List<Range<double>>();
@@ -263,7 +281,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
 
             panels = solver.Execute(out List<Point3D> nakedPoint3Ds, bucketBetweenLevels);
 
-            if(panels != null)
+            if (panels != null)
             {
                 //Make sure each panel has unique Guid!
                 for (int i = 0; i < panels.Count; i++)
@@ -280,15 +298,10 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
                 }
             }
 
-            //Analytical.Solver.Modify.Snap(
-            //    panels, bucketSizes, weights, maxExtensions, ranges,
-            //    levelSectionOffset, nakedNodeSnapDistance, minWallSegmentLength,
-            //    toleranceDistance, toleranceAngleRad, arcToleranceAngleRad, out List<Geometry.Spatial.Point3D> nakedPoint3Ds);
-
             index = Params.IndexOfOutputParam("panels");
-            if(index != -1)
+            if (index != -1 && panels != null)
             {
-                if(ranges == null)
+                if (ranges == null)
                 {
                     ranges = Geometry.Object.Spatial.Query.ElevationRanges(panels);
                 }
@@ -309,7 +322,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
                         count = ranges.Count;
                     }
 
-                    if(!dictionary.TryGetValue(count, out List<Panel> panels_Temp) || panels_Temp == null)
+                    if (!dictionary.TryGetValue(count, out List<Panel> panels_Temp) || panels_Temp == null)
                     {
                         panels_Temp = new List<Panel>();
                         dictionary[count] = panels_Temp;
@@ -324,17 +337,17 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
                 DataTree<GooSAMGeometry> dataTree_Shell = index_Shells == -1 ? null : new DataTree<GooSAMGeometry>();
                 DataTree<GooSAMGeometry> dataTree_Outlines = index_Outlines == -1 ? null : new DataTree<GooSAMGeometry>();
                 DataTree<GooPanel> dataTree_Panel = new DataTree<GooPanel>();
-                foreach(KeyValuePair<int, List<Panel>> keyValuePair in dictionary)
+                foreach (KeyValuePair<int, List<Panel>> keyValuePair in dictionary)
                 {
                     GH_Path path = new GH_Path(keyValuePair.Key);
                     List<Panel> panels_Temp = keyValuePair.Value;
 
-                    foreach(Panel panel in panels_Temp)
+                    foreach (Panel panel in panels_Temp)
                     {
                         dataTree_Panel.Add(new GooPanel(panel), path);
                     }
 
-                    if(dataTree_Shell is not null)
+                    if (dataTree_Shell is not null)
                     {
                         List<Shell> shells = getShells(panels_Temp, toleranceDistance);
                         if (shells != null)
@@ -346,25 +359,23 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
                         }
                     }
 
-                    if (dataTree_Outlines is not null)
+                    if (dataTree_Outlines is not null && keyValuePair.Key < ranges.Count)
                     {
                         double elevation = ranges[keyValuePair.Key].Max;
 
                         Dictionary<Panel, List<ISAMGeometry3D>> dictionary_Section = Analytical.Query.SectionDictionary<ISAMGeometry3D>(panels_Temp, Geometry.Spatial.Plane.WorldXY.GetMoved(new Vector3D(0, 0, elevation)) as Geometry.Spatial.Plane, toleranceDistance);
 
                         List<ISAMGeometry3D> sAMGeometry3Ds = new List<ISAMGeometry3D>();
-                        foreach(List<ISAMGeometry3D> sAMGeometry3Ds_Temp in dictionary_Section.Values )
+                        foreach (List<ISAMGeometry3D> sAMGeometry3Ds_Temp in dictionary_Section.Values)
                         {
                             sAMGeometry3Ds_Temp.ForEach(x => dataTree_Outlines.Add(new GooSAMGeometry(x), path));
                         }
-
-
                     }
                 }
 
                 dataAccess.SetDataTree(index, dataTree_Panel);
 
-                if(index_Shells != -1)
+                if (index_Shells != -1)
                 {
                     dataAccess.SetDataTree(index_Shells, dataTree_Shell);
                 }
@@ -380,31 +391,166 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
             {
                 dataAccess.SetDataList(index, nakedPoint3Ds?.ConvertAll(x => Geometry.Grasshopper.Convert.ToGrasshopper(x)));
             }
+        }
 
-            index = Params.IndexOfOutputParam("report");
-            if (index != -1)
+        /// <summary>
+        /// Builds vertical wall panels from a set of axis segments and assigns the per-axis solver
+        /// properties, appending them to <paramref name="panels"/>.
+        /// </summary>
+        private static void AddPanels(List<Panel> panels, List<Segment3D> segment3Ds, double wallHeight, int sourceIndex, List<double> bucketSizes, List<double> weights, List<double> maxExtensions, double tolerance)
+        {
+            if (panels == null || segment3Ds == null || segment3Ds.Count == 0)
             {
-                List<Range<double>> ranges_Report = ranges;
-                if (ranges_Report == null && panels != null)
+                return;
+            }
+
+            double bucketSize = GetValue(bucketSizes, sourceIndex);
+            double weight = GetValue(weights, sourceIndex);
+            double maxExtension = GetValue(maxExtensions, sourceIndex);
+
+            foreach (Segment3D segment3D in segment3Ds)
+            {
+                if (segment3D == null || segment3D.GetLength() <= tolerance)
                 {
-                    ranges_Report = Geometry.Object.Spatial.Query.ElevationRanges(panels);
+                    continue;
                 }
 
-                ClosureReport closureReport = panels == null ? null
-                    : ClosureReport.Create(panels.Cast<IFace3DObject>(), ranges_Report, levelSectionOffset, toleranceAngleRad, toleranceDistance);
-                dataAccess.SetData(index, closureReport?.ToString());
+                Face3D face3D = Geometry.Spatial.Create.Face3D(segment3D, wallHeight);
+                if (face3D == null)
+                {
+                    continue;
+                }
+
+                Vector3D normal = face3D.GetPlane()?.Normal;
+                if (normal == null)
+                {
+                    continue;
+                }
+
+                PanelType panelType = Analytical.Query.PanelType(normal);
+                Construction construction = Analytical.Query.DefaultConstruction(panelType);
+
+                Panel panel = Analytical.Create.Panel(construction, panelType, face3D);
+                if (panel == null)
+                {
+                    continue;
+                }
+
+                if (!double.IsNaN(bucketSize))
+                {
+                    panel.SetValue(SolverParameter.BucketSize, bucketSize);
+                }
+
+                if (!double.IsNaN(weight))
+                {
+                    panel.SetValue(SolverParameter.Weight, weight);
+                }
+
+                if (!double.IsNaN(maxExtension))
+                {
+                    panel.SetValue(SolverParameter.MaxExtend, maxExtension);
+                }
+
+                panels.Add(panel);
             }
+        }
+
+        /// <summary>
+        /// Converts a Rhino curve (line, polyline or general curve) into a list of SAM
+        /// <see cref="Segment3D"/> wall axes. General curves are approximated by a polyline.
+        /// </summary>
+        private static List<Segment3D> ToSegment3Ds(Curve curve, double tolerance)
+        {
+            if (curve == null)
+            {
+                return null;
+            }
+
+            Polyline polyline = null;
+            if (!curve.TryGetPolyline(out polyline) || polyline == null)
+            {
+                PolylineCurve polylineCurve = curve.ToPolyline(0, 0, 0.5, 0, 0, tolerance, 0, 0, true);
+                polylineCurve?.TryGetPolyline(out polyline);
+            }
+
+            if (polyline == null || polyline.Count < 2)
+            {
+                return null;
+            }
+
+            List<Segment3D> result = new List<Segment3D>();
+            foreach (Line line in polyline.GetSegments())
+            {
+                Geometry.Spatial.Point3D start = new Geometry.Spatial.Point3D(line.From.X, line.From.Y, line.From.Z);
+                Geometry.Spatial.Point3D end = new Geometry.Spatial.Point3D(line.To.X, line.To.Y, line.To.Z);
+
+                Segment3D segment3D = new Segment3D(start, end);
+                if (segment3D.GetLength() > tolerance)
+                {
+                    result.Add(segment3D);
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Reduces SAM geometry to a list of wall axis <see cref="Segment3D"/>. Segments are used
+        /// directly, faces contribute their external edges and any other segmentable geometry is
+        /// exploded into its segments.
+        /// </summary>
+        private static List<Segment3D> ToSegment3Ds(ISAMGeometry3D geometry, double tolerance)
+        {
+            if (geometry == null)
+            {
+                return null;
+            }
+
+            List<Segment3D> result = new List<Segment3D>();
+
+            switch (geometry)
+            {
+                case Segment3D segment3D:
+                    result.Add(segment3D);
+                    break;
+
+                case Face3D face3D:
+                    ISegmentable3D externalEdge = face3D.GetExternalEdge3D() as ISegmentable3D;
+                    if (externalEdge != null)
+                    {
+                        result.AddRange(externalEdge.GetSegments());
+                    }
+                    break;
+
+                case ISegmentable3D segmentable3D:
+                    result.AddRange(segmentable3D.GetSegments());
+                    break;
+            }
+
+            result.RemoveAll(x => x == null || x.GetLength() <= tolerance);
+
+            return result;
+        }
+
+        private static double GetValue(List<double> values, int index)
+        {
+            if (values == null || values.Count == 0)
+            {
+                return double.NaN;
+            }
+
+            return values.Count <= index ? values.Last() : values[index];
         }
 
         private List<Shell> getShells(IEnumerable<Panel> panels, double tolerance)
         {
-            if(panels == null)
+            if (panels == null)
             {
                 return null;
             }
 
             BoundingBox3D boundingBox3D = panels.BoundingBox3D();
-            if(boundingBox3D == null)
+            if (boundingBox3D == null)
             {
                 return null;
             }
@@ -412,25 +558,25 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
             double elevation_Min = boundingBox3D.Min.Z;
             double elevation_Max = boundingBox3D.Max.Z;
 
-            Point3D point3D = boundingBox3D.GetCentroid();
+            Geometry.Spatial.Point3D point3D = boundingBox3D.GetCentroid();
 
-            Geometry.Spatial.Plane plane_Min = new Geometry.Spatial.Plane(new Point3D(point3D.X, point3D.Y, elevation_Min), Vector3D.WorldZ.GetNegated());
+            Geometry.Spatial.Plane plane_Min = new Geometry.Spatial.Plane(new Geometry.Spatial.Point3D(point3D.X, point3D.Y, elevation_Min), Vector3D.WorldZ.GetNegated());
             Geometry.Spatial.Plane plane = new Geometry.Spatial.Plane(point3D, Vector3D.WorldZ);
-            Geometry.Spatial.Plane plane_Max = new Geometry.Spatial.Plane(new Point3D(point3D.X, point3D.Y, elevation_Max), Vector3D.WorldZ);
+            Geometry.Spatial.Plane plane_Max = new Geometry.Spatial.Plane(new Geometry.Spatial.Point3D(point3D.X, point3D.Y, elevation_Max), Vector3D.WorldZ);
 
 
             Dictionary<Panel, List<ISegmentable2D>> dictionary = Analytical.Query.SectionDictionary<ISegmentable2D>(panels, plane);
-            if(dictionary == null)
+            if (dictionary == null)
             {
                 return null;
             }
 
-            List<Tuple<Panel, Face3D, BoundingBox3D, List<Point3D>>> tuples = new List<Tuple<Panel, Face3D, BoundingBox3D, List<Point3D>>>();
+            List<Tuple<Panel, Face3D, BoundingBox3D, List<Geometry.Spatial.Point3D>>> tuples = new List<Tuple<Panel, Face3D, BoundingBox3D, List<Geometry.Spatial.Point3D>>>();
 
             List<Segment2D> segment2Ds = new List<Segment2D>();
-            foreach(KeyValuePair<Panel, List<ISegmentable2D>> keyValuePair in dictionary)
+            foreach (KeyValuePair<Panel, List<ISegmentable2D>> keyValuePair in dictionary)
             {
-                foreach(ISegmentable2D segmentable2D in keyValuePair.Value)
+                foreach (ISegmentable2D segmentable2D in keyValuePair.Value)
                 {
                     segment2Ds.AddRange(segmentable2D.GetSegments());
                 }
@@ -439,19 +585,19 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
 
                 BoundingBox3D boundingBox3D_Face3D = face3D.GetBoundingBox();
 
-                List<Point3D> point3Ds = (face3D.GetExternalEdge3D() as ISegmentable3D)?.GetPoints();
+                List<Geometry.Spatial.Point3D> point3Ds = (face3D.GetExternalEdge3D() as ISegmentable3D)?.GetPoints();
 
-                tuples.Add(new Tuple<Panel, Face3D, BoundingBox3D, List<Point3D>>(keyValuePair.Key, face3D, boundingBox3D_Face3D, point3Ds));
+                tuples.Add(new Tuple<Panel, Face3D, BoundingBox3D, List<Geometry.Spatial.Point3D>>(keyValuePair.Key, face3D, boundingBox3D_Face3D, point3Ds));
             }
 
             List<Face2D> face2Ds = segment2Ds.Face2Ds();
             face2Ds.Holes()?.ForEach(x => face2Ds.Add(new Face2D(x)));
 
-            Func<Point3D, Point3D> findExistingPoint3D = new Func<Point3D, Point3D>((Point3D x) =>
+            Func<Geometry.Spatial.Point3D, Geometry.Spatial.Point3D> findExistingPoint3D = new Func<Geometry.Spatial.Point3D, Geometry.Spatial.Point3D>((Geometry.Spatial.Point3D x) =>
             {
-                foreach (Tuple<Panel, Face3D, BoundingBox3D, List<Point3D>> tuple in tuples)
+                foreach (Tuple<Panel, Face3D, BoundingBox3D, List<Geometry.Spatial.Point3D>> tuple in tuples)
                 {
-                    foreach (Point3D point3D_Temp in tuple.Item4)
+                    foreach (Geometry.Spatial.Point3D point3D_Temp in tuple.Item4)
                     {
                         if (x.Distance(point3D_Temp) < Tolerance.MacroDistance)
                         {
@@ -470,17 +616,17 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
                     return null;
                 }
 
-                List<Point3D> point3Ds = new List<Point3D>();
-                foreach (Point3D point3D_Segmentable3D in segmentable3D.GetPoints())
+                List<Geometry.Spatial.Point3D> point3Ds = new List<Geometry.Spatial.Point3D>();
+                foreach (Geometry.Spatial.Point3D point3D_Segmentable3D in segmentable3D.GetPoints())
                 {
-                    Point3D point3D_Temp = y.Project(point3D_Segmentable3D);
+                    Geometry.Spatial.Point3D point3D_Temp = y.Project(point3D_Segmentable3D);
                     point3D_Temp = findExistingPoint3D.Invoke(point3D_Temp);
                     if (point3D_Temp == null)
                     {
                         continue;
                     }
 
-                    Point3D point3D_Project = y.Project(point3D_Temp);
+                    Geometry.Spatial.Point3D point3D_Project = y.Project(point3D_Temp);
                     if (point3D_Project.Distance(point3D_Temp) > tolerance)
                     {
                         point3D_Temp = point3D_Temp.Mid(point3D_Project);
@@ -502,14 +648,14 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
             foreach (Face2D face2D in face2Ds)
             {
                 List<Segment2D> segment2Ds_Face2D = (face2D?.ExternalEdge2D as ISegmentable2D)?.GetSegments();
-                if(segment2Ds_Face2D == null)
+                if (segment2Ds_Face2D == null)
                 {
                     continue;
                 }
 
                 face2D.InternalEdge2Ds?.FindAll(x => x is ISegmentable2D).ForEach(x => segment2Ds_Face2D.AddRange(((ISegmentable2D)x).GetSegments()));
-            
-                if(segment2Ds_Face2D == null || segment2Ds_Face2D.Count == 0)
+
+                if (segment2Ds_Face2D == null || segment2Ds_Face2D.Count == 0)
                 {
                     continue;
                 }
@@ -517,9 +663,9 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
                 List<Face3D> face3Ds = new List<Face3D>();
                 foreach (Segment2D segment2D in segment2Ds_Face2D)
                 {
-                    Point3D point3D_Segment2D = plane.Convert(segment2D.Mid());
+                    Geometry.Spatial.Point3D point3D_Segment2D = plane.Convert(segment2D.Mid());
 
-                    Tuple<Panel, Face3D, BoundingBox3D, List<Point3D>> tuple = tuples.Find(x => x.Item3.InRange(point3D_Segment2D) && x.Item2.On(point3D_Segment2D));
+                    Tuple<Panel, Face3D, BoundingBox3D, List<Geometry.Spatial.Point3D>> tuple = tuples.Find(x => x.Item3.InRange(point3D_Segment2D) && x.Item2.On(point3D_Segment2D));
                     face3Ds.Add(tuple.Item2);
                 }
 
@@ -533,7 +679,7 @@ namespace SAM.Analytical.Grasshopper.Solver.Component
                 internalEdges = face3D.GetInternalEdge3Ds()?.ConvertAll(x => createPolygon2D(x, plane_Min));
 
                 face3D_Temp = Geometry.Spatial.Create.Face3Ds(externalEdge, internalEdges, plane_Min)?.FirstOrDefault();
-                if(face3D_Temp != null)
+                if (face3D_Temp != null)
                 {
                     face3Ds.Add(face3D_Temp);
                 }

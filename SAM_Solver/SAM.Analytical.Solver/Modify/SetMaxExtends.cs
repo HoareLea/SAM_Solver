@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿// SPDX-License-Identifier: LGPL-3.0-or-later
+// Copyright (c) 2020-2026 Michal Dengusiak & Jakub Ziolkowski and contributors
+using System.Collections.Generic;
 using SAM.Geometry.Object.Spatial;
 using SAM.Geometry.Spatial;
 
@@ -6,6 +8,18 @@ namespace SAM.Analytical.Solver
 {
     public static partial class Modify
     {
+        // Default reach applied when a panel's thickness is unknown.
+        private const double MaxExtend_DefaultWhenThicknessUnknown = 0.33;
+        // Wall thickness (m) above which a wall is treated as "thick" and given a longer reach.
+        private const double MaxExtend_ThickWallThickness = 0.29;
+        // Reach for thick walls.
+        private const double MaxExtend_ThickWall = 0.6;
+        // Reach for standard walls.
+        private const double MaxExtend_StandardWall = 0.5;
+        // Fraction of a panel's in-plane length that the extension may not exceed
+        // (mirrors SnappedWall.ExtensionLimitLengthRatio).
+        private const double MaxExtend_LengthRatio = 0.49;
+
         public static void SetMaxExtends<T>(this List<T> face3DObjects, bool @override = true, double offset = 0.1) where T: Core.IParameterizedSAMObject, IFace3DObject
         {
             if (face3DObjects == null)
@@ -30,15 +44,15 @@ namespace SAM.Analytical.Solver
                 double thickness = face3DObject.Thickness();
                 if(double.IsNaN(thickness))
                 {
-                    maxExtend = 0.33;
+                    maxExtend = MaxExtend_DefaultWhenThicknessUnknown;
                 }
-                else if (thickness > 0.29)
+                else if (thickness > MaxExtend_ThickWallThickness)
                 {
-                    maxExtend = 0.6;
+                    maxExtend = MaxExtend_ThickWall;
                 }
                 else
                 {
-                    maxExtend = 0.5;
+                    maxExtend = MaxExtend_StandardWall;
                 }
 
                 double length = double.NaN;
@@ -79,7 +93,7 @@ namespace SAM.Analytical.Solver
                     length = 0;
                 }
 
-                length = 0.49 * length;
+                length = MaxExtend_LengthRatio * length;
 
                 maxExtend = System.Math.Min(length, maxExtend);
 
